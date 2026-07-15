@@ -1201,6 +1201,7 @@ export default function Dashboard() {
       const pledgedItems = getValue("pledgeditems", "Gold/Silver Items");
       const status = getValue("status", "Pending");
       const interestPaidUpto = getValue("interestpaidupto", takenDate);
+      const clearedDate = getValue("cleareddate", "");
       
       if (!custName || !amount) {
         errorCount++;
@@ -1256,6 +1257,7 @@ export default function Dashboard() {
           category: "Jewelry",
           date: takenDate,
           status: status,
+          clearedDate: status === "Cleared" ? (clearedDate || new Date().toISOString().split('T')[0]) : null,
           loanDetails: {
             father: getValue("father", "Offline Father"),
             idProof: getValue("idproof", "Offline ID"),
@@ -1265,18 +1267,28 @@ export default function Dashboard() {
             interestRate: interestRate,
             takenDate: takenDate,
             endDate: endDate,
+            clearedDate: status === "Cleared" ? (clearedDate || new Date().toISOString().split('T')[0]) : null,
             interestPaidUpto: interestPaidUpto,
             interestPayments: interestPayments,
-            items: pledgedItems.split(';').map((name, idx) => ({
-              id: idx + 1,
-              name: name.trim(),
-              qty: 1,
-              yield: "",
-              grossWeight: "",
-              netWeight: "",
-              value: "",
-              remarks: "Bulk Import"
-            }))
+            items: pledgedItems.split(';').map((rawName, idx) => {
+              let name = rawName.trim();
+              let qty = 1;
+              const match = name.match(/^(\d+)\s*x?\s+(.+)$/i);
+              if (match) {
+                qty = parseInt(match[1]) || 1;
+                name = match[2];
+              }
+              return {
+                id: idx + 1,
+                name: name,
+                qty: qty,
+                yield: "",
+                grossWeight: "",
+                netWeight: "",
+                value: "",
+                remarks: "Bulk Import"
+              };
+            })
           }
         };
 
@@ -3524,11 +3536,13 @@ export default function Dashboard() {
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 font-medium">
                 <div className="font-bold text-slate-800 mb-1">CSV Field Header Order (Make sure the first line matches this header exactly):</div>
                 <code className="block bg-slate-800 text-slate-200 p-2 rounded select-all font-mono font-bold leading-normal break-all">
-                  BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal
+                  BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal,ClearedDate
                 </code>
                 <div className="mt-2 text-[10px] text-slate-500 leading-relaxed space-y-1">
                   <div>* Note: Use semicolons (<code className="font-mono bg-slate-200 p-0.5 rounded font-bold">;</code>) to separate items inside the <code className="font-bold">PledgedItems</code> field to avoid breaking the CSV columns. Dates must be formatted as <code className="font-bold">YYYY-MM-DD</code>.</div>
-                  <div>* <strong>Missing values / Optional fields</strong>: If a field has no value (like phone number, father's name, ID proof, or interest paid upto date), <strong>leave it completely empty between the commas</strong> (for example: <code className="font-mono bg-slate-200 p-0.5 rounded font-bold">101,Rajesh,,15000,...</code>). Do not add spaces or dashes, just keep the column empty.</div>
+                  <div>* <strong>Items Quantity</strong>: To specify item quantities, prefix the name with the quantity, e.g. <code className="font-mono bg-slate-200 p-0.5 rounded font-bold">2x Gold Ring; 1x Gold Chain</code>. It will automatically detect the number!</div>
+                  <div>* <strong>Missing values / Optional fields</strong>: If a field has no value (like phone number, father's name, ID proof, mandal, or cleared date), <strong>leave it completely empty between the commas</strong> (for example: <code className="font-mono bg-slate-200 p-0.5 rounded font-bold">101,Rajesh,,15000,...</code>). Do not add spaces or dashes, just keep the column empty.</div>
+                  <div>* <strong>Cleared Loans</strong>: If a loan is already cleared/closed, set the <code className="font-bold">Status</code> column to <code className="font-mono bg-slate-200 p-0.5 rounded font-bold">Cleared</code> and put the date it was cleared in the <code className="font-bold">ClearedDate</code> column.</div>
                 </div>
               </div>
 
@@ -3536,7 +3550,7 @@ export default function Dashboard() {
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Paste CSV Data</label>
                 <textarea 
                   rows={8}
-                  placeholder={`BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto\n101,Rajesh,9876543210,15000,1.5%,2025-01-10,2026-01-10,Gold Ring;Gold Chain,Pending,2025-04-10`}
+                  placeholder={`BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal,ClearedDate\n101,Rajesh,9876543210,15000,1.5%,2025-01-10,2026-01-10,2x Gold Ring;1x Gold Chain,Cleared,2025-04-10,,,Chennai,,2025-04-10`}
                   className="w-full border border-slate-200 rounded-lg p-2.5 text-xs outline-none bg-white font-mono font-bold"
                   value={bulkCsvText}
                   onChange={(e) => setBulkCsvText(e.target.value)}
