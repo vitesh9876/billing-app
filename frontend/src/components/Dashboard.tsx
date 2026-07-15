@@ -1124,7 +1124,7 @@ export default function Dashboard() {
           address: form.address.trim(),
           mandal: form.mandal.trim(),
           amount: Number(form.amount),
-          interestRate: form.interestRate,
+          interestRate: form.interestRate.endsWith("%") ? form.interestRate : (form.interestRate + "%"),
           takenDate: form.takenDate,
           endDate: form.endDate,
           clearedDate: form.status === "Cleared" ? (form.clearedDate || new Date().toISOString().split('T')[0]) : null,
@@ -3787,7 +3787,7 @@ export default function Dashboard() {
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Loan Finance Amount * (₹)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     required 
                     className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-rose-600 animate-pulse"
                     value={offlineLoanForm.amount}
@@ -3797,10 +3797,11 @@ export default function Dashboard() {
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Interest Rate (Auto per month)</label>
                   <input 
-                    type="text" 
+                    type="number" 
+                    step="any"
                     className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-blue-600"
-                    value={offlineLoanForm.interestRate}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestRate: e.target.value }))}
+                    value={offlineLoanForm.interestRate.replace("%", "")}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestRate: e.target.value + "%" }))}
                   />
                 </div>
 
