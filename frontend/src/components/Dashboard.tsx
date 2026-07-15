@@ -1415,7 +1415,7 @@ export default function Dashboard() {
     const val = offlineLoanForm.pledgedItemsStr || "";
     const parts = val.split(";");
     parts[parts.length - 1] = " " + suggestedName; // Replace the last typed term
-    const newVal = parts.join(";").trim();
+    const newVal = parts.join(";").trim() + "; ";
     setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: newVal }));
     setShowItemSuggestions(false);
   };
