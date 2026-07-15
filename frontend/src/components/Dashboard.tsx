@@ -1067,7 +1067,16 @@ export default function Dashboard() {
 
     try {
       // Find or create customer
-      let cust = customers.find(c => c.phone === form.phone.trim() || (c.name.toLowerCase() === form.custName.trim().toLowerCase() && c.phone === form.phone.trim()));
+      let cust = null;
+      const cleanPhone = form.phone.trim();
+      const cleanName = form.custName.trim().toLowerCase();
+
+      if (cleanPhone) {
+        cust = customers.find(c => c.phone && c.phone.trim() === cleanPhone);
+      }
+      if (!cust) {
+        cust = customers.find(c => c.name.toLowerCase() === cleanName);
+      }
       let custId = cust?.id;
 
       if (!custId) {
