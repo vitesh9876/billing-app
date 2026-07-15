@@ -2476,7 +2476,6 @@ export default function Dashboard() {
                           <th className="p-4 text-xs uppercase tracking-wider">ID Proof</th>
                           <th className="p-4 text-xs uppercase tracking-wider">Address</th>
                           <th className="p-4 text-xs uppercase tracking-wider">Mandal</th>
-                          <th className="p-4 text-xs uppercase tracking-wider text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
@@ -2491,19 +2490,6 @@ export default function Dashboard() {
                               <td className="p-4 text-xs text-slate-500">{c.idproof || "-"}</td>
                               <td className="p-4 text-slate-600">{c.address || "-"}</td>
                               <td className="p-4 text-slate-600">{c.mandal || "-"}</td>
-                              <td className="p-4 text-center">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteCustomer(c.id);
-                                  }}
-                                  className="text-rose-600 hover:text-rose-800 p-1.5 rounded-md hover:bg-rose-50 transition-all inline-flex items-center justify-center"
-                                  title="Delete Customer"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </td>
                             </tr>
                         ))}
                       </tbody>
