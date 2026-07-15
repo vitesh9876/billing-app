@@ -48,12 +48,16 @@ button, select, input, textarea {
 
 /* Light / Dark Mode Global Overrides */
 .dark {
-  --background: #030712;
-  --foreground: #f9fafb;
+  --background: #000000 !important;
+  --foreground: #f9fafb !important;
 }
 
-.dark body {
-  background-color: #030712 !important;
+.dark body,
+.dark main,
+.dark .flex-1,
+.dark div[class*="overflow-y-auto"],
+.dark .bg-slate-50 {
+  background-color: #000000 !important;
   color: #f9fafb !important;
 }
 
@@ -66,10 +70,6 @@ button, select, input, textarea {
 /* Override background colors dynamically in dark mode */
 .dark .bg-white {
   background-color: #0f172a !important; /* bg-slate-900 */
-}
-
-.dark .bg-slate-50 {
-  background-color: #030712 !important; /* bg-slate-950 */
 }
 
 .dark .bg-slate-100 {
