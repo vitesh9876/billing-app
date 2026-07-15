@@ -191,6 +191,7 @@ export default function Dashboard() {
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [showMandalSuggestions, setShowMandalSuggestions] = useState(false);
   const [showItemSuggestions, setShowItemSuggestions] = useState(false);
+  const [editingTxnId, setEditingTxnId] = useState<string | null>(null);
 
   // Bulk Import States
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
@@ -1099,8 +1100,8 @@ export default function Dashboard() {
         if (!custRes.ok) throw new Error("Failed to create customer");
       }
 
-      // Generate transaction ID
-      const txnId = form.billNo.trim() ? "BILL-" + form.billNo.trim() : "TXN-OFFLINE-" + Date.now();
+      // Use existing transaction ID if editing, otherwise generate
+      const txnId = editingTxnId || (form.billNo.trim() ? "BILL-" + form.billNo.trim() : "TXN-OFFLINE-" + Date.now());
       
       // Calculate interest payments if already cleared interest upto a date
       let interestPayments: any[] = [];
@@ -1164,6 +1165,7 @@ export default function Dashboard() {
 
       alert("Offline loan saved successfully!");
       setShowOfflineLoanModal(false);
+      setEditingTxnId(null);
       setOfflineLoanForm({
         billNo: "",
         custName: "",
@@ -2627,7 +2629,32 @@ export default function Dashboard() {
                 <h3 className="font-bold text-lg text-slate-800">Loans</h3>
                 <div className="flex flex-wrap gap-2 items-center w-full md:w-auto justify-end">
                   <button 
-                    onClick={() => setShowOfflineLoanModal(true)}
+                    onClick={() => {
+                      setEditingTxnId(null);
+                      setOfflineLoanForm({
+                        billNo: "",
+                        custName: "",
+                        phone: "",
+                        father: "",
+                        idProof: "",
+                        address: "",
+                        mandal: "",
+                        amount: "",
+                        interestRate: "3.0%",
+                        takenDate: new Date().toISOString().split('T')[0],
+                        endDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+                        status: "Pending",
+                        interestPaidUpto: "",
+                        clearedDate: "",
+                        pledgedItemsStr: "",
+                        yield: "60%",
+                        grossWeight: "",
+                        netWeight: "",
+                        worth: "",
+                        remarks: ""
+                      });
+                      setShowOfflineLoanModal(true);
+                    }}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
                   >
                     <Plus size={14} /> Add Offline Loan
