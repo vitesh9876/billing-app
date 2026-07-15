@@ -1,0 +1,4004 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { 
+  LayoutDashboard, 
+  PlusCircle, 
+  Users, 
+  History, 
+  MessageSquare, 
+  Settings, 
+  Send, 
+  Search, 
+  CheckCircle, 
+  X,
+  Phone,
+  MapPin,
+  Printer,
+  ChevronRight,
+  Grid,
+  Table,
+  List,
+  Bell,
+  Plus,
+  Upload
+} from "lucide-react";
+
+export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [itemsCatalog, setItemsCatalog] = useState<any[]>([]);
+  const [activeItemSuggestions, setActiveItemSuggestions] = useState<{[key: string]: any[]}>({});
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [itemForm, setItemForm] = useState({ id: "", name: "", category: "Jewelry" });
+  const [customerViewMode, setCustomerViewMode] = useState<"grid" | "table" | "compact">("grid");
+  const [remindersStatus, setRemindersStatus] = useState<any[]>([]);
+  const [showConnectionGuide, setShowConnectionGuide] = useState(false);
+  
+  const safeItems = Array.isArray(itemsCatalog) ? itemsCatalog : [];
+  
+  // Dashboard states
+  const [stats, setStats] = useState({
+    totalSales: 0,
+    activeLoans: 0,
+    pledgedValue: 0,
+    totalCustomers: 0
+  });
+
+  // SMS status
+  const [smsDevices, setSmsDevices] = useState<any[]>([]);
+  const [smsQueue, setSmsQueue] = useState<any[]>([]);
+  const [smsTemplates, setSmsTemplates] = useState<any[]>([]);
+  
+  // Real-time WebSocket connection status
+  const [wsConnected, setWsConnected] = useState(false);
+
+  // Billing Tab States
+  const [billingType, setBillingType] = useState<"purchase" | "loan">("purchase");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [billingCustName, setBillingCustName] = useState("");
+  const [billingCustPhone, setBillingCustPhone] = useState("");
+  const [nameSuggestions, setNameSuggestions] = useState<any[]>([]);
+  const [phoneSuggestions, setPhoneSuggestions] = useState<any[]>([]);
+  const [sendThankYouSms, setSendThankYouSms] = useState(true);
+  
+  // Purchase items
+  const [purchaseCategory, setPurchaseCategory] = useState<"Jewelry" | "Furniture">("Jewelry");
+  const [purchaseItems, setPurchaseItems] = useState<any[]>([
+    { id: 1, particulars: "", grams: "", mg: "", qty: 1, amount: "" }
+  ]);
+
+  // Loan Finance Items
+  const [loanMetalType, setLoanMetalType] = useState<"Gold" | "Silver">("Gold");
+  const [loanPledgedItems, setLoanPledgedItems] = useState<any[]>([
+    { id: 1, name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", value: "", remarks: "" }
+  ]);
+  const [loanDetails, setLoanDetails] = useState({
+    father: "",
+    idProof: "",
+    address: "",
+    mandal: "",
+    amount: "",
+    interestRate: "1.5%",
+    takenDate: new Date().toISOString().split('T')[0],
+    endDate: ""
+  });
+
+  // Send SMS States
+  const [smsCustomerName, setSmsCustomerName] = useState("");
+  const [smsCustomerPhone, setSmsCustomerPhone] = useState("");
+  const [smsCustSuggestions, setSmsCustSuggestions] = useState<any[]>([]);
+  const [selectedSmsCustomer, setSelectedSmsCustomer] = useState<any>(null);
+  const [selectedTemplateName, setSelectedTemplateName] = useState("");
+  const [smsMessageText, setSmsMessageText] = useState("");
+  const [smsSubTab, setSmsSubTab] = useState<"send" | "queue" | "templates">("send");
+  const [editTemplateName, setEditTemplateName] = useState("");
+  const [editTemplateContent, setEditTemplateContent] = useState("");
+  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
+  const [editTemplateId, setEditTemplateId] = useState<number | null>(null);
+
+  // Customer List Search & Modals
+  const [searchCustomerQuery, setSearchCustomerQuery] = useState("");
+  const [selectedProfileCustomer, setSelectedProfileCustomer] = useState<any>(null);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [customerForm, setCustomerForm] = useState({
+    id: "",
+    name: "",
+    phone: "",
+    address: "",
+    father: "",
+    idproof: "",
+    mandal: ""
+  });
+
+  // Loan history Search & Filters
+  const [loanHistorySearch, setLoanHistorySearch] = useState("");
+  const [loanHistoryFilter, setLoanHistoryFilter] = useState("all");
+
+  // Custom Offline Loan States
+  const [showOfflineLoanModal, setShowOfflineLoanModal] = useState(false);
+  const [offlineLoanMetalType, setOfflineLoanMetalType] = useState("Gold");
+  const [offlineLoanPledgedItems, setOfflineLoanPledgedItems] = useState<any[]>([
+    { id: 1, name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", remarks: "" }
+  ]);
+  const [offlineLoanForm, setOfflineLoanForm] = useState({
+    billNo: "",
+    custName: "",
+    phone: "",
+    father: "",
+    idProof: "",
+    address: "",
+    mandal: "",
+    amount: "",
+    interestRate: "3.0%",
+    takenDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+    status: "Pending",
+    interestPaidUpto: ""
+  });
+
+  // Bulk Import States
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  const [bulkCsvText, setBulkCsvText] = useState("");
+  const [bulkImportProgress, setBulkImportProgress] = useState<{current: number, total: number, status: string} | null>(null);
+  const [selectedLoanTxn, setSelectedLoanTxn] = useState<any>(null);
+  const [interestPaidUptoDate, setInterestPaidUptoDate] = useState(new Date().toISOString().split('T')[0]);
+  const [interestRemarks, setInterestRemarks] = useState("");
+
+  // SMS queue filter
+  const [smsQueueSearch, setSmsQueueSearch] = useState("");
+  const [smsQueueFilter, setSmsQueueFilter] = useState("all");
+
+  // Printing state
+  const [activePrintTicket, setActivePrintTicket] = useState<any>(null);
+
+  // Establish persistent WebSocket to server for real-time state sync
+  useEffect(() => {
+    let socket: WebSocket;
+    const connectWS = () => {
+      let backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      let wsUrl = "";
+      
+      if (backendUrl) {
+        // Clean trailing slash
+        backendUrl = backendUrl.replace(/\/$/, "");
+        const wsProtocol = backendUrl.startsWith("https:") ? "wss:" : "ws:";
+        const wsHost = backendUrl.replace(/^https?:\/\//, "");
+        wsUrl = `${wsProtocol}//${wsHost}/ws/v1/browser`;
+      } else {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${protocol}//${window.location.hostname}:8000/ws/v1/browser`;
+      }
+      
+      socket = new WebSocket(wsUrl);
+
+      socket.onopen = () => {
+        setWsConnected(true);
+      };
+
+      socket.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "update") {
+          refreshData();
+        }
+      };
+
+      socket.onclose = () => {
+        setWsConnected(false);
+        setTimeout(connectWS, 3000);
+      };
+    };
+
+    connectWS();
+    refreshData();
+
+    return () => {
+      if (socket) socket.close();
+    };
+  }, []);
+
+  const refreshData = () => {
+    fetch("/api/v1/customers").then(res => res.json()).then(setCustomers);
+    fetch("/api/v1/transactions").then(res => res.json()).then(setTransactions);
+    fetch("/api/v1/sms/templates").then(res => res.json()).then(setSmsTemplates);
+    fetch("/api/v1/sms/queue").then(res => res.json()).then(setSmsQueue);
+    fetch("/api/v1/devices").then(res => res.json()).then(setSmsDevices);
+    fetch("/api/v1/items")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setItemsCatalog(data);
+        else setItemsCatalog([]);
+      })
+      .catch(() => setItemsCatalog([]));
+    fetch("/api/v1/loans/reminders-status").then(res => res.json()).then(data => {
+      if (Array.isArray(data)) setRemindersStatus(data);
+      else setRemindersStatus([]);
+    }).catch(() => setRemindersStatus([]));
+  };
+
+  // Clear suggestions when navigating tabs
+  useEffect(() => {
+    setActiveItemSuggestions({});
+  }, [activeTab]);
+
+  // Clear suggestions when clicking outside
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveItemSuggestions({});
+    };
+    window.addEventListener("click", handleGlobalClick);
+    return () => window.removeEventListener("click", handleGlobalClick);
+  }, []);
+
+  // Synchronize browser history with activeTab state for back button navigation
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.tab) {
+        setActiveTab(event.state.tab);
+      } else {
+        setActiveTab("dashboard");
+      }
+    };
+    window.history.replaceState({ tab: activeTab }, "", "");
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (window.history.state?.tab !== activeTab) {
+      window.history.pushState({ tab: activeTab }, "", "");
+    }
+  }, [activeTab]);
+
+  // Re-calculate dashboard statistics whenever transactions or customers change
+  useEffect(() => {
+    const totalSales = transactions
+      .filter(t => t.type === "purchase")
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const activeLoansList = transactions.filter(t => t.type === "loan" && t.status !== "Cleared");
+    const activeLoans = activeLoansList.length;
+    const pledgedValue = activeLoansList.reduce((sum, t) => sum + t.amount, 0);
+
+    setStats({
+      totalSales,
+      activeLoans,
+      pledgedValue,
+      totalCustomers: customers.length
+    });
+  }, [transactions, customers]);
+
+  const formatDateToDDMMYYYY = (dateStr: string) => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  const getLoanInterest = (txn: any) => {
+    const rateVal = parseFloat(txn.loanDetails?.interestRate) || 0;
+    const startDateStr = txn.loanDetails?.interestPaidUpto || txn.loanDetails?.takenDate || txn.date;
+    const takenDate = new Date(startDateStr);
+    const start = new Date(takenDate.getFullYear(), takenDate.getMonth(), takenDate.getDate());
+    const today = new Date();
+    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const diffTime = Math.max(0, end.getTime() - start.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const months = diffDays / 30;
+    return txn.amount * (rateVal / 100) * months;
+  };
+
+  const calculateInterestForRange = (amount: number, rate: number, startStr: string, endStr: string) => {
+    if (!startStr || !endStr) return 0;
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    const startDt = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const endDt = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const diffTime = Math.max(0, endDt.getTime() - startDt.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const months = diffDays / 30;
+    return amount * (rate / 100) * months;
+  };
+
+  const handlePayInterest = (txnId: string, paidUptoDate: string, amount: number, remarks: string) => {
+    const passcode = prompt("Enter 4-digit passcode to clear interest:");
+    if (passcode === null) return;
+    if (passcode.trim() !== "1004") {
+      alert("Incorrect passcode! Authorization Denied.");
+      return;
+    }
+
+    const txn = transactions.find(t => t.id === txnId);
+    if (!txn) return;
+    
+    const currentLoanDetails = txn.loanDetails || {};
+    const previousPayments = currentLoanDetails.interestPayments || [];
+    
+    const newPayment = {
+      date: new Date().toISOString().split('T')[0],
+      amountPaid: amount,
+      paidUpto: paidUptoDate,
+      remarks: remarks || "Cleared interest"
+    };
+    
+    const updatedLoanDetails = {
+      ...currentLoanDetails,
+      interestPaidUpto: paidUptoDate,
+      interestPayments: [...previousPayments, newPayment]
+    };
+    
+    const updatedTxn = {
+      ...txn,
+      loanDetails: updatedLoanDetails
+    };
+    
+    fetch("/api/v1/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedTxn)
+    }).then(res => res.json())
+      .then(() => {
+        alert("Interest payment recorded successfully.");
+        
+        // Send Interest Paid SMS Confirmation
+        const customerObj = customers.find(c => c.id === txn.customerId);
+        if (customerObj) {
+          const tpl = smsTemplates.find(t => t.name === "Interest Payment Confirmation");
+          const formattedPaidUpto = formatDateToDDMMYYYY(paidUptoDate);
+          const msg = tpl
+            ? tpl.content
+                .replace("{CustomerName}", customerObj.name)
+                .replace("{InvoiceNumber}", txnId.substring(txnId.length - 6))
+                .replace("{LoanAmount}", amount.toLocaleString('en-IN'))
+                .replace("{LoanEndDate}", formattedPaidUpto)
+            : `ప్రియమైన ${customerObj.name}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ నంబర్ ${txnId.substring(txnId.length - 6)} కి సంబంధించిన వడ్డీ ₹${amount.toLocaleString('en-IN')} చెల్లించబడింది. వడ్డీ ${formattedPaidUpto} వరకు క్లియర్ చేయబడింది. ధన్యవాదాలు.`;
+          
+          fetch("/api/v1/sms/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: "SMS-" + Date.now(),
+              customerId: customerObj.id,
+              phone: customerObj.phone,
+              message: msg,
+              priority: 1,
+              createdBy: "System"
+            })
+          });
+        }
+
+        setTransactions(transactions.map(t => t.id === txnId ? updatedTxn : t));
+        setSelectedLoanTxn(updatedTxn);
+        setInterestRemarks("");
+        refreshData();
+      });
+  };
+
+  // Autocomplete search handlers
+  const handleBillingCustNameChange = (val: string) => {
+    setBillingCustName(val);
+    setSelectedCustomerId("");
+    if (!val) {
+      setNameSuggestions([]);
+      return;
+    }
+    const filtered = customers.filter(c => 
+      c.name.toLowerCase().includes(val.toLowerCase())
+    );
+    setNameSuggestions(filtered);
+    setPhoneSuggestions([]);
+  };
+
+  const handleBillingCustPhoneChange = (val: string) => {
+    setBillingCustPhone(val);
+    setSelectedCustomerId("");
+    if (!val) {
+      setPhoneSuggestions([]);
+      return;
+    }
+    const filtered = customers.filter(c => 
+      c.phone.includes(val)
+    );
+    setPhoneSuggestions(filtered);
+    setNameSuggestions([]);
+  };
+
+  const selectCustomer = (c: any) => {
+    setSelectedCustomerId(c.id);
+    setBillingCustName(c.name);
+    setBillingCustPhone(c.phone);
+    setNameSuggestions([]);
+    setPhoneSuggestions([]);
+    setLoanDetails(prev => ({
+      ...prev,
+      father: c.father || "",
+      idProof: c.idproof || "",
+      address: c.address || "",
+      mandal: c.mandal || ""
+    }));
+  };
+
+  const matchesUniversal = (c: any, query: string) => {
+    if (!query) return true;
+    const q = query.toLowerCase().trim();
+    
+    // 1. Check customer fields
+    if (c.name.toLowerCase().includes(q)) return true;
+    if (c.phone.includes(q)) return true;
+    if (c.id.toLowerCase().includes(q)) return true;
+    if (c.address && c.address.toLowerCase().includes(q)) return true;
+    if (c.mandal && c.mandal.toLowerCase().includes(q)) return true;
+    if (c.father && c.father.toLowerCase().includes(q)) return true;
+    if (c.idproof && c.idproof.toLowerCase().includes(q)) return true;
+
+    // 2. Filter transactions belonging to this customer
+    const custTxns = transactions.filter(t => t.customerId === c.id);
+    for (const t of custTxns) {
+      if (t.id.toLowerCase().includes(q)) return true;
+      if (t.amount.toString().includes(q)) return true;
+      
+      // Check purchase items
+      if (t.type === "purchase" && t.items) {
+        for (const item of t.items) {
+          if (item.particulars && item.particulars.toLowerCase().includes(q)) return true;
+        }
+      }
+      // Check loan items
+      if (t.type === "loan" && t.loanDetails && t.loanDetails.items) {
+        for (const item of t.loanDetails.items) {
+          if (item.name && item.name.toLowerCase().includes(q)) return true;
+          if (item.remarks && item.remarks.toLowerCase().includes(q)) return true;
+          if (item.yield && item.yield.toLowerCase().includes(q)) return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const handleSmsCustNameChange = (val: string) => {
+    setSmsCustomerName(val);
+    setSelectedSmsCustomer(null);
+    if (!val) {
+      setSmsCustSuggestions([]);
+      return;
+    }
+    const filtered = customers.filter(c => 
+      c.name.toLowerCase().includes(val.toLowerCase())
+    );
+    setSmsCustSuggestions(filtered);
+  };
+
+  const handleSmsCustPhoneChange = (val: string) => {
+    setSmsCustomerPhone(val);
+    setSelectedSmsCustomer(null);
+    if (!val) {
+      setSmsCustSuggestions([]);
+      return;
+    }
+    const filtered = customers.filter(c => 
+      c.phone.includes(val)
+    );
+    setSmsCustSuggestions(filtered);
+  };
+
+  // Add Item Rows dynamically
+  const addPurchaseRow = () => {
+    setPurchaseItems([
+      ...purchaseItems,
+      { id: Date.now(), particulars: "", grams: "", mg: "", qty: 1, amount: "" }
+    ]);
+  };
+
+  const removePurchaseRow = (id: number) => {
+    if (purchaseItems.length === 1) return;
+    setPurchaseItems(purchaseItems.filter(item => item.id !== id));
+  };
+
+  const updatePurchaseItem = (id: number, field: string, val: any) => {
+    setPurchaseItems(purchaseItems.map(item => {
+      if (item.id === id) {
+        return { ...item, [field]: val };
+      }
+      return item;
+    }));
+  };
+
+  const addLoanRow = () => {
+    setLoanPledgedItems([
+      ...loanPledgedItems,
+      { id: Date.now(), name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", value: "", remarks: "" }
+    ]);
+  };
+
+  const removeLoanRow = (id: number) => {
+    if (loanPledgedItems.length === 1) return;
+    setLoanPledgedItems(loanPledgedItems.filter(item => item.id !== id));
+  };
+
+  const updateLoanItem = (id: number, field: string, val: any) => {
+    setLoanPledgedItems(loanPledgedItems.map(item => {
+      if (item.id === id) {
+        return { ...item, [field]: val };
+      }
+      return item;
+    }));
+  };
+
+  const updateOfflineLoanItem = (id: number, field: string, val: any) => {
+    setOfflineLoanPledgedItems(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, [field]: val };
+      }
+      return item;
+    }));
+  };
+
+  const addOfflineLoanRow = () => {
+    setOfflineLoanPledgedItems(prev => [
+      ...prev,
+      { id: Date.now(), name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", remarks: "" }
+    ]);
+  };
+
+  const removeOfflineLoanRow = (id: number) => {
+    if (offlineLoanPledgedItems.length === 1) return;
+    setOfflineLoanPledgedItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  // Handle forms submit
+  const handleSavePurchase = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!billingCustName.trim() || !billingCustPhone.trim()) {
+      alert("Please enter customer name and phone number.");
+      return;
+    }
+
+    const saveTxn = (custId: string, customerObj: any) => {
+      const total = purchaseItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+      // Category-based sequential prefix
+      const prefix = purchaseCategory === "Jewelry" ? "J-" : "F-";
+      const count = transactions.filter(t => t.type === "purchase" && t.id.startsWith(prefix)).length;
+      const txnId = prefix + String(count + 1).padStart(3, "0");
+
+      const payload = {
+        id: txnId,
+        customerId: custId,
+        type: "purchase",
+        amount: total,
+        category: purchaseCategory,
+        date: new Date().toISOString().split("T")[0],
+        items: purchaseItems.map(item => ({
+          particulars: item.particulars,
+          grams: parseFloat(item.grams) || 0,
+          mg: parseFloat(item.mg) || 0,
+          qty: parseInt(item.qty as any) || 1,
+          amount: parseFloat(item.amount) || 0
+        }))
+      };
+
+      fetch("/api/v1/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert("Purchase ticket saved successfully!");
+        handlePrintTicket(payload, customerObj, "purchase");
+
+        // Auto-save item name to catalog if it's not already in list
+        purchaseItems.forEach(item => {
+          if (item.particulars && item.particulars.trim()) {
+            const exists = safeItems.some(i => i.name.toLowerCase() === item.particulars.trim().toLowerCase() && i.category === purchaseCategory);
+            if (!exists) {
+              fetch("/api/v1/items", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: item.particulars.trim(), category: purchaseCategory })
+              });
+            }
+          }
+        });
+
+        // Send Thank you SMS if checked
+        if (sendThankYouSms) {
+          const tpl = smsTemplates.find(t => t.name === "Purchase Confirmation");
+          const msg = tpl 
+            ? tpl.content
+                .replace("{CustomerName}", customerObj.name)
+                .replace("{InvoiceNumber}", payload.id)
+                .replace("{LoanAmount}", payload.amount.toLocaleString('en-IN'))
+            : `ప్రియమైన ${customerObj.name}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మా వద్ద కొనుగోలు చేసినందుకు ధన్యవాదాలు! మీ బిల్ నంబర్: ${payload.id}, అమౌంట్: ₹${payload.amount.toLocaleString('en-IN')}.`;
+
+          const smsPayload = {
+            id: "SMS-" + Date.now(),
+            customerId: custId,
+            phone: customerObj.phone,
+            message: msg,
+            priority: 1,
+            createdBy: "System"
+          };
+          fetch("/api/v1/sms/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(smsPayload)
+          });
+        }
+
+        // Reset forms
+        setPurchaseItems([{ id: 1, particulars: "", grams: "", mg: "", qty: 1, amount: "" }]);
+        setSelectedCustomerId("");
+        setBillingCustName("");
+        setBillingCustPhone("");
+        setActiveTab("dashboard");
+        refreshData();
+      });
+    };
+
+    if (!selectedCustomerId) {
+      // Create new sequential customer
+      const nextCustNum = customers.filter(c => c.id.startsWith("CUST-")).length + 1;
+      const newCustId = "CUST-" + String(nextCustNum).padStart(3, "0");
+      const newCust = {
+        id: newCustId,
+        name: billingCustName,
+        phone: billingCustPhone,
+        address: "Gannavaram",
+        father: "N/A",
+        idproof: "N/A",
+        mandal: "Gannavaram"
+      };
+      fetch("/api/v1/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCust)
+      })
+      .then(() => {
+        saveTxn(newCustId, newCust);
+      });
+    } else {
+      const cust = customers.find(c => c.id === selectedCustomerId);
+      saveTxn(selectedCustomerId, cust);
+    }
+  };
+
+  const handleSaveLoan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!billingCustName.trim() || !billingCustPhone.trim()) {
+      alert("Please enter customer name and phone number.");
+      return;
+    }
+
+    const saveTxn = (custId: string, customerObj: any) => {
+      const totalAmount = parseFloat(loanDetails.amount) || 0;
+      // Series-based loan ID
+      const prefix = totalAmount > 8000 ? "L★-" : "L-";
+      const count = transactions.filter(t => t.type === "loan" && t.id.startsWith(prefix)).length;
+      const txnId = prefix + String(count + 1).padStart(3, "0");
+      
+      let endDate = loanDetails.endDate;
+      if (!endDate && loanDetails.takenDate) {
+        const start = new Date(loanDetails.takenDate);
+        start.setFullYear(start.getFullYear() + 1);
+        endDate = start.toISOString().split("T")[0];
+      }
+
+      const payload = {
+        id: txnId,
+        customerId: custId,
+        type: "loan",
+        amount: totalAmount,
+        date: new Date().toISOString().split("T")[0],
+        loanDetails: {
+          father: loanDetails.father || "N/A",
+          idProof: loanDetails.idProof || "N/A",
+          interestRate: loanDetails.interestRate,
+          takenDate: loanDetails.takenDate,
+          endDate: endDate,
+          items: loanPledgedItems.map(item => ({
+            qty: parseInt(item.qty) || 1,
+            name: item.name,
+            yield: item.yield,
+            grossWeight: parseFloat(item.grossWeight) || 0,
+            netWeight: parseFloat(item.netWeight) || 0,
+            value: parseFloat(item.value) || 0,
+            remarks: item.remarks
+          }))
+        }
+      };
+
+      fetch("/api/v1/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert("Loan pawn ticket saved successfully!");
+        handlePrintTicket(payload, customerObj, "loan");
+
+        // Auto-save item name to catalog if it's not already in list
+        loanPledgedItems.forEach(item => {
+          if (item.name && item.name.trim()) {
+            const exists = safeItems.some(i => i.name.toLowerCase() === item.name.trim().toLowerCase() && i.category === "Jewelry");
+            if (!exists) {
+              fetch("/api/v1/items", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: item.name.trim(), category: "Jewelry" })
+              });
+            }
+          }
+        });
+
+        // Send Thank you SMS if checked
+        // Send Thank you SMS if checked
+        if (sendThankYouSms) {
+          const tpl = smsTemplates.find(t => t.name === "Loan Pledge Confirmation");
+          const msg = tpl 
+            ? tpl.content
+                .replace("{CustomerName}", customerObj.name)
+                .replace("{InvoiceNumber}", payload.id)
+                .replace("{LoanAmount}", payload.amount.toLocaleString('en-IN'))
+            : `ప్రియమైన ${customerObj.name}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. శ్రీ సాయి బాలాజీ ని ఎంచుకున్నందుకు ధన్యవాదాలు! మీ లోన్ నంబర్: ${payload.id}, అమౌంట్: ₹${payload.amount.toLocaleString('en-IN')}.`;
+
+          const smsPayload = {
+            id: "SMS-" + Date.now(),
+            customerId: custId,
+            phone: customerObj.phone,
+            message: msg,
+            priority: 1,
+            createdBy: "System"
+          };
+          fetch("/api/v1/sms/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(smsPayload)
+          });
+        }
+
+        // Reset forms
+        setLoanPledgedItems([{ id: 1, name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", value: "", remarks: "" }]);
+        setLoanDetails({ father: "", idProof: "", address: "", mandal: "", amount: "", interestRate: "1.5%", takenDate: new Date().toISOString().split('T')[0], endDate: "" });
+        setSelectedCustomerId("");
+        setBillingCustName("");
+        setBillingCustPhone("");
+        setActiveTab("dashboard");
+        refreshData();
+      });
+    };
+
+    if (!selectedCustomerId) {
+      // Create new customer with sequential ID
+      const nextCustNum = customers.filter(c => c.id.startsWith("CUST-")).length + 1;
+      const newCustId = "CUST-" + String(nextCustNum).padStart(3, "0");
+      const newCust = {
+        id: newCustId,
+        name: billingCustName,
+        phone: billingCustPhone,
+        address: loanDetails.address || "Gannavaram",
+        father: loanDetails.father || "N/A",
+        idproof: loanDetails.idProof || "N/A",
+        mandal: loanDetails.mandal || "Gannavaram"
+      };
+      fetch("/api/v1/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCust)
+      })
+      .then(() => {
+        saveTxn(newCustId, newCust);
+      });
+    } else {
+      const cust = customers.find(c => c.id === selectedCustomerId);
+      saveTxn(selectedCustomerId, cust);
+    }
+  };
+
+  // Print format styles injector helper
+  const handlePrintTicket = (txn: any, customer: any, variant: string) => {
+    setActivePrintTicket({ txn, customer, variant });
+    setTimeout(() => {
+      window.print();
+    }, 300);
+  };
+
+  // Auto-calculated interest and release date inside loan finance inputs
+  useEffect(() => {
+    if (billingType === "loan") {
+      let rate = "3.0%";
+      const amt = parseFloat(loanDetails.amount) || 0;
+      if (loanMetalType === "Gold") {
+        if (amt > 8000) rate = "2.0%";
+        else rate = "3.0%";
+      } else {
+        rate = "5.0%";
+      }
+
+      let calculatedEndDate = "";
+      if (loanDetails.takenDate) {
+        const start = new Date(loanDetails.takenDate);
+        if (loanMetalType === "Gold") {
+          start.setDate(start.getDate() + 365);
+        } else {
+          start.setDate(start.getDate() + 90);
+        }
+        calculatedEndDate = start.toISOString().split("T")[0];
+      }
+
+      setLoanDetails(prev => ({ ...prev, interestRate: rate, endDate: calculatedEndDate }));
+    }
+  }, [loanMetalType, loanDetails.amount, loanDetails.takenDate, billingType]);
+
+  // Auto-calculated interest and release date for custom offline loan inputs
+  useEffect(() => {
+    if (showOfflineLoanModal) {
+      let rate = "3.0%";
+      const amt = parseFloat(offlineLoanForm.amount) || 0;
+      if (offlineLoanMetalType === "Gold") {
+        if (amt > 8000) rate = "2.0%";
+        else rate = "3.0%";
+      } else {
+        rate = "5.0%";
+      }
+
+      let calculatedEndDate = "";
+      if (offlineLoanForm.takenDate) {
+        const start = new Date(offlineLoanForm.takenDate);
+        if (offlineLoanMetalType === "Gold") {
+          start.setDate(start.getDate() + 365);
+        } else {
+          start.setDate(start.getDate() + 90);
+        }
+        calculatedEndDate = start.toISOString().split("T")[0];
+      }
+
+      setOfflineLoanForm(prev => ({ ...prev, interestRate: rate, endDate: calculatedEndDate }));
+    }
+  }, [offlineLoanMetalType, offlineLoanForm.amount, offlineLoanForm.takenDate, showOfflineLoanModal]);
+
+  // Variables preview inside Send SMS Tab
+  const getSMSPreviewText = () => {
+    let preview = smsMessageText;
+    
+    const nameVal = selectedSmsCustomer ? selectedSmsCustomer.name : smsCustomerName;
+    const phoneVal = selectedSmsCustomer ? selectedSmsCustomer.phone : smsCustomerPhone;
+    
+    const custTxns = selectedSmsCustomer ? transactions.filter(t => t.customerId === selectedSmsCustomer.id) : [];
+    const lastTxn = custTxns.length > 0 ? custTxns[custTxns.length - 1] : null;
+
+    const replacements: any = {
+      "{CustomerName}": nameVal || "Customer",
+      "{ShopName}": "Sri Sai Balaji Jewelry & Furniture",
+      "{Phone}": phoneVal || "",
+      "{InvoiceNumber}": lastTxn ? lastTxn.id.substring(lastTxn.id.length - 6) : "N/A",
+      "{LoanAmount}": lastTxn ? lastTxn.amount.toLocaleString('en-IN') : "0",
+      "{LoanEndDate}": (lastTxn && lastTxn.loanDetails) ? formatDateToDDMMYYYY(lastTxn.loanDetails.endDate || "") : "N/A",
+      "{DaysLeft}": "30",
+      "{ItemName}": (lastTxn && lastTxn.loanDetails?.items?.length > 0) ? lastTxn.loanDetails.items[0].name : "Item"
+    };
+
+    for (const [key, val] of Object.entries(replacements)) {
+      preview = preview.replaceAll(key, val as string);
+    }
+    return preview;
+  };
+
+  const handleSendSMS = () => {
+    if (!smsCustomerName.trim()) {
+      alert("Please enter customer name.");
+      return;
+    }
+    if (!smsCustomerPhone.trim()) {
+      alert("Please enter phone number.");
+      return;
+    }
+    if (!smsMessageText.trim()) {
+      alert("Please enter message content.");
+      return;
+    }
+
+    const payload = {
+      id: "SMS-" + Date.now(),
+      customerId: selectedSmsCustomer ? selectedSmsCustomer.id : "unregistered",
+      phone: smsCustomerPhone,
+      message: getSMSPreviewText(),
+      priority: 1,
+      createdBy: "Admin"
+    };
+
+    fetch("/api/v1/sms/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(() => {
+      alert("SMS queued successfully!");
+      setSmsCustomerName("");
+      setSmsCustomerPhone("");
+      setSelectedSmsCustomer(null);
+      setSmsMessageText("");
+      setSelectedTemplateName("");
+      setActiveTab("sms");
+      setSmsSubTab("queue");
+    });
+  };
+
+  const handleSaveTemplate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTemplateName.trim() || !editTemplateContent.trim()) {
+      alert("Please enter template name and content.");
+      return;
+    }
+    
+    fetch("/api/v1/sms/template", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        id: editTemplateId, 
+        name: editTemplateName.trim(), 
+        content: editTemplateContent.trim() 
+      })
+    })
+    .then(res => res.json())
+    .then(() => {
+      alert("Template saved successfully!");
+      setEditTemplateName("");
+      setEditTemplateContent("");
+      setEditTemplateId(null);
+      setIsEditingTemplate(false);
+      fetch("/api/v1/sms/templates").then(res => res.json()).then(setSmsTemplates);
+    });
+  };
+
+  const handleDeleteTemplate = (name: string) => {
+    if (!confirm(`Are you sure you want to delete template "${name}"?`)) return;
+    
+    fetch("/api/v1/sms/template/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name })
+    })
+    .then(res => res.json())
+    .then(() => {
+      alert("Template deleted successfully.");
+      fetch("/api/v1/sms/templates").then(res => res.json()).then(setSmsTemplates);
+    });
+  };
+
+  const handleSaveOfflineLoan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = offlineLoanForm;
+    if (!form.custName.trim() || !form.phone.trim() || !form.amount) {
+      alert("Please enter customer name, phone number, and loan amount.");
+      return;
+    }
+
+    try {
+      // Find or create customer
+      let cust = customers.find(c => c.phone === form.phone.trim() || (c.name.toLowerCase() === form.custName.trim().toLowerCase() && c.phone === form.phone.trim()));
+      let custId = cust?.id;
+
+      if (!custId) {
+        // Generate new customer ID
+        custId = "CUST-" + Date.now();
+        const newCustPayload = {
+          id: custId,
+          name: form.custName.trim(),
+          phone: form.phone.trim(),
+          address: form.address.trim() || "Offline Address",
+          father: form.father.trim() || "Offline Father",
+          idproof: form.idProof.trim() || "Offline ID",
+          mandal: form.mandal.trim() || "Offline Mandal"
+        };
+        const custRes = await fetch("/api/v1/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newCustPayload)
+        });
+        if (!custRes.ok) throw new Error("Failed to create customer");
+      }
+
+      // Generate transaction ID
+      const txnId = form.billNo.trim() ? "BILL-" + form.billNo.trim() : "TXN-OFFLINE-" + Date.now();
+      
+      // Calculate interest payments if already cleared interest upto a date
+      let interestPayments: any[] = [];
+      if (form.interestPaidUpto && form.interestPaidUpto !== form.takenDate) {
+        interestPayments = [{
+          date: new Date().toISOString().split('T')[0],
+          amountPaid: calculateInterestForRange(
+            Number(form.amount),
+            parseFloat(form.interestRate) || 0,
+            form.takenDate,
+            form.interestPaidUpto
+          ),
+          paidUpto: form.interestPaidUpto,
+          remarks: "Offline imported interest clearance"
+        }];
+      }
+
+      const txnPayload = {
+        id: txnId,
+        customerId: custId,
+        type: "loan",
+        amount: Number(form.amount),
+        category: "Jewelry", // Default
+        date: form.takenDate,
+        status: form.status,
+        loanDetails: {
+          father: form.father.trim(),
+          idProof: form.idProof.trim(),
+          address: form.address.trim(),
+          mandal: form.mandal.trim(),
+          amount: Number(form.amount),
+          interestRate: form.interestRate,
+          takenDate: form.takenDate,
+          endDate: form.endDate,
+          interestPaidUpto: form.interestPaidUpto || form.takenDate,
+          interestPayments: interestPayments,
+          items: offlineLoanPledgedItems.map((item, idx) => ({
+            id: idx + 1,
+            name: item.name.trim() || "Pledged Item",
+            qty: Number(item.qty) || 1,
+            yield: item.yield || "",
+            grossWeight: item.grossWeight || "",
+            netWeight: item.netWeight || "",
+            remarks: item.remarks || "",
+            value: ""
+          }))
+        }
+      };
+
+      const txnRes = await fetch("/api/v1/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(txnPayload)
+      });
+
+      if (!txnRes.ok) throw new Error("Failed to create loan transaction");
+
+      alert("Offline loan saved successfully!");
+      setShowOfflineLoanModal(false);
+      setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", remarks: "" }]);
+      setOfflineLoanForm({
+        billNo: "",
+        custName: "",
+        phone: "",
+        father: "",
+        idProof: "",
+        address: "",
+        mandal: "",
+        amount: "",
+        interestRate: "3.0%",
+        takenDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+        status: "Pending",
+        interestPaidUpto: ""
+      });
+      refreshData();
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (!bulkCsvText.trim()) {
+      alert("Please paste some CSV data first.");
+      return;
+    }
+
+    const lines = bulkCsvText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length <= 1) {
+      alert("CSV data needs to contain header row and at least one data row.");
+      return;
+    }
+
+    const header = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/[\"\']/g, ""));
+    const dataRows = lines.slice(1);
+    
+    setBulkImportProgress({ current: 0, total: dataRows.length, status: "Starting import..." });
+
+    let importedCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i];
+      const cols = row.split(',').map(c => c.trim().replace(/[\"\']/g, ""));
+      
+      const getValue = (colName: string, defaultVal: string = "") => {
+        const idx = header.indexOf(colName.toLowerCase());
+        return (idx !== -1 && cols[idx] !== undefined) ? cols[idx] : defaultVal;
+      };
+
+      const billNo = getValue("billno");
+      const custName = getValue("customername");
+      const phone = getValue("phone");
+      const amount = Number(getValue("amount", "0"));
+      const interestRate = getValue("interestrate", "1.5%");
+      const takenDate = getValue("takendate", new Date().toISOString().split('T')[0]);
+      const endDate = getValue("enddate", new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0]);
+      const pledgedItems = getValue("pledgeditems", "Gold/Silver Items");
+      const status = getValue("status", "Pending");
+      const interestPaidUpto = getValue("interestpaidupto", takenDate);
+      
+      if (!custName || !phone || !amount) {
+        errorCount++;
+        continue;
+      }
+
+      try {
+        setBulkImportProgress({ 
+          current: i + 1, 
+          total: dataRows.length, 
+          status: `Processing row ${i + 1} of ${dataRows.length}: ${custName}...` 
+        });
+
+        let cust = customers.find(c => c.phone === phone);
+        let custId = cust?.id;
+
+        if (!custId) {
+          custId = "CUST-" + Date.now() + "-" + Math.floor(Math.random()*1000);
+          const newCustPayload = {
+            id: custId,
+            name: custName,
+            phone: phone,
+            address: getValue("address", "Offline Address"),
+            father: getValue("father", "Offline Father"),
+            idproof: getValue("idproof", "Offline ID"),
+            mandal: getValue("mandal", "Offline Mandal")
+          };
+          const custRes = await fetch("/api/v1/customers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newCustPayload)
+          });
+          if (!custRes.ok) throw new Error("Failed to create customer " + custName);
+        }
+
+        const txnId = billNo ? "BILL-" + billNo : "TXN-OFFLINE-" + Date.now() + "-" + Math.floor(Math.random()*1000);
+        
+        let interestPayments: any[] = [];
+        if (interestPaidUpto && interestPaidUpto !== takenDate) {
+          interestPayments = [{
+            date: new Date().toISOString().split('T')[0],
+            amountPaid: calculateInterestForRange(amount, parseFloat(interestRate) || 0, takenDate, interestPaidUpto),
+            paidUpto: interestPaidUpto,
+            remarks: "Bulk imported interest clearance"
+          }];
+        }
+
+        const txnPayload = {
+          id: txnId,
+          customerId: custId,
+          type: "loan",
+          amount: amount,
+          category: "Jewelry",
+          date: takenDate,
+          status: status,
+          loanDetails: {
+            father: getValue("father", "Offline Father"),
+            idProof: getValue("idproof", "Offline ID"),
+            address: getValue("address", "Offline Address"),
+            mandal: getValue("mandal", "Offline Mandal"),
+            amount: amount,
+            interestRate: interestRate,
+            takenDate: takenDate,
+            endDate: endDate,
+            interestPaidUpto: interestPaidUpto,
+            interestPayments: interestPayments,
+            items: pledgedItems.split(';').map((name, idx) => ({
+              id: idx + 1,
+              name: name.trim(),
+              qty: 1,
+              yield: "",
+              grossWeight: "",
+              netWeight: "",
+              value: "",
+              remarks: "Bulk Import"
+            }))
+          }
+        };
+
+        const txnRes = await fetch("/api/v1/transactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(txnPayload)
+        });
+        if (!txnRes.ok) throw new Error("Failed to save loan transaction");
+
+        importedCount++;
+      } catch (err) {
+        console.error(err);
+        errorCount++;
+      }
+    }
+
+    setBulkImportProgress(null);
+    alert(`Bulk import completed! Success: ${importedCount}, Errors/Skipped: ${errorCount}`);
+    setBulkCsvText("");
+    setShowBulkImportModal(false);
+    refreshData();
+  };
+
+  // Mark loan as cleared passcode logic
+  const handleMarkAsCleared = (txnId: string) => {
+    const passcode = prompt("Enter 4-digit passcode to clear this loan:");
+    if (passcode === null) return;
+    if (passcode.trim() === "1004") {
+      fetch("/api/v1/transactions/clear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ txnId: txnId })
+      }).then(() => {
+        // Find transaction and set to cleared locally
+        setTransactions(transactions.map(t => {
+          if (t.id === txnId) {
+            return { ...t, status: "Cleared" };
+          }
+          return t;
+        }));
+        alert("Loan marked as Cleared.");
+        setSelectedLoanTxn(null);
+        refreshData();
+      });
+    } else {
+      alert("Incorrect passcode! Authorization Denied.");
+    }
+  };
+
+  // Add / Edit Customer form submission
+  const handleSaveCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    const isNew = !customerForm.id;
+    const payload = {
+      ...customerForm,
+      id: isNew ? "CUST-" + String(customers.length + 1).padStart(3, "0") : customerForm.id
+    };
+
+    fetch("/api/v1/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(() => {
+      alert(isNew ? "New customer registered successfully!" : "Customer profile updated.");
+      setShowCustomerModal(false);
+      refreshData();
+    });
+  };
+
+  const handleOpenAddCustomer = () => {
+    setCustomerForm({ id: "", name: "", phone: "", address: "", father: "", idproof: "", mandal: "" });
+    setShowCustomerModal(true);
+  };
+
+  const handleOpenEditCustomer = (cust: any) => {
+    setCustomerForm(cust);
+    setShowCustomerModal(true);
+  };
+
+  const activeConnectedDevice = smsDevices.find(d => d.connection === "Connected");
+
+  return (
+    <div className="flex min-h-screen bg-slate-50 font-sans print:bg-white text-slate-900 w-full">
+      
+      {/* Sidebar Navigation */}
+      <aside className="hidden md:flex w-64 bg-slate-900 text-slate-100 flex-col justify-between print:hidden shrink-0">
+        <div>
+          <div className="p-6 border-b border-slate-800 flex items-center gap-3">
+            <img 
+              src="/saibaba.png" 
+              alt="Sai Baba Logo" 
+              className="w-10 h-10 rounded-lg object-cover bg-white border border-slate-700 shadow-sm" 
+            />
+            <div>
+              <h1 className="font-bold text-sm leading-tight text-white">Sri Sai Balaji</h1>
+              <p className="text-xs text-slate-400">Jewelry & Furniture</p>
+            </div>
+          </div>
+          <nav className="p-4 space-y-1">
+            <button 
+              onClick={() => setActiveTab("dashboard")} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "dashboard" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+            >
+              <LayoutDashboard size={18} /> Dashboard
+            </button>
+            <button 
+              onClick={() => setActiveTab("billing")} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "billing" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+            >
+              <PlusCircle size={18} /> New Billing
+            </button>
+            <button 
+              onClick={() => setActiveTab("customers")} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "customers" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+            >
+              <Users size={18} /> Customers Data
+            </button>
+             <button 
+              onClick={() => setActiveTab("loan-history")} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "loan-history" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+            >
+              <History size={18} /> Loan History
+            </button>
+            <button 
+              onClick={() => setActiveTab("sms")} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "sms" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+            >
+              <MessageSquare size={18} /> SMS
+            </button>
+            <button 
+              onClick={() => setActiveTab("settings")} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "settings" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+            >
+              <Settings size={18} /> Settings
+            </button>
+          </nav>
+        </div>
+        <div className="p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
+          <span>Real-time Status:</span>
+          <span className={`w-2.5 h-2.5 rounded-full ${wsConnected ? "bg-emerald-500" : "bg-rose-500 animate-pulse"}`}></span>
+        </div>
+      </aside>
+
+      {/* Main Container */}
+      <main className="flex-1 flex flex-col min-w-0 print:hidden pb-16 md:pb-0">
+        
+        {/* Dynamic Top Header */}
+        <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-10 print:hidden">
+          <h2 className="text-xl font-bold text-slate-800 capitalize">{activeTab.replace("-", " ")}</h2>
+          <div className="flex items-center gap-2 text-sm text-slate-500 font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Active Session
+          </div>
+        </header>
+
+        {/* Tab Contents */}
+        <div className="p-4 md:p-8 flex-1 overflow-y-auto print:p-0 print:overflow-visible">
+          
+          {/* DASHBOARD TAB */}
+          {activeTab === "dashboard" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Total Sales Card */}
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center gap-4 hover:border-blue-500 hover:shadow-md transition-all">
+                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Sales</h3>
+                    <p className="text-xl font-extrabold mt-1 font-technical text-slate-800">
+                      ₹{stats.totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Active Loans Card */}
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center gap-4 hover:border-amber-500 hover:shadow-md transition-all">
+                  <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center font-bold">
+                    <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Loans</h3>
+                    <p className="text-xl font-extrabold mt-1 font-technical text-slate-800">
+                      {stats.activeLoans}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Pledged Value Card */}
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center gap-4 hover:border-emerald-500 hover:shadow-md transition-all">
+                  <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-bold">
+                    <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pledged Value</h3>
+                    <p className="text-xl font-extrabold mt-1 font-technical text-slate-800">
+                      ₹{stats.pledgedValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Total Customers Card */}
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center gap-4 hover:border-slate-500 hover:shadow-md transition-all">
+                  <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center font-bold">
+                    <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Customers</h3>
+                    <p className="text-xl font-extrabold mt-1 font-technical text-slate-800">
+                      {stats.totalCustomers}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* SMS Bridge Widget & Recent Transactions split */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm col-span-2">
+                  <h3 className="font-bold text-lg text-slate-800 mb-4">Recent Transactions</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-slate-400 font-semibold">
+                          <th className="pb-3">Date</th>
+                          <th className="pb-3">Customer</th>
+                          <th className="pb-3">Type</th>
+                          <th className="pb-3">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 font-medium">
+                        {transactions.slice(0, 5).map((t, idx) => (
+                           <tr key={idx} className="hover:bg-slate-50/50">
+                             <td className="py-3 font-technical text-slate-600">{formatDateToDDMMYYYY(t.date)}</td>
+                             <td className="py-3 text-slate-800 font-semibold">{customers.find(c => c.id === t.customerId)?.name || "Unknown"}</td>
+                             <td className="py-3">
+                               <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${t.type === "purchase" ? "bg-blue-100 text-blue-800" : "bg-pink-100 text-pink-800"}`}>{t.type}</span>
+                             </td>
+                             <td className="py-3 font-technical font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
+                           </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-lg text-slate-800">SMS Bridge Device</h3>
+                      {activeConnectedDevice ? (
+                        <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">🟢 Connected</span>
+                      ) : (
+                        <span className="text-xs font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded animate-pulse">🔴 Disconnected</span>
+                      )}
+                    </div>
+                    <div className="space-y-3 text-sm text-slate-600 font-medium">
+                      <div className="flex justify-between">
+                        <span>Device ID:</span>
+                        <strong className="text-slate-800">{activeConnectedDevice?.id || "-"}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Battery level:</span>
+                        <strong className="text-slate-800">{activeConnectedDevice ? `${activeConnectedDevice.battery}%` : "-"}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>SIM card:</span>
+                        <strong className="text-slate-800">{activeConnectedDevice?.sim || "-"}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-100 pt-4 mt-4 grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <span className="text-xs text-slate-400 font-bold block uppercase tracking-wider">SMS Queued</span>
+                      <strong className="text-lg text-slate-800">{smsQueue.filter(s => ["Pending", "Queued", "Sending"].includes(s.status)).length}</strong>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-400 font-bold block uppercase tracking-wider">Sent Today</span>
+                      <strong className="text-lg text-emerald-600">{smsQueue.filter(s => ["Sent", "Delivered"].includes(s.status)).length}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SMS TAB */}
+          {activeTab === "sms" && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-4xl mx-auto">
+              <div className="flex justify-between items-center gap-4 mb-6">
+                <div>
+                  <button 
+                    onClick={() => setActiveTab("dashboard")}
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all mb-1"
+                  >
+                    &larr; Back to Dashboard
+                  </button>
+                  <h3 className="font-bold text-lg text-slate-800">Send Custom SMS</h3>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setActiveTab("sms-queue")}
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold py-2 px-4 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <MessageSquare size={14} /> View Queue Logs
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab("sms-templates")}
+                    className="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold py-2 px-4 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Settings size={14} /> Manage Templates
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                {/* Left Panel */}
+                <div className="space-y-4">
+                  {/* Customer Name */}
+                  <div className="form-group relative">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Customer Name</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white transition-all font-semibold"
+                      placeholder="Enter customer name..." 
+                      value={smsCustomerName}
+                      onChange={(e) => handleSmsCustNameChange(e.target.value)}
+                    />
+                    {smsCustSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                        {smsCustSuggestions.map((c, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={() => {
+                              setSelectedSmsCustomer(c);
+                              setSmsCustomerName(c.name);
+                              setSmsCustomerPhone(c.phone);
+                              setSmsCustSuggestions([]);
+                            }}
+                            className="p-3 text-xs font-semibold cursor-pointer hover:bg-slate-50 flex justify-between"
+                          >
+                            <span>{c.name}</span>
+                            <span className="text-slate-400">{c.phone}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className="form-group relative">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Phone Number</label>
+                    <input 
+                      type="text" 
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white transition-all font-semibold font-technical"
+                      placeholder="Enter phone number..." 
+                      value={smsCustomerPhone}
+                      onChange={(e) => handleSmsCustPhoneChange(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Select Template</label>
+                    <select 
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none cursor-pointer"
+                      value={selectedTemplateName}
+                      onChange={(e) => {
+                        setSelectedTemplateName(e.target.value);
+                        const tpl = smsTemplates.find(t => t.name === e.target.value);
+                        setSmsMessageText(tpl ? tpl.content : "");
+                      }}
+                    >
+                      <option value="">-- Custom SMS (No Template) --</option>
+                      {smsTemplates.map((t, idx) => (
+                        <option key={idx} value={t.name}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Variables Helper</label>
+                    <div className="flex flex-wrap gap-2">
+                      {["{CustomerName}", "{ShopName}", "{InvoiceNumber}", "{LoanAmount}", "{LoanEndDate}", "{DaysLeft}", "{ItemName}"].map((v, idx) => (
+                        <button 
+                          key={idx} 
+                          type="button" 
+                          onClick={() => {
+                            setSmsMessageText(prev => prev + v);
+                          }}
+                          className="px-2.5 py-1.5 bg-slate-100 border border-slate-200 rounded text-xs font-semibold hover:bg-slate-200 text-slate-700"
+                        >
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Panel */}
+                <div className="flex flex-col justify-between">
+                  <div className="form-group">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Message Content</label>
+                    <textarea 
+                      className="w-full border border-slate-200 rounded-lg p-3 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white h-32 resize-none leading-relaxed" 
+                      placeholder="Write your message here..."
+                      value={smsMessageText}
+                      onChange={(e) => setSmsMessageText(e.target.value)}
+                    ></textarea>
+                    <div className="flex justify-between text-xs text-slate-400 font-semibold mt-1">
+                      <span>{smsMessageText.length} characters</span>
+                      <span>1 SMS = 160 characters</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+                    <h5 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Live Preview (With Variables)</h5>
+                    <p className="text-sm text-slate-700 leading-relaxed font-semibold italic white-space-pre-wrap">{getSMSPreviewText() || "(Preview content will appear here...)"}</p>
+                  </div>
+
+                  <button 
+                    onClick={handleSendSMS}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <Send size={16} /> Send SMS (Queue Job)
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* DEDICATED SMS QUEUE TAB */}
+          {activeTab === "sms-queue" && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <div className="mb-4">
+                <button 
+                  onClick={() => setActiveTab("sms")}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                >
+                  &larr; Back to Send SMS
+                </button>
+              </div>
+              <div className="flex justify-between items-center gap-4 mb-6">
+                <h3 className="font-bold text-lg text-slate-800">SMS Queue Logs</h3>
+                <div className="flex gap-3">
+                  <input 
+                    type="text" 
+                    className="border border-slate-200 rounded-lg p-2 px-3 text-sm outline-none" 
+                    placeholder="Search by phone..."
+                    value={smsQueueSearch}
+                    onChange={(e) => setSmsQueueSearch(e.target.value)}
+                  />
+                  <select 
+                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer"
+                    value={smsQueueFilter}
+                    onChange={(e) => setSmsQueueFilter(e.target.value)}
+                  >
+                    <option value="all">All SMS</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Queued">Queued</option>
+                    <option value="Sending">Sending</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-400 font-bold">
+                      <th className="pb-3">SMS ID</th>
+                      <th className="pb-3">Phone</th>
+                      <th className="pb-3">Message</th>
+                      <th className="pb-3">Created Time</th>
+                      <th className="pb-3">Status</th>
+                      <th className="pb-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 font-semibold">
+                    {smsQueue
+                      .filter(s => s.phone.includes(smsQueueSearch))
+                      .filter(s => smsQueueFilter === "all" || s.status === smsQueueFilter)
+                      .map((s, idx) => (
+                        <tr key={idx}>
+                          <td className="py-3 text-blue-600 font-technical">#{s.id.substring(s.id.length - 6)}</td>
+                          <td className="py-3 font-technical">{s.phone}</td>
+                          <td className="py-3 max-w-xs truncate" title={s.message}>{s.message}</td>
+                          <td className="py-3 font-technical">{s.created_time}</td>
+                          <td className="py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${s.status === "Sent" || s.status === "Delivered" ? "bg-emerald-100 text-emerald-800" : s.status === "Failed" ? "bg-rose-100 text-rose-800" : s.status === "Sending" ? "bg-sky-100 text-sky-800" : "bg-slate-100 text-slate-500"}`}>{s.status}</span>
+                          </td>
+                          <td className="py-3 flex gap-2">
+                            {["Pending", "Queued"].includes(s.status) && (
+                              <button onClick={() => {
+                                fetch('/api/v1/sms/cancel', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ smsId: s.id })
+                                }).then(refreshData);
+                              }} className="text-rose-600 hover:bg-rose-50 border border-rose-200 rounded px-2 py-1 text-xs">Cancel</button>
+                            )}
+                            {s.status === "Failed" && (
+                              <button onClick={() => {
+                                fetch('/api/v1/sms/retry', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ smsId: s.id })
+                                }).then(refreshData);
+                              }} className="text-blue-600 hover:bg-blue-50 border border-blue-200 rounded px-2 py-1 text-xs">Retry</button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* DEDICATED SMS TEMPLATES TAB */}
+          {activeTab === "sms-templates" && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <div className="mb-4">
+                <button 
+                  onClick={() => setActiveTab("sms")}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                >
+                  &larr; Back to Send SMS
+                </button>
+              </div>
+              <div className="max-w-4xl mx-auto">
+                <h3 className="font-bold text-lg text-slate-800 mb-6 font-technical">Manage SMS Templates</h3>
+                
+                {/* Template Add/Edit Form */}
+                <form onSubmit={handleSaveTemplate} className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-8 space-y-4">
+                  <h4 className="font-bold text-sm text-slate-700 uppercase tracking-wider mb-2">
+                    {isEditingTemplate ? "✏️ Edit Template" : "➕ Add New Template"}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="form-group md:col-span-1">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Template Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="e.g. Festival Offer"
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none bg-white font-semibold"
+                        value={editTemplateName}
+                        onChange={(e) => setEditTemplateName(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group md:col-span-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Template Content (Variables like {"{CustomerName}"} allowed)</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="Dear {CustomerName}, thank you for shopping at..."
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none bg-white font-semibold"
+                        value={editTemplateContent}
+                        onChange={(e) => setEditTemplateContent(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    {isEditingTemplate && (
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setEditTemplateName("");
+                          setEditTemplateContent("");
+                          setIsEditingTemplate(false);
+                        }}
+                        className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button 
+                      type="submit" 
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs"
+                    >
+                      {isEditingTemplate ? "Update Template" : "Save Template"}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Templates List */}
+                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <table className="w-full text-left text-sm min-w-[700px]">
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-slate-50 text-slate-500 font-bold">
+                        <th className="p-4 text-xs uppercase tracking-wider w-1/4">Name</th>
+                        <th className="p-4 text-xs uppercase tracking-wider w-2/3">Content</th>
+                        <th className="p-4 text-xs uppercase tracking-wider w-1/12 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                      {smsTemplates.map((t, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50">
+                          <td className="p-4 text-slate-900">{t.name}</td>
+                          <td className="p-4 text-slate-500 text-xs font-medium max-w-md truncate" title={t.content}>{t.content}</td>
+                          <td className="p-4 text-right flex justify-end gap-2">
+                            <button 
+                              onClick={() => {
+                                setEditTemplateId(t.id);
+                                setEditTemplateName(t.name);
+                                setEditTemplateContent(t.content);
+                                setIsEditingTemplate(true);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="text-blue-600 hover:bg-blue-50 border border-blue-200 rounded px-2.5 py-1 text-xs"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteTemplate(t.name)}
+                              className="text-rose-600 hover:bg-rose-50 border border-rose-200 rounded px-2.5 py-1 text-xs"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* NEW BILLING TAB */}
+          {activeTab === "billing" && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-4xl mx-auto">
+              <div className="mb-4">
+                <button 
+                  onClick={() => setActiveTab("dashboard")}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                >
+                  &larr; Back to Dashboard
+                </button>
+              </div>
+              <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-6">
+                <button 
+                  onClick={() => setBillingType("purchase")}
+                  className={`px-6 py-2 text-sm font-bold rounded-md transition-all ${billingType === "purchase" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-700"}`}
+                >
+                  Item Purchase Bill
+                </button>
+                <button 
+                  onClick={() => setBillingType("loan")}
+                  className={`px-6 py-2 text-sm font-bold rounded-md transition-all ${billingType === "loan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-700"}`}
+                >
+                  Loan Finance Bill
+                </button>
+              </div>
+
+              {/* Common Customer Selection - Name & Phone separate inputs with autocomplete */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                
+                {/* Customer Name Input */}
+                <div className="form-group relative">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Customer Name</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white"
+                    placeholder="Enter customer name..." 
+                    value={billingCustName}
+                    onChange={(e) => handleBillingCustNameChange(e.target.value)}
+                  />
+                  {nameSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                      {nameSuggestions.map((c, idx) => (
+                        <div 
+                          key={idx}
+                          onClick={() => selectCustomer(c)}
+                          className="p-3 text-xs font-semibold cursor-pointer hover:bg-slate-50 flex justify-between"
+                        >
+                          <span>{c.name}</span>
+                          <span className="text-slate-400">{c.phone}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Phone Number Input */}
+                <div className="form-group relative">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Phone Number</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white"
+                    placeholder="Enter phone number..." 
+                    value={billingCustPhone}
+                    onChange={(e) => handleBillingCustPhoneChange(e.target.value)}
+                  />
+                  {phoneSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                      {phoneSuggestions.map((c, idx) => (
+                        <div 
+                          key={idx}
+                          onClick={() => selectCustomer(c)}
+                          className="p-3 text-xs font-semibold cursor-pointer hover:bg-slate-50 flex justify-between"
+                        >
+                          <span>{c.name}</span>
+                          <span className="text-slate-400">{c.phone}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+              {/* ITEM PURCHASE BILL FORM */}
+              {billingType === "purchase" && (
+                <form onSubmit={handleSavePurchase} className="space-y-6">
+                  <div className="flex items-center gap-6 pb-4 border-b border-slate-100">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Item Category:</label>
+                    <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                      <input type="radio" name="p-cat" checked={purchaseCategory === "Jewelry"} onChange={() => setPurchaseCategory("Jewelry")} /> Jewelry
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                      <input type="radio" name="p-cat" checked={purchaseCategory === "Furniture"} onChange={() => setPurchaseCategory("Furniture")} /> Furniture
+                    </label>
+                  </div>
+
+                  <div className="space-y-3">
+                    {purchaseItems.map((item, idx) => (
+                      <div key={item.id} className="grid grid-cols-12 gap-2 md:gap-3 items-end border-b border-slate-100 pb-3 md:pb-0 md:border-none">
+                        <div className={`form-group relative ${purchaseCategory === "Jewelry" ? "col-span-12 md:col-span-4" : "col-span-12 md:col-span-7"}`}>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Item Name</label>
+                          <input 
+                            type="text" 
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                            required
+                            value={item.particulars}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updatePurchaseItem(item.id, "particulars", val);
+                              if (val) {
+                                const filtered = safeItems.filter(i => i.category === purchaseCategory && i.name.toLowerCase().includes(val.toLowerCase()));
+                                setActiveItemSuggestions(prev => ({ ...prev, [item.id]: filtered }));
+                              } else {
+                                setActiveItemSuggestions(prev => ({ ...prev, [item.id]: [] }));
+                              }
+                            }}
+                          />
+                          {activeItemSuggestions[item.id]?.length > 0 && (
+                            <div onClick={(e) => e.stopPropagation()} className="absolute left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                              {activeItemSuggestions[item.id].map((suggestedItem, sIdx) => (
+                                <div 
+                                  key={sIdx}
+                                  onClick={() => {
+                                    updatePurchaseItem(item.id, "particulars", suggestedItem.name);
+                                    setActiveItemSuggestions(prev => ({ ...prev, [item.id]: [] }));
+                                  }}
+                                  className="p-2 text-xs font-semibold cursor-pointer hover:bg-slate-50"
+                                >
+                                  {suggestedItem.name}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {purchaseCategory === "Jewelry" && (
+                          <>
+                            <div className="form-group col-span-6 md:col-span-2">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Grams (g)</label>
+                              <input 
+                                type="number" 
+                                step="any"
+                                className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                                value={item.grams}
+                                onChange={(e) => updatePurchaseItem(item.id, "grams", e.target.value)}
+                              />
+                            </div>
+                            <div className="form-group col-span-6 md:col-span-1">
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mg</label>
+                              <input 
+                                type="number" 
+                                className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                                value={item.mg}
+                                onChange={(e) => updatePurchaseItem(item.id, "mg", e.target.value)}
+                              />
+                            </div>
+                          </>
+                        )}
+                        <div className="form-group col-span-4 md:col-span-1 col-start-auto">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Qty</label>
+                          <input 
+                            type="number" 
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                            required
+                            value={item.qty}
+                            onChange={(e) => updatePurchaseItem(item.id, "qty", e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group col-span-8 md:col-span-3">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Amount (₹)</label>
+                          <input 
+                            type="number" 
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                            required
+                            value={item.amount}
+                            onChange={(e) => updatePurchaseItem(item.id, "amount", e.target.value)}
+                          />
+                        </div>
+                        <div className="col-span-12 md:col-span-1 pb-1 flex justify-end md:justify-center">
+                          <button 
+                            type="button" 
+                            onClick={() => removePurchaseRow(item.id)}
+                            className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg"
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+                    <button type="button" onClick={addPurchaseRow} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50">Add Item</button>
+                    <div className="text-lg font-bold text-slate-700">
+                      Total: <span className="text-blue-600">₹{purchaseItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-6">
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer" 
+                        checked={sendThankYouSms} 
+                        onChange={(e) => setSendThankYouSms(e.target.checked)} 
+                      />
+                      Send Thank You SMS to Customer
+                    </label>
+                    <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm">
+                      Save & Print Invoice
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* LOAN FINANCE FORM */}
+              {billingType === "loan" && (
+                <form onSubmit={handleSaveLoan} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Father's/Husband's Name</label>
+                      <input 
+                        type="text" 
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        required
+                        value={loanDetails.father}
+                        onChange={(e) => setLoanDetails(prev => ({ ...prev, father: e.target.value }))}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Ration/Aadhar ID Proof</label>
+                      <input 
+                        type="text" 
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        required
+                        value={loanDetails.idProof}
+                        onChange={(e) => setLoanDetails(prev => ({ ...prev, idProof: e.target.value }))}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Address</label>
+                      <input 
+                        type="text" 
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        required
+                        placeholder="Enter address..." 
+                        value={loanDetails.address}
+                        onChange={(e) => setLoanDetails(prev => ({ ...prev, address: e.target.value }))}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Mandal</label>
+                      <input 
+                        type="text" 
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        required
+                        placeholder="Enter mandal..." 
+                        value={loanDetails.mandal}
+                        onChange={(e) => setLoanDetails(prev => ({ ...prev, mandal: e.target.value }))}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Taken Date</label>
+                      <input 
+                        type="date" 
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        required
+                        value={loanDetails.takenDate}
+                        onChange={(e) => setLoanDetails(prev => ({ ...prev, takenDate: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6 pb-4 border-b border-slate-100">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metal Type:</label>
+                    <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                      <input type="radio" name="l-metal" checked={loanMetalType === "Gold"} onChange={() => setLoanMetalType("Gold")} /> Gold
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                      <input type="radio" name="l-metal" checked={loanMetalType === "Silver"} onChange={() => setLoanMetalType("Silver")} /> Silver
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-sm text-slate-700">Pledged Items Checklist</h4>
+                    {loanPledgedItems.map((item, idx) => (
+                      <div key={item.id} className="grid grid-cols-12 gap-2 md:gap-3 items-end w-full border-b border-slate-100 pb-3 md:pb-0 md:border-none">
+                        <div className="form-group relative col-span-12 md:col-span-3">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Item Name</label>
+                          <input 
+                            type="text" 
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            required
+                            placeholder="Enter item name..."
+                            value={item.name}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateLoanItem(item.id, "name", val);
+                              if (val) {
+                                const filtered = safeItems.filter(i => i.category === "Jewelry" && i.name.toLowerCase().includes(val.toLowerCase()));
+                                setActiveItemSuggestions(prev => ({ ...prev, [item.id]: filtered }));
+                              } else {
+                                setActiveItemSuggestions(prev => ({ ...prev, [item.id]: [] }));
+                              }
+                            }}
+                          />
+                          {activeItemSuggestions[item.id]?.length > 0 && (
+                            <div onClick={(e) => e.stopPropagation()} className="absolute left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                              {activeItemSuggestions[item.id].map((suggestedItem, sIdx) => (
+                                <div 
+                                  key={sIdx}
+                                  onClick={() => {
+                                    updateLoanItem(item.id, "name", suggestedItem.name);
+                                    setActiveItemSuggestions(prev => ({ ...prev, [item.id]: [] }));
+                                  }}
+                                  className="p-2 text-xs font-semibold cursor-pointer hover:bg-slate-50"
+                                >
+                                  {suggestedItem.name}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="form-group col-span-3 md:col-span-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Qty</label>
+                          <input 
+                            type="number" 
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            required
+                            min="1"
+                            value={item.qty || 1}
+                            onChange={(e) => updateLoanItem(item.id, "qty", e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group col-span-4 md:col-span-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Yield/KDM</label>
+                          <input 
+                            type="text" 
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            placeholder="e.g. 916"
+                            value={item.yield}
+                            onChange={(e) => updateLoanItem(item.id, "yield", e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group col-span-5 md:col-span-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Gross (g)</label>
+                          <input 
+                            type="number" 
+                            step="any"
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            required
+                            placeholder="0.00"
+                            value={item.grossWeight}
+                            onChange={(e) => updateLoanItem(item.id, "grossWeight", e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group col-span-6 md:col-span-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Net (g)</label>
+                          <input 
+                            type="number" 
+                            step="any"
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            required
+                            placeholder="0.00"
+                            value={item.netWeight}
+                            onChange={(e) => updateLoanItem(item.id, "netWeight", e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group col-span-6 md:col-span-3">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Remarks</label>
+                          <input 
+                            type="text" 
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            placeholder="Remarks..."
+                            value={item.remarks}
+                            onChange={(e) => updateLoanItem(item.id, "remarks", e.target.value)}
+                          />
+                        </div>
+                        <div className="col-span-12 md:col-span-1 pb-1 flex justify-end md:justify-center">
+                          <button 
+                            type="button" 
+                            onClick={() => removeLoanRow(item.id)}
+                            className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-all"
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2">
+                    <button type="button" onClick={addLoanRow} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50">Add Item</button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Loan Finance Amount (₹)</label>
+                      <input 
+                        type="number" 
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500" 
+                        required
+                        value={loanDetails.amount}
+                        onChange={(e) => setLoanDetails(prev => ({ ...prev, amount: e.target.value }))}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Interest Rate (Auto per month)</label>
+                      <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-100 outline-none font-semibold text-blue-600" readOnly value={loanDetails.interestRate} />
+                    </div>
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">To be released Date</label>
+                      <input type="date" className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-100 outline-none font-semibold text-slate-700" readOnly value={loanDetails.endDate} />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-6">
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer" 
+                        checked={sendThankYouSms} 
+                        onChange={(e) => setSendThankYouSms(e.target.checked)} 
+                      />
+                      Send Thank You SMS to Customer
+                    </label>
+                    <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm">
+                      Save & Print Pawn Slip
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* CUSTOMERS LIST TAB */}
+          {activeTab === "customers" && (
+            <div className="space-y-6">
+              {!selectedProfileCustomer && (
+                <div className="mb-4">
+                  <button 
+                    onClick={() => setActiveTab("dashboard")}
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                  >
+                    &larr; Back to Dashboard
+                  </button>
+                </div>
+              )}
+              
+              {/* Profile Details Overlay */}
+              {selectedProfileCustomer ? (
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                  <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-6">
+                    <div>
+                      <button onClick={() => setSelectedProfileCustomer(null)} className="text-xs font-bold text-slate-400 hover:text-slate-600 mb-2 block">← BACK TO LIST</button>
+                      <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        {selectedProfileCustomer.name}
+                        <span className="text-xs font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{selectedProfileCustomer.id}</span>
+                      </h3>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleOpenEditCustomer(selectedProfileCustomer)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50">Edit Profile</button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-slate-50 p-5 rounded-lg mb-8">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Phone Number</span>
+                      <strong className="text-sm text-slate-700">{selectedProfileCustomer.phone}</strong>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Full Address</span>
+                      <strong className="text-sm text-slate-700">{selectedProfileCustomer.address}</strong>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mandal</span>
+                      <strong className="text-sm text-slate-700">{selectedProfileCustomer.mandal || "-"}</strong>
+                    </div>
+                  </div>
+
+                  {/* Customer Purchase/Loan list */}
+                  <div className="space-y-8">
+                    <div>
+                      <h4 className="font-bold text-slate-700 mb-3 uppercase tracking-wider text-xs">Item Purchase History</h4>
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-100 text-slate-400 font-semibold">
+                            <th className="pb-2">Date</th>
+                            <th className="pb-2">Bill No</th>
+                            <th className="pb-2">Category</th>
+                            <th className="pb-2">Items Purchased</th>
+                            <th className="pb-2">Total Amount</th>
+                            <th className="pb-2">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {transactions
+                            .filter(t => t.customerId === selectedProfileCustomer.id && t.type === "purchase")
+                            .map((p, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/50 font-semibold">
+                                <td className="py-2.5">{formatDateToDDMMYYYY(p.date)}</td>
+                                <td className="py-2.5 text-blue-600">{p.id.substring(p.id.length - 6)}</td>
+                                <td className="py-2.5">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${p.category === "Furniture" ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-800"}`}>{p.category}</span>
+                                </td>
+                                <td className="py-2.5">{p.items?.map((i: any) => i.particulars).join(', ')}</td>
+                                <td className="py-2.5 text-slate-700">₹{p.amount.toLocaleString('en-IN')}</td>
+                                <td className="py-2.5">
+                                  <button onClick={() => handlePrintTicket(p, selectedProfileCustomer, "purchase")} className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-2.5 py-1 flex items-center gap-1.5 text-slate-700">
+                                    Print Bill
+                                  </button>
+                                </td>
+                              </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-slate-700 mb-3 uppercase tracking-wider text-xs">Loan Finance History</h4>
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-100 text-slate-400 font-semibold">
+                            <th className="pb-2">Date</th>
+                            <th className="pb-2">Serial No</th>
+                            <th className="pb-2">Pledged Items</th>
+                            <th className="pb-2">Loan Amount</th>
+                            <th className="pb-2">Due Date</th>
+                            <th className="pb-2">Status</th>
+                            <th className="pb-2">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {transactions
+                            .filter(t => t.customerId === selectedProfileCustomer.id && t.type === "loan")
+                            .map((l, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50/50 font-semibold">
+                                <td className="py-2.5">{formatDateToDDMMYYYY(l.date)}</td>
+                                <td className="py-2.5">{l.id.substring(l.id.length - 6)}</td>
+                                <td className="py-2.5">{l.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
+                                <td className="py-2.5">₹{l.amount.toLocaleString('en-IN')}</td>
+                                <td className="py-2.5">{formatDateToDDMMYYYY(l.loanDetails?.endDate)}</td>
+                                <td className="py-2.5">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${l.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{l.status || "Pending"}</span>
+                                </td>
+                                <td className="py-2.5 flex gap-1">
+                                  <button onClick={() => handlePrintTicket(l, selectedProfileCustomer, "loan")} className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-2.5 py-1 text-slate-700">
+                                    Print Ticket
+                                  </button>
+                                </td>
+                              </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center gap-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div className="flex-1 relative max-w-sm">
+                      <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+                      <input 
+                        type="text" 
+                        className="w-full border border-slate-200 rounded-lg p-2.5 pl-10 text-sm outline-none focus:border-blue-500" 
+                        placeholder="Search customer name or phone..." 
+                        value={searchCustomerQuery}
+                        onChange={(e) => setSearchCustomerQuery(e.target.value)}
+                      />
+                    </div>
+                    <button onClick={handleOpenAddCustomer} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg text-sm transition-all flex items-center gap-1.5 shadow-sm">
+                      <PlusCircle size={16} /> Add Customer
+                    </button>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm overflow-x-auto">
+                    <table className="w-full text-left text-sm min-w-[800px]">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50 text-slate-500 font-bold">
+                          <th className="p-4 text-xs uppercase tracking-wider">ID</th>
+                          <th className="p-4 text-xs uppercase tracking-wider">Customer Name</th>
+                          <th className="p-4 text-xs uppercase tracking-wider">Phone</th>
+                          <th className="p-4 text-xs uppercase tracking-wider">Father's Name</th>
+                          <th className="p-4 text-xs uppercase tracking-wider">ID Proof</th>
+                          <th className="p-4 text-xs uppercase tracking-wider">Address</th>
+                          <th className="p-4 text-xs uppercase tracking-wider">Mandal</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                        {customers
+                          .filter(c => matchesUniversal(c, searchCustomerQuery))
+                          .map((c, idx) => (
+                            <tr key={idx} onClick={() => setSelectedProfileCustomer(c)} className="hover:bg-slate-50 cursor-pointer transition-all">
+                              <td className="p-4 text-xs text-slate-400">{c.id}</td>
+                              <td className="p-4 text-slate-800 font-bold text-blue-600 hover:underline">{c.name}</td>
+                              <td className="p-4 text-slate-600">{c.phone}</td>
+                              <td className="p-4 text-slate-600">{c.father || "-"}</td>
+                              <td className="p-4 text-xs text-slate-500">{c.idproof || "-"}</td>
+                              <td className="p-4 text-slate-600">{c.address || "-"}</td>
+                              <td className="p-4 text-slate-600">{c.mandal || "-"}</td>
+                            </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* COMBINED LOAN HISTORY TAB */}
+          {activeTab === "loan-history" && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <div className="mb-4">
+                <button 
+                  onClick={() => setActiveTab("dashboard")}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                >
+                  &larr; Back to Dashboard
+                </button>
+              </div>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <h3 className="font-bold text-lg text-slate-800">Combined Loan History</h3>
+                <div className="flex flex-wrap gap-2 items-center w-full md:w-auto justify-end">
+                  <button 
+                    onClick={() => setShowOfflineLoanModal(true)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Plus size={14} /> Add Offline Loan
+                  </button>
+                  <button 
+                    onClick={() => setShowBulkImportModal(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Upload size={14} /> Bulk Import (CSV)
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab("loan-reminders")}
+                    className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold py-2 px-4 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Bell size={14} /> View Loan Reminders
+                  </button>
+                  <input 
+                    type="text" 
+                    className="border border-slate-200 rounded-lg p-2 px-3 text-sm outline-none" 
+                    placeholder="Search name or bill no..."
+                    value={loanHistorySearch}
+                    onChange={(e) => setLoanHistorySearch(e.target.value)}
+                  />
+                  <select 
+                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer"
+                    value={loanHistoryFilter}
+                    onChange={(e) => setLoanHistoryFilter(e.target.value)}
+                  >
+                    <option value="all">All Loans</option>
+                    <option value="pending">Pending</option>
+                    <option value="cleared">Cleared</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-400 font-bold">
+                      <th className="pb-3">Bill No</th>
+                      <th className="pb-3">Customer Name</th>
+                      <th className="pb-3">Pledged Items</th>
+                      <th className="pb-3">Loan Taken Date</th>
+                      <th className="pb-3">Loan Period End Date</th>
+                      <th className="pb-3">Interest Generated</th>
+                      <th className="pb-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 font-semibold">
+                    {transactions
+                      .filter(t => t.type === "loan")
+                      .filter(t => {
+                        const cust = customers.find(c => c.id === t.customerId);
+                        const custName = cust ? cust.name.toLowerCase() : "";
+                        const billNo = t.id.substring(t.id.length - 6).toLowerCase();
+                        
+                        const matchesSearch = custName.includes(loanHistorySearch.toLowerCase()) || billNo.includes(loanHistorySearch.toLowerCase());
+                        
+                        const status = t.status || "Pending";
+                        const matchesFilter = loanHistoryFilter === "all"
+                          || (loanHistoryFilter === "pending" && status === "Pending")
+                          || (loanHistoryFilter === "cleared" && status === "Cleared");
+                        
+                        return matchesSearch && matchesFilter;
+                      })
+                      .map((t, idx) => {
+                        const cust = customers.find(c => c.id === t.customerId);
+                        return (
+                          <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
+                            <td className="py-3 text-blue-600">#{t.id.substring(t.id.length - 6)}</td>
+                            <td className="py-3">{cust?.name || "Unknown"}</td>
+                            <td className="py-3">{t.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
+                            <td className="py-3">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
+                            <td className="py-3">{formatDateToDDMMYYYY(t.loanDetails?.endDate)}</td>
+                            <td className="py-3 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                            <td className="py-3">
+                              <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{t.status || "Pending"}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+
+
+          {/* SETTINGS TAB */}
+          {activeTab === "settings" && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <div className="mb-4">
+                <button 
+                  onClick={() => setActiveTab("dashboard")}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                >
+                  &larr; Back to Dashboard
+                </button>
+              </div>
+              <h3 className="font-bold text-lg text-slate-800 mb-4">SMS Device Bridge Configuration</h3>
+              <p className="text-xs text-slate-400 font-semibold mb-6">Manage registered Android Bridge devices. WebSocket connections dynamically route the pending queue automatically.</p>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-400 font-bold">
+                      <th className="pb-3">Device UUID</th>
+                      <th className="pb-3">Device Name</th>
+                      <th className="pb-3">Model</th>
+                      <th className="pb-3">Battery</th>
+                      <th className="pb-3">SIM operator</th>
+                      <th className="pb-3">Connection</th>
+                      <th className="pb-3">Last Seen</th>
+                      <th className="pb-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 font-semibold">
+                    {smsDevices.map((d, idx) => (
+                      <tr key={idx}>
+                        <td className="py-3 text-slate-400">#{d.id}</td>
+                        <td className="py-3">{d.name}</td>
+                        <td className="py-3">{d.model}</td>
+                        <td className="py-3">{d.battery}%</td>
+                        <td className="py-3">{d.sim}</td>
+                        <td className="py-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${d.connection === "Connected" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{d.connection}</span>
+                        </td>
+                        <td className="py-3">{d.last_seen}</td>
+                        <td className="py-3">
+                          <button 
+                            onClick={() => {
+                              if (confirm("Remove registered device?")) {
+                                fetch('/api/v1/devices/unregister', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ id: d.id })
+                                }).then(refreshData);
+                              }
+                            }}
+                            className="text-rose-500 hover:bg-rose-50 rounded px-2 py-1 text-xs border border-rose-200"
+                          >
+                            Unregister
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-6 bg-slate-50 border border-slate-200 rounded-xl p-5">
+                <div 
+                  onClick={() => setShowConnectionGuide(!showConnectionGuide)} 
+                  className="flex justify-between items-center cursor-pointer select-none"
+                >
+                  <h4 className="font-bold text-sm text-slate-800">How to Connect your Android Phone & Send SMS</h4>
+                  <button className="text-xs bg-white hover:bg-slate-100 border border-slate-200 rounded px-2.5 py-1 font-semibold text-slate-600">
+                    {showConnectionGuide ? "Hide Guide" : "Show Guide"}
+                  </button>
+                </div>
+                {showConnectionGuide && (
+                  <ol className="list-decimal list-inside text-xs text-slate-600 font-semibold space-y-2.5 mt-4 pt-4 border-t border-slate-100/50">
+                    <li>Install the <strong>SmartShop SMS Bridge</strong> Android app on your phone.</li>
+                    <li>Find your laptop's Local IP address (e.g. on Windows, open Command Prompt, run <code>ipconfig</code>, and copy your <strong>IPv4 Address</strong>, e.g. <code>192.168.1.15</code>).</li>
+                    <li>In the Android app, enter the Server URL as: <code>http://&lt;your-laptop-ip&gt;:8000</code> (example: <code>http://192.168.1.15:8000</code>).</li>
+                    <li>Enter a Device Name for identification, then click <strong>Register Device</strong>.</li>
+                    <li>Refresh this settings page on your browser to see your device in the list above.</li>
+                    <li>In the Android app, click the green <strong>Connect</strong> button. The status badge will change to <span className="text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200 font-bold uppercase">Connected</span> and any pending SMS will send immediately!</li>
+                  </ol>
+                )}
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-slate-100">
+                <h4 className="font-bold text-sm text-slate-800 mb-3">Other Settings</h4>
+                <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden bg-slate-50/50">
+                  <div 
+                    onClick={() => setActiveTab("item-catalog")}
+                    className="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-all"
+                  >
+                    <div>
+                      <h5 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <List size={16} className="text-blue-600" /> Item Catalog Settings
+                      </h5>
+                      <p className="text-xs text-slate-400 font-semibold mt-0.5">Add, edit, or delete items from the auto-suggestion lists for sales and loans.</p>
+                    </div>
+                    <ChevronRight size={16} className="text-slate-400" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ITEM CATALOG TAB */}
+          {activeTab === "item-catalog" && (
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <div className="mb-4">
+                <button 
+                  onClick={() => setActiveTab("settings")}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                >
+                  &larr; Back to Settings
+                </button>
+              </div>
+              <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="font-bold text-lg text-slate-800">Manage Item Catalog</h3>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Manage items used in sales and loans to populate auto-suggestions list.</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setItemForm({ id: "", name: "", category: "Jewelry" });
+                    setShowItemModal(true);
+                  }} 
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <PlusCircle size={14} /> Add New Item
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Jewelry List */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
+                  <h4 className="font-bold text-sm text-slate-700 mb-3 border-b border-slate-200 pb-2 flex justify-between items-center">
+                    <span>Jewelry Items</span>
+                    <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                      {safeItems.filter(i => i.category === "Jewelry").length} items
+                    </span>
+                  </h4>
+                  <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                    {safeItems
+                      .filter(i => i.category === "Jewelry")
+                      .map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center py-2 text-xs font-semibold">
+                          <span className="text-slate-800">{item.name}</span>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => {
+                                setItemForm(item);
+                                setShowItemModal(true);
+                              }} 
+                              className="text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-100"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (confirm("Are you sure you want to delete this item?")) {
+                                  fetch(`/api/v1/items/${item.id}`, { method: "DELETE" }).then(refreshData);
+                                }
+                              }} 
+                              className="text-rose-600 hover:text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-100"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Furniture List */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
+                  <h4 className="font-bold text-sm text-slate-700 mb-3 border-b border-slate-200 pb-2 flex justify-between items-center">
+                    <span>Furniture Items</span>
+                    <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                      {safeItems.filter(i => i.category === "Furniture").length} items
+                    </span>
+                  </h4>
+                  <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                    {safeItems
+                      .filter(i => i.category === "Furniture")
+                      .map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center py-2 text-xs font-semibold">
+                          <span className="text-slate-800">{item.name}</span>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => {
+                                setItemForm(item);
+                                setShowItemModal(true);
+                              }} 
+                              className="text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-100"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (confirm("Are you sure you want to delete this item?")) {
+                                  fetch(`/api/v1/items/${item.id}`, { method: "DELETE" }).then(refreshData);
+                                }
+                              }} 
+                              className="text-rose-600 hover:text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-100"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* LOAN REMINDERS TAB */}
+          {activeTab === "loan-reminders" && (
+            <div className="space-y-4">
+              <button 
+                onClick={() => setActiveTab("loan-history")} 
+                className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-all"
+              >
+                ← BACK TO LOAN HISTORY
+              </button>
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+              <div className="flex justify-between items-center gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="font-bold text-lg text-slate-800">Automated Loan Reminders</h3>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Automated SMS warnings are sent in Telugu at 30 days left and 7 days left before maturity.</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    fetch("/api/v1/loans/trigger-reminders", { method: "POST" })
+                      .then(res => res.json())
+                      .then(data => {
+                        alert(`Reminder check completed! Sent ${data.count} reminders successfully.`);
+                        refreshData();
+                      });
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <Bell size={14} /> Scan & Send Reminders
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm divide-y divide-slate-100">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-500 font-bold">
+                      <th className="pb-3 text-xs uppercase tracking-wider">Loan ID</th>
+                      <th className="pb-3 text-xs uppercase tracking-wider">Customer Name</th>
+                      <th className="pb-3 text-xs uppercase tracking-wider">Phone</th>
+                      <th className="pb-3 text-xs uppercase tracking-wider">Amount</th>
+                      <th className="pb-3 text-xs uppercase tracking-wider">Release Date</th>
+                      <th className="pb-3 text-xs uppercase tracking-wider">Days Left</th>
+                      <th className="pb-3 text-xs uppercase tracking-wider text-center">30-Day Reminder</th>
+                      <th className="pb-3 text-xs uppercase tracking-wider text-center">7-Day Reminder</th>
+                      <th className="pb-3 text-xs uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                    {remindersStatus.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="py-6 text-center text-slate-400 text-xs font-semibold">
+                          No active loans found.
+                        </td>
+                      </tr>
+                    ) : (
+                      remindersStatus.map((r, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50">
+                          <td className="py-3.5 text-blue-600">#{r.loanId.substring(r.loanId.length - 6)}</td>
+                          <td className="py-3.5 text-slate-800">{r.customerName}</td>
+                          <td className="py-3.5 text-slate-500 text-xs">{r.phone}</td>
+                          <td className="py-3.5">₹{r.amount.toLocaleString('en-IN')}</td>
+                          <td className="py-3.5 text-xs">{formatDateToDDMMYYYY(r.endDate)}</td>
+                          <td className="py-3.5">
+                            {r.daysLeft <= 0 ? (
+                              <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                                Overdue ({Math.abs(r.daysLeft)}d ago)
+                              </span>
+                            ) : r.daysLeft <= 30 ? (
+                              <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                                {r.daysLeft} days left
+                              </span>
+                            ) : (
+                              <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                                {r.daysLeft} days left
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 text-center">
+                            {r.sent30Day ? (
+                              <span className="text-emerald-600 text-xs bg-emerald-50 px-2 py-0.5 border border-emerald-200 rounded-full">Sent</span>
+                            ) : (
+                              <span className="text-slate-400 text-xs bg-slate-50 px-2 py-0.5 border border-slate-200 rounded-full">Not Sent</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 text-center">
+                            {r.sent7Day ? (
+                              <span className="text-emerald-600 text-xs bg-emerald-50 px-2 py-0.5 border border-emerald-200 rounded-full">Sent</span>
+                            ) : (
+                              <span className="text-slate-400 text-xs bg-slate-50 px-2 py-0.5 border border-slate-200 rounded-full">Not Sent</span>
+                            )}
+                          </td>
+                          <td className="py-3.5">
+                            <button
+                              onClick={() => {
+                                const tplName = r.daysLeft <= 7 ? "Loan Warning (7 Days)" : "Loan Warning (30 Days)";
+                                const tpl = smsTemplates.find(t => t.name === tplName);
+                                const defaultMsg = tplName === "Loan Warning (7 Days)"
+                                  ? `ప్రియమైన ${r.customerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ గడువు ముగియడానికి ఇంకా 7 రోజులు మాత్రమే మిగిలి ఉంది (లోన్ నంబర్: ${r.loanId}). త్వరగా చెల్లించవలసిందిగా కోరుతున్నాము, లేనిచో అదనపు వడ్డీ వసూలు చేయబడుతుంది.`
+                                  : `ప్రియమైన ${r.customerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ గడువు ముగియడానికి ఇంకా 30 రోజులు మాత్రమే మిగిలి ఉంది (లోన్ నంబర్: ${r.loanId}). దయచేసి గమనించగలరు.`;
+                                const fallbackMessage = tpl 
+                                  ? tpl.content
+                                      .replace("{CustomerName}", r.customerName)
+                                      .replace("{InvoiceNumber}", r.loanId)
+                                  : defaultMsg;
+                                const msg = prompt(
+                                  "Enter Telugu reminder custom message or click OK to send standard warning Telugu SMS:",
+                                  fallbackMessage
+                                );
+                                if (msg === null) return;
+                                
+                                fetch("/api/v1/sms/send", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    id: "SMS-" + Date.now(),
+                                    customerId: r.customerId,
+                                    phone: r.phone,
+                                    message: msg,
+                                    priority: 1
+                                  })
+                                }).then(() => {
+                                  alert("Telugu SMS Reminder queued successfully!");
+                                  refreshData();
+                                });
+                              }}
+                              className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-2.5 py-1 text-slate-700"
+                            >
+                              Send SMS Now
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </main>
+
+      {/* LOAN SUMMARY DETAILS MODAL */}
+      {selectedLoanTxn && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-xl p-6 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
+            <div>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+                <h3 className="font-bold text-lg text-slate-800">Loan Summary Details</h3>
+                <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50">
+                <div><strong>Bill No:</strong> {selectedLoanTxn.id.substring(selectedLoanTxn.id.length - 6)}</div>
+                <div className="pt-0"><strong>Date:</strong> {formatDateToDDMMYYYY(selectedLoanTxn.date)}</div>
+                <div className="pt-2"><strong>Pledger Name:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</div>
+                <div className="pt-2"><strong>Phone No:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</div>
+                <div className="pt-2"><strong>Father's Name:</strong> {selectedLoanTxn.loanDetails?.father || "-"}</div>
+                <div className="pt-2"><strong>ID Proof:</strong> {selectedLoanTxn.loanDetails?.idProof || "-"}</div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mb-4">
+                <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Financial Details</h4>
+                <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
+                  <div>Principal: <strong className="text-slate-800">₹{selectedLoanTxn.amount.toLocaleString('en-IN')}</strong></div>
+                  <div>Interest Rate: <strong className="text-slate-800">{selectedLoanTxn.loanDetails?.interestRate} per month</strong></div>
+                  <div>Taken Date: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}</strong></div>
+                  <div>Period End: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.endDate)}</strong></div>
+                  
+                  {selectedLoanTxn.loanDetails?.interestPaidUpto && (
+                    <div className="col-span-2 text-slate-600 bg-slate-100 p-1.5 rounded font-bold">
+                      Last Cleared Upto: <span className="font-technical text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="text-rose-600">Interest Generated: <strong>₹{getLoanInterest(selectedLoanTxn).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
+                  <div className="text-blue-600">Total Due: <strong>₹{(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
+                </div>
+              </div>
+
+              <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Pledged Items</h4>
+              <table className="w-full text-left text-xs divide-y divide-slate-100 mb-4 border border-slate-100 rounded-lg">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-400 font-bold">
+                    <th className="p-2">Qty</th>
+                    <th className="p-2">Item Name</th>
+                    <th className="p-2">Yield</th>
+                    <th className="p-2">Gross</th>
+                    <th className="p-2">Net</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 font-semibold">
+                  {selectedLoanTxn.loanDetails?.items?.map((item: any, idx: number) => (
+                    <tr key={idx}>
+                      <td className="p-2">{item.qty}</td>
+                      <td className="p-2">{item.name}</td>
+                      <td className="p-2">{item.yield || "-"}</td>
+                      <td className="p-2">{item.grossWeight}g</td>
+                      <td className="p-2">{item.netWeight}g</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Interest Payment History Ledger */}
+              {selectedLoanTxn.loanDetails?.interestPayments?.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Interest Payment History</h4>
+                  <div className="max-h-28 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
+                    <table className="w-full text-left text-[10px] divide-y divide-slate-100">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold">
+                          <th className="p-2">Paid Date</th>
+                          <th className="p-2">Upto Date</th>
+                          <th className="p-2">Amount Paid</th>
+                          <th className="p-2">Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
+                        {selectedLoanTxn.loanDetails.interestPayments.map((pay: any, pIdx: number) => (
+                          <tr key={pIdx} className="hover:bg-slate-50/50">
+                            <td className="p-2 font-technical">{formatDateToDDMMYYYY(pay.date)}</td>
+                            <td className="p-2 font-technical">{formatDateToDDMMYYYY(pay.paidUpto)}</td>
+                            <td className="p-2 font-technical text-emerald-600">₹{pay.amountPaid.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                            <td className="p-2 text-slate-500">{pay.remarks}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Record Interest Payment Section */}
+              {selectedLoanTxn.status !== "Cleared" && (
+                <div className="border border-blue-100 rounded-lg p-3 bg-blue-50/30 mb-4">
+                  <h5 className="font-bold text-xs text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Clear Interest Till Date
+                  </h5>
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <label className="text-[9px] font-bold text-slate-500 block mb-1">Paid Upto Date</label>
+                      <input 
+                        type="date" 
+                        className="w-full border border-slate-200 rounded-lg p-1.5 text-xs outline-none bg-white font-semibold"
+                        value={interestPaidUptoDate}
+                        onChange={(e) => setInterestPaidUptoDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-[9px] font-bold text-slate-500 block mb-1">Calculated Interest</label>
+                      <div className="p-1.5 text-xs font-bold font-technical text-rose-600 bg-white border border-slate-200 rounded-lg">
+                        ₹{calculateInterestForRange(
+                          selectedLoanTxn.amount,
+                          parseFloat(selectedLoanTxn.loanDetails?.interestRate) || 0,
+                          selectedLoanTxn.loanDetails?.interestPaidUpto || selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date,
+                          interestPaidUptoDate
+                        ).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Remarks (e.g. Paid cash)..."
+                      className="flex-1 border border-slate-200 rounded-lg p-1.5 text-xs outline-none bg-white font-semibold"
+                      value={interestRemarks}
+                      onChange={(e) => setInterestRemarks(e.target.value)}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const amt = calculateInterestForRange(
+                          selectedLoanTxn.amount,
+                          parseFloat(selectedLoanTxn.loanDetails?.interestRate) || 0,
+                          selectedLoanTxn.loanDetails?.interestPaidUpto || selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date,
+                          interestPaidUptoDate
+                        );
+                        handlePayInterest(selectedLoanTxn.id, interestPaidUptoDate, amt, interestRemarks);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs"
+                    >
+                      Clear Interest
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+              <button onClick={() => setSelectedLoanTxn(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50">Close</button>
+              {selectedLoanTxn.status !== "Cleared" && (
+                <button 
+                  onClick={() => handleMarkAsCleared(selectedLoanTxn.id)} 
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1"
+                >
+                  <CheckCircle size={14} /> Mark as Cleared
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+         {/* ADD CUSTOM OFFLINE LOAN MODAL */}
+      {showOfflineLoanModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center p-4 overflow-y-auto items-start">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-4xl p-6 flex flex-col my-8">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+                <PlusCircle className="text-emerald-600" size={20} /> Add Custom Offline Loan
+              </h3>
+              <button type="button" onClick={() => setShowOfflineLoanModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            
+            <form onSubmit={handleSaveOfflineLoan} className="space-y-4 text-sm font-semibold">
+              {/* Customer Autocomplete Suggestion Bar */}
+              {(offlineLoanForm.custName.trim() || offlineLoanForm.phone.trim()) && customers.filter(c => 
+                (offlineLoanForm.custName && c.name.toLowerCase().includes(offlineLoanForm.custName.toLowerCase())) ||
+                (offlineLoanForm.phone && c.phone.includes(offlineLoanForm.phone))
+              ).length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2">
+                  <div className="text-[10px] text-blue-500 uppercase tracking-wider font-bold mb-1">Select Existing Customer to Autofill:</div>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                    {customers.filter(c => 
+                      (offlineLoanForm.custName && c.name.toLowerCase().includes(offlineLoanForm.custName.toLowerCase())) ||
+                      (offlineLoanForm.phone && c.phone.includes(offlineLoanForm.phone))
+                    ).slice(0, 5).map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setOfflineLoanForm(prev => ({
+                            ...prev,
+                            custName: c.name,
+                            phone: c.phone,
+                            father: c.father || "",
+                            idProof: c.idproof || "",
+                            address: c.address || "",
+                            mandal: c.mandal || ""
+                          }));
+                        }}
+                        className="bg-white hover:bg-blue-100 text-blue-800 border border-blue-200 rounded px-2 py-0.5 text-xs font-bold transition-all text-left"
+                      >
+                        {c.name} ({c.phone})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Custom Bill No / ID (Optional)</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. 1234 (Leave blank to auto-generate)"
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.billNo}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Customer Name *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Enter customer name..."
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.custName}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, custName: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Phone Number *</label>
+                  <input 
+                    type="tel" 
+                    required 
+                    placeholder="Enter phone number..."
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.phone}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Father's/Husband's Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="Father's/Husband's Name..."
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.father}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, father: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Ration/Aadhar ID Proof</label>
+                  <input 
+                    type="text" 
+                    placeholder="ID Proof..."
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.idProof}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, idProof: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Mandal</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter mandal..."
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.mandal}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, mandal: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group col-span-2">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Address</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter address..."
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.address}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, address: e.target.value }))}
+                  />
+                </div>
+
+                <div className="flex items-center gap-6 py-2 border-b border-slate-100 col-span-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metal Type:</label>
+                  <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                    <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Gold"} onChange={() => setOfflineLoanMetalType("Gold")} /> Gold
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                    <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Silver"} onChange={() => setOfflineLoanMetalType("Silver")} /> Silver
+                  </label>
+                </div>
+
+                {/* Structured Pledged Items Checklist */}
+                <div className="space-y-3 col-span-2">
+                  <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider">Pledged Items Checklist</h4>
+                  {offlineLoanPledgedItems.map((item, idx) => (
+                    <div key={item.id} className="grid grid-cols-12 gap-2 md:gap-3 items-end w-full border-b border-slate-100 pb-3 md:pb-0 md:border-none">
+                      <div className="form-group relative col-span-12 md:col-span-3">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Item Name</label>
+                        <input 
+                          type="text" 
+                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white bg-white font-semibold" 
+                          required
+                          placeholder="Enter item name..."
+                          value={item.name}
+                          onChange={(e) => updateOfflineLoanItem(item.id, "name", e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group col-span-3 md:col-span-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Qty</label>
+                        <input 
+                          type="number" 
+                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white bg-white font-semibold" 
+                          required
+                          min="1"
+                          value={item.qty || 1}
+                          onChange={(e) => updateOfflineLoanItem(item.id, "qty", e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group col-span-4 md:col-span-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Yield/KDM</label>
+                        <input 
+                          type="text" 
+                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white bg-white font-semibold" 
+                          placeholder="e.g. 916"
+                          value={item.yield}
+                          onChange={(e) => updateOfflineLoanItem(item.id, "yield", e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group col-span-5 md:col-span-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Gross (g)</label>
+                        <input 
+                          type="number" 
+                          step="any"
+                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white bg-white font-semibold" 
+                          required
+                          placeholder="0.00"
+                          value={item.grossWeight}
+                          onChange={(e) => updateOfflineLoanItem(item.id, "grossWeight", e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group col-span-6 md:col-span-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Net (g)</label>
+                        <input 
+                          type="number" 
+                          step="any"
+                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white bg-white font-semibold" 
+                          required
+                          placeholder="0.00"
+                          value={item.netWeight}
+                          onChange={(e) => updateOfflineLoanItem(item.id, "netWeight", e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group col-span-6 md:col-span-3">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Remarks</label>
+                        <input 
+                          type="text" 
+                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white bg-white font-semibold" 
+                          placeholder="Remarks..."
+                          value={item.remarks}
+                          onChange={(e) => updateOfflineLoanItem(item.id, "remarks", e.target.value)}
+                        />
+                      </div>
+                      <div className="col-span-12 md:col-span-1 pb-1 flex justify-end md:justify-center">
+                        <button 
+                          type="button" 
+                          onClick={() => removeOfflineLoanRow(item.id)}
+                          className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-all"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center pt-2 col-span-2">
+                  <button type="button" onClick={addOfflineLoanRow} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-50 bg-white">Add Item</button>
+                </div>
+
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Loan Finance Amount * (₹)</label>
+                  <input 
+                    type="number" 
+                    required 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-rose-600 animate-pulse"
+                    value={offlineLoanForm.amount}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, amount: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Interest Rate (Auto per month)</label>
+                  <input 
+                    type="text" 
+                    readOnly
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-slate-100 font-bold text-blue-600 cursor-not-allowed"
+                    value={offlineLoanForm.interestRate}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Taken Date *</label>
+                  <input 
+                    type="date" 
+                    required 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.takenDate}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, takenDate: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">To be released Date *</label>
+                  <input 
+                    type="date" 
+                    readOnly
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-slate-100 font-bold text-slate-700 cursor-not-allowed"
+                    value={offlineLoanForm.endDate}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Loan Status</label>
+                  <select 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white cursor-pointer font-semibold"
+                    value={offlineLoanForm.status}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, status: e.target.value }))}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Cleared">Cleared</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Interest Paid Upto Date</label>
+                  <input 
+                    type="date" 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.interestPaidUpto}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestPaidUpto: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setShowOfflineLoanModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-lg text-slate-500 font-bold hover:bg-slate-50 bg-white"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold"
+                >
+                  Save Loan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BULK IMPORT OFFLINE LOANS MODAL */}
+      {showBulkImportModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-2xl p-6 flex flex-col my-8">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <h3 className="font-bold text-lg text-slate-800">📤 Bulk Import Offline Loans</h3>
+              <button type="button" onClick={() => setShowBulkImportModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 font-medium">
+                <div className="font-bold text-slate-800 mb-1">CSV Field Header Order (Make sure the first line matches this header exactly):</div>
+                <code className="block bg-slate-800 text-slate-200 p-2 rounded select-all font-mono font-bold leading-normal break-all">
+                  BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal
+                </code>
+                <div className="mt-2 text-[10px] text-slate-500 leading-relaxed">
+                  * Note: Use semicolons (<code className="font-mono bg-slate-200 p-0.5 rounded font-bold">;</code>) to separate items inside the <code className="font-bold">PledgedItems</code> field to avoid breaking the CSV columns. Dates must be formatted as <code className="font-bold">YYYY-MM-DD</code>.
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Paste CSV Data</label>
+                <textarea 
+                  rows={8}
+                  placeholder={`BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto\n101,Rajesh,9876543210,15000,1.5%,2025-01-10,2026-01-10,Gold Ring;Gold Chain,Pending,2025-04-10`}
+                  className="w-full border border-slate-200 rounded-lg p-2.5 text-xs outline-none bg-white font-mono font-bold"
+                  value={bulkCsvText}
+                  onChange={(e) => setBulkCsvText(e.target.value)}
+                />
+              </div>
+
+              {bulkImportProgress && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                  <div className="flex justify-between items-center mb-1 text-xs font-bold text-blue-700">
+                    <span>Importing Rows...</span>
+                    <span>{bulkImportProgress.current} / {bulkImportProgress.total}</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden mb-2">
+                    <div 
+                      className="bg-blue-600 h-2.5 transition-all duration-300" 
+                      style={{ width: `${(bulkImportProgress.current / bulkImportProgress.total) * 100}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-[10px] font-semibold text-slate-500 font-mono truncate">{bulkImportProgress.status}</div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
+                <button 
+                  type="button" 
+                  disabled={bulkImportProgress !== null}
+                  onClick={() => setShowBulkImportModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-lg text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  disabled={bulkImportProgress !== null || !bulkCsvText.trim()}
+                  onClick={handleBulkImport}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <Upload size={14} /> Start Import
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD / EDIT CUSTOMER MODAL */}
+      {showCustomerModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleSaveCustomer} className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-lg p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+                <h3 className="font-bold text-lg text-slate-800">{customerForm.id ? "Edit Customer Profile" : "Register New Customer"}</h3>
+                <button type="button" onClick={() => setShowCustomerModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm font-semibold">
+                <div className="form-group col-span-2">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Customer Name *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    value={customerForm.name}
+                    onChange={(e) => setCustomerForm(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Phone Number *</label>
+                  <input 
+                    type="tel" 
+                    required 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    value={customerForm.phone}
+                    onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Father's / Husband's Name</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    value={customerForm.father}
+                    onChange={(e) => setCustomerForm(prev => ({ ...prev, father: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group col-span-2">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Full Address *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    value={customerForm.address}
+                    onChange={(e) => setCustomerForm(prev => ({ ...prev, address: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Ration / Aadhar ID Proof</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    value={customerForm.idproof}
+                    onChange={(e) => setCustomerForm(prev => ({ ...prev, idproof: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Mandal</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    value={customerForm.mandal}
+                    onChange={(e) => setCustomerForm(prev => ({ ...prev, mandal: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+              <button type="button" onClick={() => setShowCustomerModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50">Cancel</button>
+              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs">Save Profile</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ADD/EDIT ITEM MODAL */}
+      {showItemModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <h3 className="font-bold text-lg text-slate-800">{itemForm.id ? "Edit Item Name" : "Add New Item to Catalog"}</h3>
+              <button type="button" onClick={() => setShowItemModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!itemForm.name.trim()) return;
+              fetch("/api/v1/items", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id: itemForm.id || undefined,
+                  name: itemForm.name.trim(),
+                  category: itemForm.category
+                })
+              }).then(() => {
+                setShowItemModal(false);
+                refreshData();
+              });
+            }} className="space-y-4 text-sm font-semibold">
+              <div className="form-group">
+                <label className="text-xs font-bold text-slate-400 block mb-1">Item Name *</label>
+                <input 
+                  type="text" 
+                  required 
+                  className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500" 
+                  value={itemForm.name}
+                  onChange={(e) => setItemForm(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="form-group">
+                <label className="text-xs font-bold text-slate-400 block mb-1">Category *</label>
+                <select 
+                  className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500"
+                  value={itemForm.category}
+                  onChange={(e) => setItemForm(prev => ({ ...prev, category: e.target.value }))}
+                >
+                  <option value="Jewelry">Jewelry</option>
+                  <option value="Furniture">Furniture</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+                <button type="button" onClick={() => setShowItemModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50">Cancel</button>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs">Save Item</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* HIDDEN PRINTABLE TICKETS */}
+      {activePrintTicket && (
+        <div className={`hidden print:block fixed top-0 left-0 bg-white text-black p-0 m-0 z-[9999] ${
+          activePrintTicket.variant === "purchase" ? "w-[105mm] h-[148mm]" : "w-full h-full"
+        }`}>
+          
+          {/* Purchase Invoice */}
+          {activePrintTicket.variant === "purchase" && (
+            <div className="w-full h-full flex flex-col justify-between p-4 border border-blue-955 text-xs leading-normal text-blue-950 bg-white font-sans box-border relative">
+              <div>
+                {/* Header row 1: Proprietor and phone */}
+                <div className="flex justify-between items-center text-[9px] font-bold text-blue-950 pb-1 border-b border-slate-200">
+                  <div className="flex items-center">
+                    <svg className="w-3.5 h-3.5 mr-1 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path></svg>
+                    P. ప్రవీణ్ కుమార్
+                  </div>
+                  <div className="flex items-center">
+                    <svg className="w-3.5 h-3.5 mr-1 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.3 11.3 0 005.455 5.455l.773-1.548a1 1 0 011.06-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path></svg>
+                    సెల్ : 99636 53730
+                  </div>
+                </div>
+
+                {/* Header Content: Sai Baba Portrait + Title Block */}
+                <div className="flex items-center gap-3 mt-2 mb-1">
+                  {/* Sai Baba Portrait */}
+                  <div className="w-16 h-16 rounded-full border border-slate-350 overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-50">
+                    <img src="/saibaba.png" alt="Shirdi Sai Baba" className="w-full h-full object-cover" />
+                  </div>
+
+                  {/* Title details */}
+                  <div className="flex-1 flex flex-col items-center">
+                    {/* Estimation center title with ornaments */}
+                    <div className="flex flex-col items-center my-0.5">
+                      <svg className="w-16 h-1 text-[#b89550]" fill="currentColor" viewBox="0 0 100 10"><path d="M10 5h80M50 0l5 5-5 5-5-5z"></path></svg>
+                      <div className="text-[11px] font-extrabold tracking-widest text-blue-950">ESTIMATION</div>
+                      <svg className="w-16 h-1 text-[#b89550]" fill="currentColor" viewBox="0 0 100 10"><path d="M10 5h80M50 0l5 5-5 5-5-5z"></path></svg>
+                    </div>
+
+                    {/* Shop Name */}
+                    <div className="text-center font-black text-[14.5px] text-blue-950 tracking-wide">
+                      సాయి బాలాజీ జ్యుయలరీ & ఫర్నిచర్
+                    </div>
+
+                    {/* Address */}
+                    <div className="flex justify-center items-center text-[8px] font-bold text-blue-900 mt-0.5">
+                      <svg className="w-2.5 h-2.5 mr-0.5 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd"></path></svg>
+                      గాంధీ బొమ్మ సెంటర్, శ్రీ కృష్ణ కాంప్లెక్స్, బుద్ధవరం బస్టాఫ్ ఎదురుగా, గన్నవరం
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gold horizontal border */}
+                <div className="border-t border-[#b89550] my-2"></div>
+
+                {/* Customer Details Box */}
+                <div className="border border-slate-200 rounded-lg p-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] bg-slate-50/50 mb-3">
+                  <div className="flex flex-col justify-center">
+                    <span className="text-slate-500 font-bold text-[8.5px] uppercase tracking-wider flex items-center">
+                      <svg className="w-3 h-3 mr-1 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path></svg>
+                      Customer Name :
+                    </span>
+                    <span className="font-extrabold text-[12px] text-blue-950 mt-0.5">Sri: {activePrintTicket.customer.name}</span>
+                  </div>
+                  <div className="flex flex-col justify-center border-l border-slate-200 pl-4">
+                    <span className="text-slate-500 font-bold text-[8.5px] uppercase tracking-wider flex items-center">
+                      <svg className="w-3 h-3 mr-1 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clipRule="evenodd"></path></svg>
+                      Bill No. :
+                    </span>
+                    <span className="font-black text-[12px] text-blue-950 mt-0.5">#{activePrintTicket.txn.id.substring(activePrintTicket.txn.id.length - 6)}</span>
+                  </div>
+                  <div className="flex flex-col justify-center border-t border-slate-100 pt-2">
+                    <span className="text-slate-500 font-bold text-[8.5px] uppercase tracking-wider flex items-center">
+                      <svg className="w-3 h-3 mr-1 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.3 11.3 0 005.455 5.455l.773-1.548a1 1 0 011.06-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path></svg>
+                      Phone :
+                    </span>
+                    <span className="font-bold text-blue-950 mt-0.5">{activePrintTicket.customer.phone}</span>
+                  </div>
+                  <div className="flex flex-col justify-center border-l border-slate-200 pl-4 border-t border-slate-100 pt-2">
+                    <span className="text-slate-500 font-bold text-[8.5px] uppercase tracking-wider flex items-center">
+                      <svg className="w-3 h-3 mr-1 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"></path></svg>
+                      Date :
+                    </span>
+                    <span className="font-bold text-blue-950 mt-0.5">{formatDateToDDMMYYYY(activePrintTicket.txn.date)}</span>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <table className="w-full text-left border border-slate-300 border-collapse text-[10.5px]">
+                  <thead>
+                    <tr className="bg-[#002f5d] text-white text-center font-bold">
+                      <th className="p-2 border-r border-[#002f5d] w-12 text-center">క్ర.సం.<br/><span className="text-[7.5px] font-normal uppercase">No.</span></th>
+                      <th className="p-2 border-r border-[#002f5d] text-left">వివరం (Particulars)</th>
+                      {activePrintTicket.txn.category === "Jewelry" ? (
+                        <>
+                          <th className="p-2 border-r border-[#002f5d] w-14">గ్రా॥<br/><span className="text-[7.5px] font-normal uppercase">Grams</span></th>
+                          <th className="p-2 border-r border-[#002f5d] w-14">మి. గ్రా॥<br/><span className="text-[7.5px] font-normal uppercase">Mg</span></th>
+                        </>
+                      ) : (
+                        <th className="p-2 border-r border-[#002f5d] w-20">పరిమాణం<br/><span className="text-[7.5px] font-normal uppercase">(Qty)</span></th>
+                      )}
+                      <th className="p-2 w-28 text-right">మొత్తం (₹)<br/><span className="text-[7.5px] font-normal uppercase">Amount</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activePrintTicket.txn.items.map((item: any, idx: number) => (
+                      <tr key={idx} className="border-b border-slate-200 text-center font-semibold text-blue-950">
+                        <td className="p-2 border-r border-slate-200">{idx + 1}</td>
+                        <td className="p-2 border-r border-slate-200 text-left font-bold">{item.particulars}</td>
+                        {activePrintTicket.txn.category === "Jewelry" ? (
+                          <>
+                            <td className="p-2 border-r border-slate-200">{item.grams || "-"}</td>
+                            <td className="p-2 border-r border-slate-200">{item.mg || "-"}</td>
+                          </>
+                        ) : (
+                          <td className="p-2 border-r border-slate-200">{item.qty}</td>
+                        )}
+                        <td className="p-2 text-right font-bold">{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      </tr>
+                    ))}
+                    {/* Empty padding rows to lock notebook design size */}
+                    {Array.from({ length: Math.max(0, 4 - activePrintTicket.txn.items.length) }).map((_, idx) => (
+                      <tr key={`empty-${idx}`} className="border-b border-slate-100 h-8">
+                        <td className="p-2 border-r border-slate-200"></td>
+                        <td className="p-2 border-r border-slate-200"></td>
+                        {activePrintTicket.txn.category === "Jewelry" ? (
+                          <>
+                            <td className="p-2 border-r border-slate-200"></td>
+                            <td className="p-2 border-r border-slate-200"></td>
+                          </>
+                        ) : (
+                          <td className="p-2 border-r border-slate-200"></td>
+                        )}
+                        <td className="p-2"></td>
+                      </tr>
+                    ))}
+                    {/* Total Row */}
+                    <tr className="font-extrabold border-t border-slate-300">
+                      <td colSpan={activePrintTicket.txn.category === "Jewelry" ? 4 : 3} className="p-2 text-right text-[#002f5d] tracking-wide text-xs uppercase bg-slate-100">TOTAL</td>
+                      <td className="p-2 text-right bg-[#002f5d] text-white text-[12px] font-black">₹{activePrintTicket.txn.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Bottom Notice & Signature Block */}
+              <div className="space-y-3">
+                {/* Gold border notice box */}
+                <div className="border border-[#b89550] rounded-lg p-2 bg-[#fdfaf2] text-center text-[9px] font-extrabold text-blue-950 flex items-center justify-center gap-1.5 shadow-sm">
+                  <svg className="w-4 h-4 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"></path></svg>
+                  {activePrintTicket.txn.category === "Jewelry" 
+                    ? "అన్ని రకాల బంగారు ఆభరణములు ఆర్డర్లపై తగిన ధరలు చేయబడును."
+                    : "అన్ని రకాల ఫర్నిచర్ ఆర్డర్లపై తగ్గిన ధరలు చేయబడును."}
+                </div>
+
+                {/* Footer floral line */}
+                <div className="flex items-center justify-center text-[10px] text-[#b89550] gap-1 font-bold">
+                  <span>✿</span>
+                  <span className="border-t border-dashed border-[#b89550] w-24"></span>
+                  <span className="text-blue-950 font-black px-1 text-[11px]">ధన్యవాదాలు!</span>
+                  <span className="border-t border-dashed border-[#b89550] w-24"></span>
+                  <span>✿</span>
+                </div>
+
+                <div className="text-center font-bold text-[9px] text-slate-500 uppercase tracking-widest pt-1">
+                  సంతకం
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loan Pawn Slips */}
+          {activePrintTicket.variant === "loan" && (
+            <div className="space-y-6">
+              {/* Green/Yellowish Slip - Shop Copy (A5 Portrait) */}
+              <div className="w-[148mm] h-[210mm] flex flex-col justify-between p-5 border border-blue-900 bg-yellow-50/10 text-[10px] leading-relaxed text-blue-950 font-sans box-border page-break-after">
+                <div>
+                  {/* Header */}
+                  <div className="text-center border-b border-blue-900 pb-2">
+                    <h2 className="text-[18px] font-black text-blue-900 tracking-wider">ప్రవీణ్ కుమార్ ఫైనాన్స్</h2>
+                    <div className="flex justify-between items-center text-[10px] font-bold mt-1 px-4">
+                      <div>ప్రొ॥ పల్లపోతు ప్రవీణ్ కుమార్</div>
+                      <div>పాన్ బ్రోకర్ లైసెన్సు నెం. 13/16</div>
+                    </div>
+                    <div className="text-[10px] font-bold text-center mt-0.5">
+                      గన్నవరం - 521101. (కృష్ణా జిల్లా) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; సెక్షన్ 7 &amp; రూలు 8
+                    </div>
+                  </div>
+
+                  {/* Fields */}
+                  <div className="mt-3 space-y-1.5">
+                    <div className="flex justify-between font-bold">
+                      <div>వరుస నెం: <span className="underline ml-1">#{activePrintTicket.txn.id.substring(activePrintTicket.txn.id.length - 6)}</span></div>
+                      <div>తేది: <span className="underline">{formatDateToDDMMYYYY(activePrintTicket.txn.loanDetails.takenDate)}</span></div>
+                    </div>
+
+                    <div className="border-b border-dotted border-blue-400 pb-0.5">
+                      తాకట్టు పెట్టిన వారి పేరు: <span className="font-extrabold ml-1">{activePrintTicket.customer.name}</span>
+                    </div>
+
+                    <div className="border-b border-dotted border-blue-400 pb-0.5">
+                      తండ్రి / భర్త: <span className="font-extrabold ml-1">{activePrintTicket.txn.loanDetails.father}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="border-b border-dotted border-blue-400 pb-0.5">
+                        రేషన్ / ఆధార్ / ఓటర్ కార్డ్ నెం: <span className="font-bold ml-1">{activePrintTicket.txn.loanDetails.idProof}</span>
+                      </div>
+                      <div className="border-b border-dotted border-blue-400 pb-0.5">
+                        ఫోన్: <span className="font-bold ml-1">{activePrintTicket.customer.phone}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="border-b border-dotted border-blue-400 pb-0.5">
+                        అడ్రసు: <span className="font-semibold ml-1">{activePrintTicket.customer.address}</span>
+                      </div>
+                      <div className="border-b border-dotted border-blue-400 pb-0.5">
+                        పోస్టు: <span className="font-semibold ml-1">{activePrintTicket.customer.mandal || "Gannavaram"}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="border-b border-dotted border-blue-400 pb-0.5">
+                        మండలం: <span className="font-semibold ml-1">{activePrintTicket.customer.mandal || "Gannavaram"}</span>
+                      </div>
+                      <div className="border-b border-dotted border-blue-400 pb-0.5">
+                        జిల్లా: <span className="font-semibold ml-1">కృష్ణా</span>
+                      </div>
+                      <div className="border-b border-dotted border-blue-400 pb-0.5">
+                        పేట: <span className="font-semibold ml-1">Bazar</span>
+                      </div>
+                    </div>
+
+                    <div className="text-center font-bold text-[11px] py-1 text-blue-900">
+                      వ్యాపారం / కుటుంబ ఖర్చుల నిమిత్తం తాకట్టు పై
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1 border-b border-dotted border-blue-400 pb-0.5">
+                        తీసుకున్న మొత్తం: <span className="font-extrabold ml-1">₹{activePrintTicket.txn.amount.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="w-40 border-b border-dotted border-blue-400 text-right pb-0.5">
+                        రూ: <span className="font-extrabold">{activePrintTicket.txn.amount}/-</span>
+                      </div>
+                    </div>
+
+                    <div className="border-b border-dotted border-blue-400 pb-0.5">
+                      అక్షరాల రూ: <span className="font-semibold ml-1">Rupees {activePrintTicket.txn.amount.toLocaleString('en-IN')} Only</span>
+                    </div>
+
+                    <div className="flex justify-between font-bold text-blue-900 text-[10px]">
+                      <div>వడ్డీరేటు : {activePrintTicket.txn.loanDetails.interestRate} చట్టప్రకారం</div>
+                      <div>: తాకట్టు పెట్టిన వస్తువు వివరం</div>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <table className="w-full text-left border border-blue-950 border-collapse text-[9px] mt-2">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-blue-950 font-bold text-center">
+                        <th className="p-1 border-r border-blue-950 w-10">శాలీల సంఖ్య</th>
+                        <th className="p-1 border-r border-blue-950 text-left">శాలీల పేర్లు</th>
+                        <th className="p-1 border-r border-blue-950 w-12">దిగుబడి</th>
+                        <th className="p-1 border-r border-blue-950 w-16">నిలువ తూకం G.M.G.</th>
+                        <th className="p-1 border-r border-blue-950 w-16">నికరం తూకం G.M.G.</th>
+                        <th className="p-1 border-r border-blue-950 w-16">విలువ రూ.</th>
+                        <th className="p-1">రిమార్కులు</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activePrintTicket.txn.loanDetails.items.map((item: any, idx: number) => (
+                        <tr key={idx} className="border-b border-blue-200 text-center">
+                          <td className="p-1 border-r border-blue-950 font-semibold">{item.qty}</td>
+                          <td className="p-1 border-r border-blue-950 text-left font-semibold">{item.name}</td>
+                          <td className="p-1 border-r border-blue-950 font-semibold">{item.yield || "-"}</td>
+                          <td className="p-1 border-r border-blue-950 font-semibold">{item.grossWeight}g</td>
+                          <td className="p-1 border-r border-blue-950 font-semibold">{item.netWeight}g</td>
+                          <td className="p-1 border-r border-blue-950 font-semibold">₹{item.value?.toLocaleString('en-IN') || "-"}</td>
+                          <td className="p-1 font-semibold">{item.remarks || "-"}</td>
+                        </tr>
+                      ))}
+                      {/* Fill empty space */}
+                      {Array.from({ length: Math.max(0, 4 - activePrintTicket.txn.loanDetails.items.length) }).map((_, idx) => (
+                        <tr key={`empty-loan-${idx}`} className="border-b border-blue-200 h-5">
+                          <td className="p-1 border-r border-blue-950"></td>
+                          <td className="p-1 border-r border-blue-950"></td>
+                          <td className="p-1 border-r border-blue-950"></td>
+                          <td className="p-1 border-r border-blue-950"></td>
+                          <td className="p-1 border-r border-blue-950"></td>
+                          <td className="p-1 border-r border-blue-950"></td>
+                          <td className="p-1"></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4 pt-2 border-t border-blue-300">
+                  <div className="flex justify-between text-[8px] font-bold text-blue-900 mb-4">
+                    <div>తాకట్టు పెట్టిన వస్తువులు విడిపించుకొనుటకు నిర్ణీత కాలము : 1 Year</div>
+                    <div>ఈ ఫారం వెనుక నున్న షరతులు చదువుకొని/ చదివించుకొని అంగీకరించు కొనడమైనది.</div>
+                  </div>
+
+                  <div className="flex justify-between items-end">
+                    <div className="border-2 border-double border-blue-900 p-2 text-center font-black text-sm text-blue-900 bg-slate-50 w-36">
+                      రూ. {activePrintTicket.txn.amount.toLocaleString('en-IN')}/-
+                    </div>
+                    <div className="text-right pb-1">
+                      <p className="font-bold text-[9px] border-t border-blue-300 pt-1 w-48 text-center">తాకట్టుపెట్టిన వారి సంతకం లేక వేలిముద్ర</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pink Slip - Customer Copy (A6 Landscape) */}
+              <div className="w-[148mm] h-[105mm] flex flex-col justify-between p-4 border border-pink-500 bg-pink-50/10 text-[9.5px] leading-tight text-pink-950 font-sans box-border">
+                <div>
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-2 border-b border-pink-400 pb-1">
+                    <div className="text-[8px] font-bold">ప్రొ॥ పల్లపోతు ప్రవీణ్ కుమార్</div>
+                    <div className="text-center flex-1">
+                      <h2 className="text-[15px] font-black text-pink-800">ప్రవీణ్ కుమార్ ఫైనాన్స్</h2>
+                      <div className="text-[9px] font-extrabold">గన్నవరం</div>
+                    </div>
+                    <div className="text-[8px] font-bold text-right">సెల్. 9963653730</div>
+                  </div>
+
+                  {/* Info fields */}
+                  <div className="space-y-1.5 font-semibold">
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1 border-b border-dotted border-pink-400">
+                        బి.నెం: <span className="font-bold ml-1">#{activePrintTicket.txn.id.substring(activePrintTicket.txn.id.length - 6)}</span>
+                      </div>
+                      <div className="w-36 text-right border-b border-dotted border-pink-400">
+                        తేది: <span className="font-bold">{formatDateToDDMMYYYY(activePrintTicket.txn.loanDetails.takenDate)}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-right border-b border-dotted border-pink-400">
+                      తూకం: <span className="font-bold">{activePrintTicket.txn.loanDetails.items.reduce((s: number, i: any) => s + (i.grossWeight * i.qty), 0).toFixed(2)} g</span>
+                    </div>
+
+                    <div className="border-b border-dotted border-pink-400 pb-0.5">
+                      ఆసామి పేరు: <span className="font-extrabold text-pink-900 ml-1">{activePrintTicket.customer.name}</span>
+                    </div>
+
+                    <div className="border-b border-dotted border-pink-400 pb-0.5">
+                      వస్తువు పేరు: <span className="font-extrabold text-pink-900 ml-1">{activePrintTicket.txn.loanDetails.items.map((i: any) => `${i.qty}x ${i.name}`).join(', ')}</span>
+                    </div>
+
+                    <div className="border-b border-dotted border-pink-400 pb-0.5">
+                      గ్రామము: <span className="font-semibold ml-1">{activePrintTicket.customer.address}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-1">
+                      <div className="flex-1 border-b border-dotted border-pink-400">
+                        రూ: <span className="font-black text-pink-800 text-[11px] ml-1">{activePrintTicket.txn.amount.toLocaleString('en-IN')}/-</span>
+                      </div>
+                      <div className="w-48 text-right border-b border-dotted border-pink-400">
+                        గడువు పూర్తి తేది: <span className="font-bold">{formatDateToDDMMYYYY(activePrintTicket.txn.loanDetails.endDate)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end pt-2 border-t border-pink-300">
+                  <p className="font-bold text-[9px] border-t border-pink-400 pt-1 w-44 text-center">వస్తువు విడిపించిన వారి సంతకం</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-1 z-40 md:hidden print:hidden">
+        <button 
+          onClick={() => setActiveTab("dashboard")} 
+          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "dashboard" ? "text-blue-500" : "text-slate-400"}`}
+        >
+          <LayoutDashboard size={18} />
+          <span className="mt-0.5">Home</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab("billing")} 
+          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "billing" ? "text-blue-500" : "text-slate-400"}`}
+        >
+          <PlusCircle size={18} />
+          <span className="mt-0.5">Billing</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab("customers")} 
+          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "customers" ? "text-blue-500" : "text-slate-400"}`}
+        >
+          <Users size={18} />
+          <span className="mt-0.5">Customers</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab("loan-history")} 
+          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "loan-history" ? "text-blue-500" : "text-slate-400"}`}
+        >
+          <History size={18} />
+          <span className="mt-0.5">Loans</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab("sms-queue")} 
+          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "sms-queue" ? "text-blue-500" : "text-slate-400"}`}
+        >
+          <MessageSquare size={18} />
+          <span className="mt-0.5">SMS</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab("settings")} 
+          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "settings" ? "text-blue-500" : "text-slate-400"}`}
+        >
+          <Settings size={18} />
+          <span className="mt-0.5">Settings</span>
+        </button>
+      </nav>
+
+    </div>
+  );
+}
