@@ -23,6 +23,7 @@ class Transaction(Base):
     date = Column(String, nullable=False)
     itemsJson = Column(Text, nullable=False) # JSON encoded items list
     status = Column(String, default="Pending") # Pending or Cleared
+    clearedDate = Column(String, nullable=True)
 
 
 class SMSQueue(Base):

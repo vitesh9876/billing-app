@@ -46,7 +46,8 @@ class TransactionRepository:
                 amount=t.amount,
                 category=t.category,
                 date=t.date,
-                status=t.status
+                status=t.status,
+                clearedDate=t.clearedDate
             )
             # Unpack items from JSON
             try:
@@ -95,7 +96,8 @@ class TransactionRepository:
                 category=txn_data.get("category", "Jewelry"),
                 date=txn_data["date"],
                 itemsJson=items_json,
-                status=txn_data.get("status", "Pending" if txn_data["type"] == "loan" else "Cleared")
+                status=txn_data.get("status", "Pending" if txn_data["type"] == "loan" else "Cleared"),
+                clearedDate=txn_data.get("clearedDate")
             )
             db.add(t)
         else:
@@ -106,6 +108,8 @@ class TransactionRepository:
             t.itemsJson = items_json
             if "status" in txn_data:
                 t.status = txn_data["status"]
+            if "clearedDate" in txn_data:
+                t.clearedDate = txn_data["clearedDate"]
         db.commit()
         db.refresh(t)
         return t

@@ -174,7 +174,8 @@ export default function Dashboard() {
     takenDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
     status: "Pending",
-    interestPaidUpto: ""
+    interestPaidUpto: "",
+    clearedDate: ""
   });
 
   // Bulk Import States
@@ -943,31 +944,61 @@ export default function Dashboard() {
       return;
     }
 
-    const payload = {
-      id: "SMS-" + Date.now(),
-      customerId: selectedSmsCustomer ? selectedSmsCustomer.id : "unregistered",
-      phone: smsCustomerPhone,
-      message: getSMSPreviewText(),
-      priority: 1,
-      createdBy: "Admin"
+    // Auto-save customer if they do not exist
+    const saveAndSend = async () => {
+      let custId = selectedSmsCustomer?.id;
+      if (!custId && smsCustomerPhone.trim()) {
+        const existing = customers.find(c => c.phone === smsCustomerPhone.trim());
+        if (existing) {
+          custId = existing.id;
+        } else {
+          custId = "CUST-" + Date.now();
+          const newCustPayload = {
+            id: custId,
+            name: smsCustomerName.trim() || "SMS Customer",
+            phone: smsCustomerPhone.trim(),
+            address: "-",
+            father: "-",
+            idproof: "-",
+            mandal: "-"
+          };
+          await fetch("/api/v1/customers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newCustPayload)
+          });
+        }
+      }
+
+      const payload = {
+        id: "SMS-" + Date.now(),
+        customerId: custId || "unregistered",
+        phone: smsCustomerPhone,
+        message: getSMSPreviewText(),
+        priority: 1,
+        createdBy: "Admin"
+      };
+
+      fetch("/api/v1/sms/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(() => {
+        alert("SMS queued successfully!");
+        setSmsCustomerName("");
+        setSmsCustomerPhone("");
+        setSelectedSmsCustomer(null);
+        setSmsMessageText("");
+        setSelectedTemplateName("");
+        setActiveTab("sms");
+        setSmsSubTab("queue");
+        refreshData();
+      });
     };
 
-    fetch("/api/v1/sms/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(() => {
-      alert("SMS queued successfully!");
-      setSmsCustomerName("");
-      setSmsCustomerPhone("");
-      setSelectedSmsCustomer(null);
-      setSmsMessageText("");
-      setSelectedTemplateName("");
-      setActiveTab("sms");
-      setSmsSubTab("queue");
-    });
+    saveAndSend();
   };
 
   const handleSaveTemplate = (e: React.FormEvent) => {
@@ -1072,6 +1103,7 @@ export default function Dashboard() {
         category: "Jewelry", // Default
         date: form.takenDate,
         status: form.status,
+        clearedDate: form.status === "Cleared" ? (form.clearedDate || new Date().toISOString().split('T')[0]) : null,
         loanDetails: {
           father: form.father.trim(),
           idProof: form.idProof.trim(),
@@ -1081,6 +1113,7 @@ export default function Dashboard() {
           interestRate: form.interestRate,
           takenDate: form.takenDate,
           endDate: form.endDate,
+          clearedDate: form.status === "Cleared" ? (form.clearedDate || new Date().toISOString().split('T')[0]) : null,
           interestPaidUpto: form.interestPaidUpto || form.takenDate,
           interestPayments: interestPayments,
           items: offlineLoanPledgedItems.map((item, idx) => ({
@@ -1120,7 +1153,8 @@ export default function Dashboard() {
         takenDate: new Date().toISOString().split('T')[0],
         endDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
         status: "Pending",
-        interestPaidUpto: ""
+        interestPaidUpto: "",
+        clearedDate: ""
       });
       refreshData();
     } catch (err: any) {
@@ -1168,7 +1202,7 @@ export default function Dashboard() {
       const status = getValue("status", "Pending");
       const interestPaidUpto = getValue("interestpaidupto", takenDate);
       
-      if (!custName || !phone || !amount) {
+      if (!custName || !amount) {
         errorCount++;
         continue;
       }
@@ -1180,7 +1214,7 @@ export default function Dashboard() {
           status: `Processing row ${i + 1} of ${dataRows.length}: ${custName}...` 
         });
 
-        let cust = customers.find(c => c.phone === phone);
+        let cust = phone && phone !== "-" ? customers.find(c => c.phone === phone) : null;
         let custId = cust?.id;
 
         if (!custId) {
@@ -1188,11 +1222,11 @@ export default function Dashboard() {
           const newCustPayload = {
             id: custId,
             name: custName,
-            phone: phone,
-            address: getValue("address", "Offline Address"),
-            father: getValue("father", "Offline Father"),
-            idproof: getValue("idproof", "Offline ID"),
-            mandal: getValue("mandal", "Offline Mandal")
+            phone: phone || "-",
+            address: getValue("address", "-"),
+            father: getValue("father", "-"),
+            idproof: getValue("idproof", "-"),
+            mandal: getValue("mandal", "-")
           };
           const custRes = await fetch("/api/v1/customers", {
             method: "POST",
@@ -1272,15 +1306,24 @@ export default function Dashboard() {
     const passcode = prompt("Enter 4-digit passcode to clear this loan:");
     if (passcode === null) return;
     if (passcode.trim() === "1004") {
+      const defaultDate = new Date().toISOString().split('T')[0];
+      const clearedDateInput = prompt("Enter cleared date (YYYY-MM-DD):", defaultDate);
+      if (clearedDateInput === null) return;
+      
       fetch("/api/v1/transactions/clear", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ txnId: txnId })
+        body: JSON.stringify({ txnId: txnId, clearedDate: clearedDateInput })
       }).then(() => {
         // Find transaction and set to cleared locally
         setTransactions(transactions.map(t => {
           if (t.id === txnId) {
-            return { ...t, status: "Cleared" };
+            return { 
+              ...t, 
+              status: "Cleared", 
+              clearedDate: clearedDateInput,
+              loanDetails: t.loanDetails ? { ...t.loanDetails, clearedDate: clearedDateInput } : undefined
+            };
           }
           return t;
         }));
@@ -2562,6 +2605,7 @@ export default function Dashboard() {
                       <th className="pb-3">Loan Period End Date</th>
                       <th className="pb-3">Interest Generated</th>
                       <th className="pb-3">Status</th>
+                      <th className="pb-3">Cleared Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 font-semibold">
@@ -2594,6 +2638,7 @@ export default function Dashboard() {
                             <td className="py-3">
                               <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{t.status || "Pending"}</span>
                             </td>
+                            <td className="py-3">{t.status === "Cleared" ? formatDateToDDMMYYYY(t.clearedDate || t.loanDetails?.clearedDate || t.date) : "-"}</td>
                           </tr>
                         );
                       })}
@@ -3016,6 +3061,12 @@ export default function Dashboard() {
                   <div>Taken Date: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}</strong></div>
                   <div>Period End: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.endDate)}</strong></div>
                   
+                  {selectedLoanTxn.status === "Cleared" && (
+                    <div className="col-span-2 text-slate-600 bg-emerald-50 border border-emerald-100 p-1.5 rounded font-bold">
+                      Cleared On: <span className="font-technical text-emerald-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || selectedLoanTxn.date)}</span>
+                    </div>
+                  )}
+
                   {selectedLoanTxn.loanDetails?.interestPaidUpto && (
                     <div className="col-span-2 text-slate-600 bg-slate-100 p-1.5 rounded font-bold">
                       Last Cleared Upto: <span className="font-technical text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
@@ -3421,6 +3472,18 @@ export default function Dashboard() {
                     <option value="Cleared">Cleared</option>
                   </select>
                 </div>
+                {offlineLoanForm.status === "Cleared" && (
+                  <div className="form-group">
+                    <label className="text-xs font-bold text-slate-400 block mb-1">Cleared Date *</label>
+                    <input 
+                      type="date" 
+                      required
+                      className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                      value={offlineLoanForm.clearedDate || ""}
+                      onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, clearedDate: e.target.value }))}
+                    />
+                  </div>
+                )}
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Interest Paid Upto Date</label>
                   <input 
@@ -3467,8 +3530,9 @@ export default function Dashboard() {
                 <code className="block bg-slate-800 text-slate-200 p-2 rounded select-all font-mono font-bold leading-normal break-all">
                   BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal
                 </code>
-                <div className="mt-2 text-[10px] text-slate-500 leading-relaxed">
-                  * Note: Use semicolons (<code className="font-mono bg-slate-200 p-0.5 rounded font-bold">;</code>) to separate items inside the <code className="font-bold">PledgedItems</code> field to avoid breaking the CSV columns. Dates must be formatted as <code className="font-bold">YYYY-MM-DD</code>.
+                <div className="mt-2 text-[10px] text-slate-500 leading-relaxed space-y-1">
+                  <div>* Note: Use semicolons (<code className="font-mono bg-slate-200 p-0.5 rounded font-bold">;</code>) to separate items inside the <code className="font-bold">PledgedItems</code> field to avoid breaking the CSV columns. Dates must be formatted as <code className="font-bold">YYYY-MM-DD</code>.</div>
+                  <div>* <strong>Missing values / Optional fields</strong>: If a field has no value (like phone number, father's name, ID proof, or interest paid upto date), <strong>leave it completely empty between the commas</strong> (for example: <code className="font-mono bg-slate-200 p-0.5 rounded font-bold">101,Rajesh,,15000,...</code>). Do not add spaces or dashes, just keep the column empty.</div>
                 </div>
               </div>
 

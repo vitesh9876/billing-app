@@ -247,9 +247,20 @@ async def save_transaction(body: dict, db: Session = Depends(get_db)):
 @app.post("/api/v1/transactions/clear")
 async def clear_transaction(body: dict, db: Session = Depends(get_db)):
     txn_id = body.get("txnId")
+    cleared_date = body.get("clearedDate") or datetime.datetime.now().strftime("%Y-%m-%d")
     txn = TransactionRepository.get_by_id(db, txn_id)
     if txn:
         txn.status = "Cleared"
+        txn.clearedDate = cleared_date
+        # Also inject clearedDate inside itemsJson structure for complete nesting
+        try:
+            import json
+            data = json.loads(txn.itemsJson)
+            if isinstance(data, dict):
+                data["clearedDate"] = cleared_date
+                txn.itemsJson = json.dumps(data)
+        except Exception:
+            pass
         db.commit()
         await browser_ws.broadcast({"type": "update", "topic": "transactions"})
         return {"status": "success"}
@@ -261,6 +272,11 @@ async def queue_sms(body: dict, db: Session = Depends(get_db)):
     customer_id = body.get("customerId")
     phone = body.get("phone")
     message = body.get("message")
+    
+    # Do not try to send SMS if the phone number is missing, placeholder, or invalid
+    if not phone or phone.strip() in ["", "-", "null", "None", "undefined"]:
+        logger.info(f"Skipping SMS queue: No valid phone number for customer {customer_id}")
+        return {"status": "skipped", "reason": "No phone number available"}
     
     # Check if a bridge device is connected
     active_bridge = DeviceRepository.get_active_bridge(db)
