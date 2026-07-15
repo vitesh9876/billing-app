@@ -22,7 +22,8 @@ import {
   Bell,
   Plus,
   Upload,
-  Trash2
+  Trash2,
+  BookOpen
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const [customerViewMode, setCustomerViewMode] = useState<"grid" | "table" | "compact">("grid");
   const [remindersStatus, setRemindersStatus] = useState<any[]>([]);
   const [showConnectionGuide, setShowConnectionGuide] = useState(false);
+  const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   
   // Theme state
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -1433,6 +1435,12 @@ export default function Dashboard() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "settings" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
             >
               <Settings size={18} /> Settings
+            </button>
+            <button 
+              onClick={() => setActiveTab("readme")} 
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "readme" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+            >
+              <BookOpen size={18} /> Readme Guide
             </button>
           </nav>
         </div>
@@ -2899,6 +2907,205 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* README GUIDE TAB */}
+          {activeTab === "readme" && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 border border-slate-800 rounded-xl p-6 shadow-lg text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-blue-600/20 text-blue-400 rounded-lg">
+                    <BookOpen size={24} />
+                  </div>
+                  <h3 className="font-bold text-xl">Interactive System Guide</h3>
+                </div>
+                <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+                  Welcome to the Sri Sai Balaji interactive user manual. Explore features, configuration steps, and troubleshooting guides to manage your store and loans efficiently.
+                </p>
+              </div>
+
+              {/* Sub-tabs inside Readme */}
+              <div className="flex border-b border-slate-200 gap-4">
+                {["Overview", "SMS Bridge App", "Bulk Import Guide", "FAQs"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setReadmeSubTab(tab)}
+                    className={`pb-3 text-sm font-bold border-b-2 transition-all px-1 ${
+                      readmeSubTab === tab 
+                        ? "border-blue-600 text-blue-600" 
+                        : "border-transparent text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Readme content based on sub-tab */}
+              {readmeSubTab === "Overview" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                    <h4 className="font-bold text-base text-slate-800 mb-3">✨ Core Capabilities</h4>
+                    <ul className="space-y-3 text-sm text-slate-600">
+                      <li className="flex items-start gap-2.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                        <div>
+                          <strong>New Billing</strong>: Print invoices instantly with automated SGST/CGST, multi-item catalogs, and dynamic barcode/bill numbers.
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                        <div>
+                          <strong>Offline Loans</strong>: Record jewelry/furniture details, custom monthly interest rates, Taken Date, and Period End dates.
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-2.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                        <div>
+                          <strong>Custom Cleared Dates</strong>: Fully log the exact closing/clearance date for loans and display it dynamically in details and records.
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                    <h4 className="font-bold text-base text-slate-800 mb-3">🛠️ System Architecture</h4>
+                    <div className="flex flex-col gap-3 text-sm text-slate-600">
+                      <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
+                        <span className="font-bold text-slate-700">Frontend Web UI</span>
+                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold">Next.js (Vite/Turbopack)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
+                        <span className="font-bold text-slate-700">Backend Server API</span>
+                        <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-semibold">FastAPI + Python Uvicorn</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
+                        <span className="font-bold text-slate-700">Database</span>
+                        <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-semibold">PostgreSQL (Supabase)</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
+                        <span className="font-bold text-slate-700">Real-time Sync</span>
+                        <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-semibold">WebSockets Connection</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {readmeSubTab === "SMS Bridge App" && (
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+                  <div>
+                    <h4 className="font-bold text-base text-slate-800 mb-2">📱 Android Foreground Service & Connection</h4>
+                    <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                      The Android app uses a dedicated <strong>Foreground Service</strong> to stay connected in the background. It will automatically reconnect when your phone starts up (using the boot receiver) and maintains a highly battery-efficient network connection.
+                    </p>
+                    
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-3 text-sm text-slate-600 font-semibold">
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-blue-600 font-bold">1.</span>
+                        <span>Open the <strong>SmartShop SMS Bridge</strong> app on your Android device.</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-blue-600 font-bold">2.</span>
+                        <span>Input Server URL: <code className="bg-white px-2 py-0.5 rounded border border-slate-200 text-xs">http://&lt;your-local-ip&gt;:8000</code>.</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-blue-600 font-bold">3.</span>
+                        <span>Click <strong>Register Device</strong>, then click <strong>Connect</strong>.</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-blue-600 font-bold">4.</span>
+                        <span>Make sure to allow <strong>SMS and Notification permissions</strong> when prompted!</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100">
+                    <h5 className="font-bold text-sm text-slate-800 mb-2">⚙️ Background Operation & Keep-Alive</h5>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      To comply with battery optimization settings, our app runs pings once every 60 seconds. This avoids continuous radio wake-ups, preserving battery life while ensuring that you receive real-time SMS requests instantly whenever you trigger reminders or billing alerts on the laptop.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {readmeSubTab === "Bulk Import Guide" && (
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+                  <div>
+                    <h4 className="font-bold text-base text-slate-800 mb-2">📂 Upload Template Details</h4>
+                    <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                      When using the Bulk Import tool, you paste standard CSV rows. You can leave optional columns empty (e.g. `,,`), specify item quantities using `2x ItemName`, and log custom cleared dates!
+                    </p>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">CSV Headers Template</span>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText("BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal,ClearedDate");
+                            alert("Headers copied to clipboard!");
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"
+                        >
+                          Copy Headers
+                        </button>
+                      </div>
+                      <code className="block bg-slate-800 text-slate-200 p-3 rounded font-mono text-xs font-bold select-all leading-normal break-all">
+                        BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal,ClearedDate
+                      </code>
+                    </div>
+
+                    <div className="space-y-3 mt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Example Pasteable Data</span>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(`101,Rajesh,9876543210,15000,1.5%,2025-01-10,2026-01-10,2x Gold Ring;1x Gold Chain,Cleared,2025-04-10,,,Chennai,,2025-04-10\n102,Karan,,8000,2.0%,2025-02-15,2026-02-15,1x Silver Plate,Pending,2025-02-15,,,Mandal-A,,`);
+                            alert("Sample rows copied to clipboard!");
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"
+                        >
+                          Copy Sample Rows
+                        </button>
+                      </div>
+                      <code className="block bg-slate-800 text-slate-200 p-3 rounded font-mono text-xs font-bold select-all leading-relaxed whitespace-pre overflow-x-auto">
+{`101,Rajesh,9876543210,15000,1.5%,2025-01-10,2026-01-10,2x Gold Ring;1x Gold Chain,Cleared,2025-04-10,,,Chennai,,2025-04-10
+102,Karan,,8000,2.0%,2025-02-15,2026-02-15,1x Silver Plate,Pending,2025-02-15,,,Mandal-A,,`}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {readmeSubTab === "FAQs" && (
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+                  <h4 className="font-bold text-base text-slate-800 mb-2">💬 Frequently Asked Questions</h4>
+                  
+                  <div className="divide-y divide-slate-100">
+                    <div className="py-3">
+                      <h5 className="font-bold text-sm text-slate-800 mb-1">Q: How do I skip SMS for old customers who don't have phone numbers?</h5>
+                      <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                        A: Simply leave the phone number blank or enter <code>-</code>. The backend automatically checks for this and skips queueing SMS messages for them.
+                      </p>
+                    </div>
+
+                    <div className="py-3">
+                      <h5 className="font-bold text-sm text-slate-800 mb-1">Q: What happens if I send a custom SMS to a number not saved in customers database?</h5>
+                      <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                        A: The system automatically registers and creates a profile for that customer in the database so you can track them in the future!
+                      </p>
+                    </div>
+
+                    <div className="py-3">
+                      <h5 className="font-bold text-sm text-slate-800 mb-1">Q: How do I change the system theme background?</h5>
+                      <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                        A: Go to <strong>Settings &rarr; Other Settings</strong> to toggle between Light and Pure Black theme modes instantly!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
