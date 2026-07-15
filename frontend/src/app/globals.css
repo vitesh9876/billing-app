@@ -63,33 +63,34 @@ button, select, input, textarea {
 
 /* Sidebar in dark mode */
 .dark .sidebar-premium {
-  background: linear-gradient(180deg, #020617 0%, #090d16 100%);
-  border-right: 1px solid #1e293b;
+  background: #000000 !important;
+  border-right: 1px solid #27272a !important;
 }
 
 /* Override background colors dynamically in dark mode */
-.dark .bg-white {
-  background-color: #0f172a !important; /* bg-slate-900 */
+.dark .bg-white,
+.dark header,
+.dark .bg-slate-50\/50 {
+  background-color: #000000 !important;
 }
 
 .dark .bg-slate-100 {
-  background-color: #1e293b !important; /* bg-slate-800 */
+  background-color: #18181b !important; /* zinc-900 */
 }
 
 .dark .bg-slate-50\/30 {
-  background-color: rgba(30, 41, 59, 0.3) !important;
-}
-
-.dark .bg-slate-50\/50 {
-  background-color: rgba(30, 41, 59, 0.4) !important;
+  background-color: rgba(39, 39, 42, 0.2) !important;
 }
 
 /* Border colors in dark mode */
 .dark .border-slate-100,
 .dark .border-slate-200,
+.dark .border-t,
+.dark .border-b,
+.dark .border-r,
 .dark .border-t-slate-100,
 .dark .border-b-slate-100 {
-  border-color: #1e293b !important; /* border-slate-800 */
+  border-color: #27272a !important; /* zinc-800 */
 }
 
 /* Text colors in dark mode */
@@ -113,26 +114,26 @@ button, select, input, textarea {
 
 /* Custom styles for tables, inputs in dark mode */
 .dark tbody tr:hover {
-  background-color: rgba(30, 41, 59, 0.5) !important;
+  background-color: rgba(39, 39, 42, 0.4) !important;
 }
 
 .dark input,
 .dark select,
 .dark textarea {
-  background-color: #1e293b !important;
+  background-color: #000000 !important;
   color: #ffffff !important;
-  border-color: #334155 !important;
+  border-color: #27272a !important;
 }
 
 .dark input::placeholder {
-  color: #64748b !important;
+  color: #52525b !important;
 }
 
 .dark input[readonly],
 .dark select[disabled] {
-  background-color: #0f172a !important;
-  color: #94a3b8 !important;
-  border-color: #1e293b !important;
+  background-color: #09090b !important;
+  color: #a1a1aa !important;
+  border-color: #27272a !important;
 }
 
 /* Modals / Overlays in dark mode */
