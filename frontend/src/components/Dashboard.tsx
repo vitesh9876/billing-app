@@ -3509,6 +3509,7 @@ export default function Dashboard() {
                       remarks: firstItem?.remarks || ""
                     });
                     setOfflineLoanMetalType(selectedLoanTxn.category || "Gold");
+                    setEditingTxnId(selectedLoanTxn.id);
                     setSelectedLoanTxn(null);
                     setShowOfflineLoanModal(true);
                   }}
