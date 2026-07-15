@@ -64,6 +64,18 @@ fun MainScreen(
     launcher.launch(Manifest.permission.SEND_SMS)
   }
 
+  // Auto connect if registered on app launch
+  LaunchedEffect(registrationState) {
+    if (registrationState == "Registered" && connectionState != "Connected") {
+      val intent = Intent(context, SmsBridgeService::class.java)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.startForegroundService(intent)
+      } else {
+        context.startService(intent)
+      }
+    }
+  }
+
   Scaffold(
     topBar = {
       TopAppBar(
@@ -196,7 +208,17 @@ fun MainScreen(
             Button(
               onClick = {
                 bridgeManager.registerDevice { success ->
-                  scopeLaunchToast(context, if (success) "Registration Successful!" else "Registration Failed")
+                  if (success) {
+                    scopeLaunchToast(context, "Registration Successful! Connecting...")
+                    val intent = Intent(context, SmsBridgeService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      context.startForegroundService(intent)
+                    } else {
+                      context.startService(intent)
+                    }
+                  } else {
+                    scopeLaunchToast(context, "Registration Failed")
+                  }
                 }
               },
               modifier = Modifier.weight(1f)
