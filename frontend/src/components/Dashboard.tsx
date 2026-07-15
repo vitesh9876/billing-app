@@ -2555,7 +2555,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h3 className="font-bold text-lg text-slate-800">Combined Loan History</h3>
+                <h3 className="font-bold text-lg text-slate-800">Loans</h3>
                 <div className="flex flex-wrap gap-2 items-center w-full md:w-auto justify-end">
                   <button 
                     onClick={() => setShowOfflineLoanModal(true)}
@@ -2602,10 +2602,8 @@ export default function Dashboard() {
                       <th className="pb-3">Customer Name</th>
                       <th className="pb-3">Pledged Items</th>
                       <th className="pb-3">Loan Taken Date</th>
-                      <th className="pb-3">Loan Period End Date</th>
                       <th className="pb-3">Interest Generated</th>
                       <th className="pb-3">Status</th>
-                      <th className="pb-3">Cleared Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 font-semibold">
@@ -2633,12 +2631,10 @@ export default function Dashboard() {
                             <td className="py-3">{cust?.name || "Unknown"}</td>
                             <td className="py-3">{t.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
                             <td className="py-3">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
-                            <td className="py-3">{formatDateToDDMMYYYY(t.loanDetails?.endDate)}</td>
                             <td className="py-3 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                             <td className="py-3">
                               <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{t.status || "Pending"}</span>
                             </td>
-                            <td className="py-3">{t.status === "Cleared" ? formatDateToDDMMYYYY(t.clearedDate || t.loanDetails?.clearedDate || t.date) : "-"}</td>
                           </tr>
                         );
                       })}
