@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.smsbridge.SmsBridgeManager
+import com.example.smsbridge.SmsBridgeService
+import android.content.Intent
+import android.os.Build
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +36,7 @@ fun MainScreen(
   modifier: Modifier = Modifier
 ) {
   val context = LocalContext.current
-  val bridgeManager = remember { SmsBridgeManager(context.applicationContext) }
+  val bridgeManager = remember { SmsBridgeManager.getInstance(context.applicationContext) }
 
   val connectionState by bridgeManager.connectionState.collectAsState()
   val registrationState by bridgeManager.registrationState.collectAsState()
@@ -203,7 +206,10 @@ fun MainScreen(
 
             if (connectionState == "Connected") {
               Button(
-                onClick = { bridgeManager.disconnect() },
+                onClick = {
+                  val intent = Intent(context, SmsBridgeService::class.java)
+                  context.stopService(intent)
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.weight(1f)
               ) {
@@ -211,7 +217,14 @@ fun MainScreen(
               }
             } else {
               Button(
-                onClick = { bridgeManager.connect() },
+                onClick = {
+                  val intent = Intent(context, SmsBridgeService::class.java)
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                  } else {
+                    context.startService(intent)
+                  }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                 modifier = Modifier.weight(1f)
               ) {

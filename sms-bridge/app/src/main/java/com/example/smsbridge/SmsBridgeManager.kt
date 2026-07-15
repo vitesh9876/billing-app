@@ -20,10 +20,25 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class SmsBridgeManager(private val context: Context) {
+class SmsBridgeManager private constructor(private val context: Context) {
+  companion object {
+    @Volatile
+    private var INSTANCE: SmsBridgeManager? = null
+
+    fun getInstance(context: Context): SmsBridgeManager {
+      return INSTANCE ?: synchronized(this) {
+        val instance = SmsBridgeManager(context.applicationContext)
+        INSTANCE = instance
+        instance
+      }
+    }
+  }
+
+  private var isManuallyDisconnected = false
   private val sharedPrefs = context.getSharedPreferences("SmsBridgePrefs", Context.MODE_PRIVATE)
   private val client = OkHttpClient.Builder()
     .readTimeout(0, TimeUnit.MILLISECONDS)
+    .pingInterval(60, TimeUnit.SECONDS)
     .build()
   private var webSocket: WebSocket? = null
   private val scope = CoroutineScope(Dispatchers.IO)
@@ -130,6 +145,7 @@ class SmsBridgeManager(private val context: Context) {
       return
     }
 
+    isManuallyDisconnected = false
     _connectionState.value = "Connecting"
     addLog("Connecting to WebSocket...")
 
@@ -176,21 +192,35 @@ class SmsBridgeManager(private val context: Context) {
 
       override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
         _connectionState.value = "Disconnected"
-        addLog("WebSocket closed.")
+        addLog("WebSocket closed. Attempting reconnect...")
+        attemptReconnect()
       }
 
       override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
         _connectionState.value = "Disconnected"
-        addLog("WebSocket Error: ${t.message}")
+        addLog("WebSocket Error: ${t.message}. Attempting reconnect...")
+        attemptReconnect()
       }
     })
   }
 
   fun disconnect() {
+    isManuallyDisconnected = true
     webSocket?.close(1000, "User manual disconnect")
     webSocket = null
     _connectionState.value = "Disconnected"
     addLog("Disconnected manually.")
+  }
+
+  private fun attemptReconnect() {
+    if (isManuallyDisconnected) return
+    scope.launch {
+      addLog("Reconnecting in 5 seconds...")
+      kotlinx.coroutines.delay(5000)
+      if (!isManuallyDisconnected) {
+        connect()
+      }
+    }
   }
 
   private fun sendDeviceStatus() {
