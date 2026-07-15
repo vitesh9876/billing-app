@@ -225,6 +225,15 @@ async def save_customer(body: dict, db: Session = Depends(get_db)):
     await browser_ws.broadcast({"type": "update", "topic": "customers"})
     return {"status": "success"}
 
+@app.delete("/api/v1/customers/{customer_id}")
+async def delete_customer(customer_id: str, db: Session = Depends(get_db)):
+    success = CustomerRepository.delete(db, customer_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    await browser_ws.broadcast({"type": "update", "topic": "customers"})
+    return {"status": "success"}
+
+
 @app.get("/api/v1/transactions")
 def get_transactions(db: Session = Depends(get_db)):
     return TransactionRepository.get_all(db)

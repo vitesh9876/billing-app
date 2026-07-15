@@ -21,7 +21,8 @@ import {
   List,
   Bell,
   Plus,
-  Upload
+  Upload,
+  Trash2
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -35,6 +36,44 @@ export default function Dashboard() {
   const [customerViewMode, setCustomerViewMode] = useState<"grid" | "table" | "compact">("grid");
   const [remindersStatus, setRemindersStatus] = useState<any[]>([]);
   const [showConnectionGuide, setShowConnectionGuide] = useState(false);
+  
+  // Theme state
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("smartshop-theme") as "light" | "dark";
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  const handleToggleTheme = (newTheme: "light" | "dark") => {
+    setTheme(newTheme);
+    localStorage.setItem("smartshop-theme", newTheme);
+  };
+
+  const handleDeleteCustomer = (customerId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this customer and all their profiles? This action cannot be undone.")) {
+      return;
+    }
+    fetch(`/api/v1/customers/${customerId}`, {
+      method: "DELETE"
+    })
+    .then(res => {
+      if (res.ok) {
+        if (selectedProfileCustomer && selectedProfileCustomer.id === customerId) {
+          setSelectedProfileCustomer(null);
+        }
+        refreshData();
+      } else {
+        alert("Failed to delete customer");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Error deleting customer");
+    });
+  };
   
   const safeItems = Array.isArray(itemsCatalog) ? itemsCatalog : [];
   
@@ -271,9 +310,14 @@ export default function Dashboard() {
 
   const formatDateToDDMMYYYY = (dateStr: string) => {
     if (!dateStr) return "";
-    const parts = dateStr.split("-");
+    const cleanDateStr = dateStr.split("T")[0].split(" ")[0];
+    const parts = cleanDateStr.split("-");
     if (parts.length === 3) {
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      if (parts[0].length === 4) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      } else {
+        return `${parts[0]}/${parts[1]}/${parts[2]}`;
+      }
     }
     return dateStr;
   };
@@ -1282,10 +1326,10 @@ export default function Dashboard() {
   const activeConnectedDevice = smsDevices.find(d => d.connection === "Connected");
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans print:bg-white text-slate-900 w-full">
+    <div className={`flex min-h-screen bg-slate-50 font-sans print:bg-white text-slate-900 w-full ${theme}`}>
       
       {/* Sidebar Navigation */}
-      <aside className="hidden md:flex w-64 bg-slate-900 text-slate-100 flex-col justify-between print:hidden shrink-0">
+      <aside className="hidden md:flex w-64 sidebar-premium text-slate-100 flex-col justify-between print:hidden shrink-0">
         <div>
           <div className="p-6 border-b border-slate-800 flex items-center gap-3">
             <img 
@@ -2301,7 +2345,13 @@ export default function Dashboard() {
                       </h3>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => handleOpenEditCustomer(selectedProfileCustomer)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50">Edit Profile</button>
+                      <button onClick={() => handleOpenEditCustomer(selectedProfileCustomer)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-all">Edit Profile</button>
+                      <button 
+                        onClick={() => handleDeleteCustomer(selectedProfileCustomer.id)} 
+                        className="px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-sm font-semibold hover:bg-rose-50 transition-all flex items-center gap-1.5"
+                      >
+                        <Trash2 size={16} /> Delete Customer
+                      </button>
                     </div>
                   </div>
 
@@ -2426,6 +2476,7 @@ export default function Dashboard() {
                           <th className="p-4 text-xs uppercase tracking-wider">ID Proof</th>
                           <th className="p-4 text-xs uppercase tracking-wider">Address</th>
                           <th className="p-4 text-xs uppercase tracking-wider">Mandal</th>
+                          <th className="p-4 text-xs uppercase tracking-wider text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
@@ -2440,6 +2491,19 @@ export default function Dashboard() {
                               <td className="p-4 text-xs text-slate-500">{c.idproof || "-"}</td>
                               <td className="p-4 text-slate-600">{c.address || "-"}</td>
                               <td className="p-4 text-slate-600">{c.mandal || "-"}</td>
+                              <td className="p-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteCustomer(c.id);
+                                  }}
+                                  className="text-rose-600 hover:text-rose-800 p-1.5 rounded-md hover:bg-rose-50 transition-all inline-flex items-center justify-center"
+                                  title="Delete Customer"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
                             </tr>
                         ))}
                       </tbody>
@@ -2642,6 +2706,35 @@ export default function Dashboard() {
               <div className="mt-8 pt-8 border-t border-slate-100">
                 <h4 className="font-bold text-sm text-slate-800 mb-3">Other Settings</h4>
                 <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden bg-slate-50/50">
+                  <div className="p-4 flex items-center justify-between">
+                    <div>
+                      <h5 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        {theme === "dark" ? (
+                          <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd"></path></svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        )}
+                        System Theme Settings
+                      </h5>
+                      <p className="text-xs text-slate-400 font-semibold mt-0.5">Toggle between Light and Dark mode interface.</p>
+                    </div>
+                    <div className="flex bg-slate-200/50 p-1 rounded-lg">
+                      <button 
+                        type="button" 
+                        onClick={() => handleToggleTheme("light")}
+                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${theme === "light" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                      >
+                        Light
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleToggleTheme("dark")}
+                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${theme === "dark" ? "bg-slate-800 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                      >
+                        Dark
+                      </button>
+                    </div>
+                  </div>
                   <div 
                     onClick={() => setActiveTab("item-catalog")}
                     className="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-all"
@@ -3954,7 +4047,7 @@ export default function Dashboard() {
       )}
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around p-1 z-40 md:hidden print:hidden">
+      <nav className={`fixed bottom-0 left-0 right-0 border-t flex justify-around p-1 z-40 md:hidden print:hidden ${theme === "dark" ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
         <button 
           onClick={() => setActiveTab("dashboard")} 
           className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "dashboard" ? "text-blue-500" : "text-slate-400"}`}

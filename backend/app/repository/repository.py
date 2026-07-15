@@ -24,6 +24,15 @@ class CustomerRepository:
         db.refresh(cust)
         return cust
 
+    @staticmethod
+    def delete(db: Session, customer_id: str):
+        cust = db.query(Customer).filter(Customer.id == customer_id).first()
+        if cust:
+            db.delete(cust)
+            db.commit()
+            return True
+        return False
+
 class TransactionRepository:
     @staticmethod
     def get_all(db: Session):
