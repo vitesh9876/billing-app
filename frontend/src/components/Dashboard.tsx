@@ -179,6 +179,7 @@ export default function Dashboard() {
     interestPaidUpto: "",
     clearedDate: "",
     pledgedItemsStr: "",
+    yield: "60%",
     grossWeight: "",
     netWeight: "",
     worth: "",
@@ -1134,7 +1135,7 @@ export default function Dashboard() {
               id: 1,
               name: form.pledgedItemsStr.trim() || "Pledged Item",
               qty: 1,
-              yield: "",
+              yield: form.yield.trim() || "60%",
               grossWeight: form.grossWeight.trim(),
               netWeight: form.netWeight.trim(),
               value: form.worth.trim(),
@@ -1170,6 +1171,7 @@ export default function Dashboard() {
         interestPaidUpto: "",
         clearedDate: "",
         pledgedItemsStr: "",
+        yield: "60%",
         grossWeight: "",
         netWeight: "",
         worth: "",
@@ -3442,7 +3444,43 @@ export default function Dashboard() {
             </div>
 
             <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-              <button onClick={() => setSelectedLoanTxn(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50">Close</button>
+              <div className="flex gap-2">
+                <button onClick={() => setSelectedLoanTxn(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">Close</button>
+                <button 
+                  onClick={() => {
+                    const cust = customers.find(c => c.id === selectedLoanTxn.customerId);
+                    const firstItem = selectedLoanTxn.loanDetails?.items?.[0];
+                    setOfflineLoanForm({
+                      billNo: selectedLoanTxn.id.startsWith("BILL-") ? selectedLoanTxn.id.replace("BILL-", "") : (selectedLoanTxn.id.startsWith("TXN-OFFLINE-") ? "" : selectedLoanTxn.id),
+                      custName: cust?.name || "",
+                      phone: cust?.phone || "",
+                      father: selectedLoanTxn.loanDetails?.father || "",
+                      idProof: selectedLoanTxn.loanDetails?.idProof || "",
+                      address: selectedLoanTxn.loanDetails?.address || "",
+                      mandal: selectedLoanTxn.loanDetails?.mandal || "",
+                      amount: String(selectedLoanTxn.amount),
+                      interestRate: selectedLoanTxn.loanDetails?.interestRate || "3.0%",
+                      takenDate: selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date,
+                      endDate: selectedLoanTxn.loanDetails?.endDate || "",
+                      status: selectedLoanTxn.status || "Pending",
+                      interestPaidUpto: selectedLoanTxn.loanDetails?.interestPaidUpto || "",
+                      clearedDate: selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || "",
+                      pledgedItemsStr: selectedLoanTxn.loanDetails?.items?.map((i: any) => i.name).join("; ") || "",
+                      yield: firstItem?.yield || "60%",
+                      grossWeight: firstItem?.grossWeight || "",
+                      netWeight: firstItem?.netWeight || "",
+                      worth: firstItem?.value || "",
+                      remarks: firstItem?.remarks || ""
+                    });
+                    setOfflineLoanMetalType(selectedLoanTxn.category || "Gold");
+                    setSelectedLoanTxn(null);
+                    setShowOfflineLoanModal(true);
+                  }}
+                  className="px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 bg-white flex items-center gap-1.5"
+                >
+                  Edit Loan
+                </button>
+              </div>
               {selectedLoanTxn.status !== "Cleared" && (
                 <button 
                   onClick={() => handleMarkAsCleared(selectedLoanTxn.id)} 
@@ -3712,7 +3750,17 @@ export default function Dashboard() {
                         onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, netWeight: e.target.value }))}
                       />
                     </div>
-                    <div className="form-group col-span-2">
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-400 block mb-1">Yield/KDM</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. 60%"
+                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                        value={offlineLoanForm.yield}
+                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, yield: e.target.value }))}
+                      />
+                    </div>
+                    <div className="form-group">
                       <label className="text-xs font-bold text-slate-400 block mb-1">Worth (₹)</label>
                       <input 
                         type="text" 
