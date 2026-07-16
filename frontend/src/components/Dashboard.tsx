@@ -324,6 +324,11 @@ export default function Dashboard() {
     });
   }, [transactions, customers]);
 
+  const formatBillNoForDisplay = (id: string) => {
+    if (!id) return "";
+    return id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+  };
+
   const formatDateToDDMMYYYY = (dateStr: string) => {
     if (!dateStr) return "";
     const cleanDateStr = dateStr.split("T")[0].split(" ")[0];
@@ -411,10 +416,10 @@ export default function Dashboard() {
           const msg = tpl
             ? tpl.content
                 .replace("{CustomerName}", customerObj.name)
-                .replace("{InvoiceNumber}", txnId.substring(txnId.length - 6))
+                .replace("{InvoiceNumber}", formatBillNoForDisplay(txnId))
                 .replace("{LoanAmount}", amount.toLocaleString('en-IN'))
                 .replace("{LoanEndDate}", formattedPaidUpto)
-            : `ప్రియమైన ${customerObj.name}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ నంబర్ ${txnId.substring(txnId.length - 6)} కి సంబంధించిన వడ్డీ ₹${amount.toLocaleString('en-IN')} చెల్లించబడింది. వడ్డీ ${formattedPaidUpto} వరకు క్లియర్ చేయబడింది. ధన్యవాదాలు.`;
+            : `ప్రియమైన ${customerObj.name}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ నంబర్ ${formatBillNoForDisplay(txnId)} కి సంబంధించిన వడ్డీ ₹${amount.toLocaleString('en-IN')} చెల్లించబడింది. వడ్డీ ${formattedPaidUpto} వరకు క్లియర్ చేయబడింది. ధన్యవాదాలు.`;
           
           fetch("/api/v1/sms/send", {
             method: "POST",
@@ -932,7 +937,7 @@ export default function Dashboard() {
       "{CustomerName}": nameVal || "Customer",
       "{ShopName}": "Sri Sai Balaji Jewelry & Furniture",
       "{Phone}": phoneVal || "",
-      "{InvoiceNumber}": lastTxn ? lastTxn.id.substring(lastTxn.id.length - 6) : "N/A",
+      "{InvoiceNumber}": lastTxn ? formatBillNoForDisplay(lastTxn.id) : "N/A",
       "{LoanAmount}": lastTxn ? lastTxn.amount.toLocaleString('en-IN') : "0",
       "{LoanEndDate}": (lastTxn && lastTxn.loanDetails) ? formatDateToDDMMYYYY(lastTxn.loanDetails.endDate || "") : "N/A",
       "{DaysLeft}": "30",
@@ -1872,7 +1877,7 @@ export default function Dashboard() {
                       .filter(s => smsQueueFilter === "all" || s.status === smsQueueFilter)
                       .map((s, idx) => (
                         <tr key={idx}>
-                          <td className="py-3 text-blue-600 font-technical">#{s.id.substring(s.id.length - 6)}</td>
+                          <td className="py-3 text-blue-600 font-technical">#{formatBillNoForDisplay(s.id || s.uuid || "")}</td>
                           <td className="py-3 font-technical">{s.phone}</td>
                           <td className="py-3 max-w-xs truncate" title={s.message}>{s.message}</td>
                           <td className="py-3 font-technical">{s.created_time}</td>
@@ -2524,7 +2529,7 @@ export default function Dashboard() {
                             .map((p, idx) => (
                               <tr key={idx} className="hover:bg-slate-50/50 font-semibold">
                                 <td className="py-2.5">{formatDateToDDMMYYYY(p.date)}</td>
-                                <td className="py-2.5 text-blue-600">{p.id.substring(p.id.length - 6)}</td>
+                                <td className="py-2.5 text-blue-600">{formatBillNoForDisplay(p.id)}</td>
                                 <td className="py-2.5">
                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${p.category === "Furniture" ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-800"}`}>{p.category}</span>
                                 </td>
@@ -2561,7 +2566,7 @@ export default function Dashboard() {
                             .map((l, idx) => (
                               <tr key={idx} className="hover:bg-slate-50/50 font-semibold">
                                 <td className="py-2.5">{formatDateToDDMMYYYY(l.date)}</td>
-                                <td className="py-2.5">{l.id.substring(l.id.length - 6)}</td>
+                                <td className="py-2.5">{formatBillNoForDisplay(l.id)}</td>
                                 <td className="py-2.5">{l.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
                                 <td className="py-2.5">₹{l.amount.toLocaleString('en-IN')}</td>
                                 <td className="py-2.5">{formatDateToDDMMYYYY(l.loanDetails?.endDate)}</td>
@@ -2727,7 +2732,7 @@ export default function Dashboard() {
                       .filter(t => {
                         const cust = customers.find(c => c.id === t.customerId);
                         const custName = cust ? cust.name.toLowerCase() : "";
-                        const billNo = t.id.substring(t.id.length - 6).toLowerCase();
+                        const billNo = formatBillNoForDisplay(t.id).toLowerCase();
                         
                         const matchesSearch = custName.includes(loanHistorySearch.toLowerCase()) || billNo.includes(loanHistorySearch.toLowerCase());
                         
@@ -2742,7 +2747,7 @@ export default function Dashboard() {
                         const cust = customers.find(c => c.id === t.customerId);
                         return (
                           <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
-                            <td className="py-3 text-blue-600">#{t.id.substring(t.id.length - 6)}</td>
+                            <td className="py-3 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
                             <td className="py-3">{cust?.name || "Unknown"}</td>
                             <td className="py-3">{t.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
                             <td className="py-3">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
@@ -3259,7 +3264,7 @@ export default function Dashboard() {
                     ) : (
                       remindersStatus.map((r, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="py-3.5 text-blue-600">#{r.loanId.substring(r.loanId.length - 6)}</td>
+                          <td className="py-3.5 text-blue-600">#{formatBillNoForDisplay(r.loanId)}</td>
                           <td className="py-3.5 text-slate-800">{r.customerName}</td>
                           <td className="py-3.5 text-slate-500 text-xs">{r.phone}</td>
                           <td className="py-3.5">₹{r.amount.toLocaleString('en-IN')}</td>
@@ -3355,7 +3360,7 @@ export default function Dashboard() {
                 <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
               </div>
               <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50">
-                <div><strong>Bill No:</strong> {selectedLoanTxn.id.substring(selectedLoanTxn.id.length - 6)}</div>
+                <div><strong>Bill No:</strong> {formatBillNoForDisplay(selectedLoanTxn.id)}</div>
                 <div className="pt-0"><strong>Date:</strong> {formatDateToDDMMYYYY(selectedLoanTxn.date)}</div>
                 <div className="pt-2"><strong>Pledger Name:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</div>
                 <div className="pt-2"><strong>Phone No:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</div>
@@ -4201,7 +4206,7 @@ export default function Dashboard() {
                       <svg className="w-3 h-3 mr-1 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clipRule="evenodd"></path></svg>
                       Bill No. :
                     </span>
-                    <span className="font-black text-[12px] text-blue-950 mt-0.5">#{activePrintTicket.txn.id.substring(activePrintTicket.txn.id.length - 6)}</span>
+                    <span className="font-black text-[12px] text-blue-950 mt-0.5">#{formatBillNoForDisplay(activePrintTicket.txn.id)}</span>
                   </div>
                   <div className="flex flex-col justify-center border-t border-slate-100 pt-2">
                     <span className="text-slate-500 font-bold text-[8.5px] uppercase tracking-wider flex items-center">
@@ -4324,7 +4329,7 @@ export default function Dashboard() {
                   {/* Fields */}
                   <div className="mt-3 space-y-1.5">
                     <div className="flex justify-between font-bold">
-                      <div>వరుస నెం: <span className="underline ml-1">#{activePrintTicket.txn.id.substring(activePrintTicket.txn.id.length - 6)}</span></div>
+                      <div>వరుస నెం: <span className="underline ml-1">#{formatBillNoForDisplay(activePrintTicket.txn.id)}</span></div>
                       <div>తేది: <span className="underline">{formatDateToDDMMYYYY(activePrintTicket.txn.loanDetails.takenDate)}</span></div>
                     </div>
 
@@ -4464,7 +4469,7 @@ export default function Dashboard() {
                   <div className="space-y-1.5 font-semibold">
                     <div className="flex justify-between items-center">
                       <div className="flex-1 border-b border-dotted border-pink-400">
-                        బి.నెం: <span className="font-bold ml-1">#{activePrintTicket.txn.id.substring(activePrintTicket.txn.id.length - 6)}</span>
+                        బి.నెం: <span className="font-bold ml-1">#{formatBillNoForDisplay(activePrintTicket.txn.id)}</span>
                       </div>
                       <div className="w-36 text-right border-b border-dotted border-pink-400">
                         తేది: <span className="font-bold">{formatDateToDDMMYYYY(activePrintTicket.txn.loanDetails.takenDate)}</span>
