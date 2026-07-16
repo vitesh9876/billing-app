@@ -1068,37 +1068,53 @@ export default function Dashboard() {
 
     try {
       // Find or create customer
-      let cust = null;
-      const cleanPhone = form.phone.trim();
-      const cleanName = form.custName.trim().toLowerCase();
+      let custId = null;
+      if (editingTxnId) {
+        const existingTxn = transactions.find(t => t.id === editingTxnId);
+        if (existingTxn) {
+          custId = existingTxn.customerId;
+        }
+      }
 
-      if (cleanPhone) {
-        cust = customers.find(c => c.phone && c.phone.trim() === cleanPhone);
+      if (!custId) {
+        let cust = null;
+        const cleanPhone = form.phone.trim();
+        const cleanName = form.custName.trim().toLowerCase();
+        const isValidPhone = (p: string) => {
+          const clean = p.trim();
+          return clean !== "" && clean !== "-" && clean !== "null" && clean !== "undefined" && clean !== "None" && clean.length > 5;
+        };
+
+        if (cleanPhone && isValidPhone(cleanPhone)) {
+          cust = customers.find(c => c.phone && c.phone.trim() === cleanPhone);
+        }
+        if (!cust) {
+          cust = customers.find(c => c.name.toLowerCase() === cleanName);
+        }
+        custId = cust?.id;
       }
-      if (!cust) {
-        cust = customers.find(c => c.name.toLowerCase() === cleanName);
-      }
-      let custId = cust?.id;
 
       if (!custId) {
         // Generate new customer ID
         custId = "CUST-" + Date.now();
-        const newCustPayload = {
-          id: custId,
-          name: form.custName.trim(),
-          phone: form.phone.trim(),
-          address: form.address.trim() || "Offline Address",
-          father: form.father.trim() || "Offline Father",
-          idproof: form.idProof.trim() || "Offline ID",
-          mandal: form.mandal.trim() || "Offline Mandal"
-        };
-        const custRes = await fetch("/api/v1/customers", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newCustPayload)
-        });
-        if (!custRes.ok) throw new Error("Failed to create customer");
       }
+
+      // Always save or update the customer details
+      const newCustPayload = {
+        id: custId,
+        name: form.custName.trim(),
+        phone: form.phone.trim(),
+        address: form.address.trim() || "Offline Address",
+        father: form.father.trim() || "Offline Father",
+        idproof: form.idProof.trim() || "Offline ID",
+        mandal: form.mandal.trim() || "Offline Mandal"
+      };
+      const custRes = await fetch("/api/v1/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newCustPayload)
+      });
+      if (!custRes.ok) throw new Error("Failed to save customer details");
 
       // Use existing transaction ID if editing, otherwise generate
       const txnId = editingTxnId || (form.billNo.trim() ? "BILL-" + form.billNo.trim() : "TXN-OFFLINE-" + Date.now());
