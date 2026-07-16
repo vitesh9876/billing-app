@@ -346,29 +346,95 @@ export default function Dashboard() {
     return dateStr;
   };
 
-  const getLoanInterest = (txn: any) => {
-    const rateVal = parseFloat(txn.loanDetails?.interestRate) || 0;
-    const startDateStr = txn.loanDetails?.interestPaidUpto || txn.loanDetails?.takenDate || txn.date;
-    const takenDate = new Date(startDateStr);
-    const start = new Date(takenDate.getFullYear(), takenDate.getMonth(), takenDate.getDate());
-    const today = new Date();
-    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const diffTime = Math.max(0, end.getTime() - start.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const months = diffDays / 30;
-    return txn.amount * (rateVal / 100) * months;
-  };
-
-  const calculateInterestForRange = (amount: number, rate: number, startStr: string, endStr: string) => {
-    if (!startStr || !endStr) return 0;
-    const start = new Date(startStr);
-    const end = new Date(endStr);
+  const calculateLoanInterest = (metal: string, amount: number, startDate: Date | string, endDate: Date | string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Normalize to date-only to avoid time-of-day differences
     const startDt = new Date(start.getFullYear(), start.getMonth(), start.getDate());
     const endDt = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    
     const diffTime = Math.max(0, endDt.getTime() - startDt.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const months = diffDays / 30;
-    return amount * (rate / 100) * months;
+    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let currentPrincipal = amount;
+    let compoundingLog: any[] = [];
+    
+    const totalYears = Math.floor(totalDays / 365);
+    const remainingDays = totalDays % 365;
+
+    const metalLower = (metal || "gold").toLowerCase();
+
+    const getMonthlyRate = (principalAmt: number) => {
+      if (metalLower === 'gold') {
+        return principalAmt < 10000 ? 0.03 : 0.02;
+      } else {
+        return 0.05;
+      }
+    };
+
+    // Calculate year-by-year compounding
+    for (let yr = 1; yr <= totalYears; yr++) {
+      const rate = getMonthlyRate(currentPrincipal);
+      const yearlyInterest = currentPrincipal * rate * 12;
+      
+      compoundingLog.push({
+        event: `Year ${yr} Mark`,
+        basePrincipal: Math.round(currentPrincipal),
+        interestEarned: Math.round(yearlyInterest),
+        monthlyRatePercent: (rate * 100) + '%'
+      });
+
+      currentPrincipal += yearlyInterest;
+    }
+
+    // Calculate final fractional months for remaining days
+    const monthsFraction = remainingDays / 30.416;
+    const fullMonths = Math.floor(monthsFraction);
+    const extraDaysFraction = remainingDays % 30.416;
+
+    let addedMonthFraction = 0;
+    if (extraDaysFraction >= 20) {
+      addedMonthFraction = 1.0;
+    } else if (extraDaysFraction >= 7 && extraDaysFraction <= 19) {
+      addedMonthFraction = 0.5;
+    }
+
+    const totalFractionalMonths = fullMonths + addedMonthFraction;
+    const finalRate = getMonthlyRate(currentPrincipal);
+    const fractionalInterest = currentPrincipal * finalRate * totalFractionalMonths;
+
+    if (totalFractionalMonths > 0) {
+      compoundingLog.push({
+        event: `Settlement Frame`,
+        basePrincipal: Math.round(currentPrincipal),
+        interestEarned: Math.round(fractionalInterest),
+        monthlyRatePercent: (finalRate * 100) + '%',
+        durationText: `${fullMonths} months, ${Math.round(extraDaysFraction)} days (rounded to ${totalFractionalMonths} months)`
+      });
+    }
+
+    const totalFinalPayable = Math.round(currentPrincipal + fractionalInterest);
+    const totalInterestGained = totalFinalPayable - amount;
+
+    return {
+      totalDays,
+      totalInterest: totalInterestGained,
+      settlementAmount: totalFinalPayable,
+      log: compoundingLog
+    };
+  };
+
+  const getLoanInterest = (txn: any) => {
+    const startDateStr = txn.loanDetails?.interestPaidUpto || txn.loanDetails?.takenDate || txn.date;
+    const res = calculateLoanInterest(txn.category || "gold", txn.amount, startDateStr, new Date().toISOString());
+    return res.totalInterest;
+  };
+
+  const calculateInterestForRange = (amount: number, rate: number, startStr: string, endStr: string, category: string = "gold") => {
+    if (!startStr || !endStr) return 0;
+    const res = calculateLoanInterest(category, amount, startStr, endStr);
+    return res.totalInterest;
   };
 
   const handlePayInterest = (txnId: string, paidUptoDate: string, amount: number, remarks: string) => {
@@ -1139,7 +1205,8 @@ export default function Dashboard() {
             Number(form.amount),
             parseFloat(form.interestRate) || 0,
             form.takenDate,
-            form.interestPaidUpto
+            form.interestPaidUpto,
+            offlineLoanMetalType
           ),
           paidUpto: form.interestPaidUpto,
           remarks: "Offline imported interest clearance"
@@ -3533,7 +3600,8 @@ export default function Dashboard() {
                           selectedLoanTxn.amount,
                           parseFloat(selectedLoanTxn.loanDetails?.interestRate) || 0,
                           selectedLoanTxn.loanDetails?.interestPaidUpto || selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date,
-                          interestPaidUptoDate
+                          interestPaidUptoDate,
+                          selectedLoanTxn.category
                         ).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                       </div>
                     </div>
@@ -3553,7 +3621,8 @@ export default function Dashboard() {
                           selectedLoanTxn.amount,
                           parseFloat(selectedLoanTxn.loanDetails?.interestRate) || 0,
                           selectedLoanTxn.loanDetails?.interestPaidUpto || selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date,
-                          interestPaidUptoDate
+                          interestPaidUptoDate,
+                          selectedLoanTxn.category
                         );
                         handlePayInterest(selectedLoanTxn.id, interestPaidUptoDate, amt, interestRemarks);
                       }}
