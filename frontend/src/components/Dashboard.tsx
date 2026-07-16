@@ -364,10 +364,20 @@ export default function Dashboard() {
     const remainingDays = totalDays % 365;
 
     const metalLower = (metal || "gold").toLowerCase();
+    const isGold = metalLower === 'gold' || metalLower === 'jewelry' || metalLower === 'gold jewellery';
 
-    const getMonthlyRate = (principalAmt: number) => {
-      if (metalLower === 'gold') {
-        return principalAmt < 10000 ? 0.03 : 0.02;
+    const getMonthlyRate = (principalAmt: number, isFractional: boolean = false) => {
+      if (isGold) {
+        if (!isFractional) {
+          if (principalAmt >= 10000 || (principalAmt + principalAmt * 0.03 * 12) >= 10000) {
+            return 0.02;
+          }
+        } else {
+          if (principalAmt >= 10000) {
+            return 0.02;
+          }
+        }
+        return 0.03;
       } else {
         return 0.05;
       }
@@ -375,7 +385,7 @@ export default function Dashboard() {
 
     // Calculate year-by-year compounding
     for (let yr = 1; yr <= totalYears; yr++) {
-      const rate = getMonthlyRate(currentPrincipal);
+      const rate = getMonthlyRate(currentPrincipal, false);
       const yearlyInterest = currentPrincipal * rate * 12;
       
       compoundingLog.push({
@@ -401,7 +411,7 @@ export default function Dashboard() {
     }
 
     const totalFractionalMonths = fullMonths + addedMonthFraction;
-    const finalRate = getMonthlyRate(currentPrincipal);
+    const finalRate = getMonthlyRate(currentPrincipal, true);
     const fractionalInterest = currentPrincipal * finalRate * totalFractionalMonths;
 
     if (totalFractionalMonths > 0) {
