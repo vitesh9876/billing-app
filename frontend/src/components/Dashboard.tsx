@@ -156,6 +156,8 @@ export default function Dashboard() {
   // Loan history Search & Filters
   const [loanHistorySearch, setLoanHistorySearch] = useState("");
   const [loanHistoryFilter, setLoanHistoryFilter] = useState("all");
+  const [loanSortField, setLoanSortField] = useState<"date" | "name" | "amount">("date");
+  const [loanSortOrder, setLoanSortOrder] = useState<"asc" | "desc">("desc");
 
   // Custom Offline Loan States
   const [showOfflineLoanModal, setShowOfflineLoanModal] = useState(false);
@@ -2711,6 +2713,23 @@ export default function Dashboard() {
                     <option value="pending">Pending</option>
                     <option value="cleared">Cleared</option>
                   </select>
+                  <select 
+                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer font-semibold text-slate-700 bg-white"
+                    value={loanSortField}
+                    onChange={(e) => setLoanSortField(e.target.value as any)}
+                  >
+                    <option value="date">Sort by: Date</option>
+                    <option value="name">Sort by: Name</option>
+                    <option value="amount">Sort by: Amount</option>
+                  </select>
+                  <select 
+                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer font-semibold text-slate-700 bg-white"
+                    value={loanSortOrder}
+                    onChange={(e) => setLoanSortOrder(e.target.value as any)}
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
                 </div>
               </div>
 
@@ -2744,6 +2763,27 @@ export default function Dashboard() {
                           || (loanHistoryFilter === "cleared" && status === "Cleared");
                         
                         return matchesSearch && matchesFilter;
+                      })
+                      .sort((a, b) => {
+                        let valA: any = "";
+                        let valB: any = "";
+                        
+                        if (loanSortField === "date") {
+                          valA = a.loanDetails?.takenDate || a.date || "";
+                          valB = b.loanDetails?.takenDate || b.date || "";
+                        } else if (loanSortField === "name") {
+                          const custA = customers.find(c => c.id === a.customerId);
+                          const custB = customers.find(c => c.id === b.customerId);
+                          valA = custA ? custA.name.toLowerCase() : "";
+                          valB = custB ? custB.name.toLowerCase() : "";
+                        } else if (loanSortField === "amount") {
+                          valA = Number(a.amount) || 0;
+                          valB = Number(b.amount) || 0;
+                        }
+                        
+                        if (valA < valB) return loanSortOrder === "asc" ? -1 : 1;
+                        if (valA > valB) return loanSortOrder === "asc" ? 1 : -1;
+                        return 0;
                       })
                       .map((t, idx) => {
                         const cust = customers.find(c => c.id === t.customerId);
