@@ -3428,6 +3428,8 @@ export default function Dashboard() {
                     <th className="p-2">Yield</th>
                     <th className="p-2">Gross</th>
                     <th className="p-2">Net</th>
+                    <th className="p-2">Worth</th>
+                    <th className="p-2">Remarks</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 font-semibold">
@@ -3436,8 +3438,10 @@ export default function Dashboard() {
                       <td className="p-2">{item.qty}</td>
                       <td className="p-2">{item.name}</td>
                       <td className="p-2">{item.yield || "-"}</td>
-                      <td className="p-2">{item.grossWeight}g</td>
-                      <td className="p-2">{item.netWeight}g</td>
+                      <td className="p-2">{item.grossWeight ? item.grossWeight + "g" : "-"}</td>
+                      <td className="p-2">{item.netWeight ? item.netWeight + "g" : "-"}</td>
+                      <td className="p-2">{item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-"}</td>
+                      <td className="p-2 text-slate-500 font-medium">{item.remarks || "-"}</td>
                     </tr>
                   ))}
                 </tbody>
