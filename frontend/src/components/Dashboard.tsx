@@ -3639,8 +3639,8 @@ export default function Dashboard() {
                   />
                 </div>
 
-                {/* Row 2: Customer Name (with suggestions) & Phone */}
-                <div className="form-group relative">
+                {/* Row 2: Customer Name (with suggestions) - spans full width */}
+                <div className="form-group col-span-2 relative">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Customer Name *</label>
                   <input 
                     type="text" 
@@ -3683,6 +3683,30 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
+
+                {/* Row 3: Father's/Husband's Name - spans full width */}
+                <div className="form-group col-span-2">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Father's/Husband's Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="Father's/Husband's Name..."
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.father}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, father: e.target.value }))}
+                  />
+                </div>
+
+                {/* Row 4: Ration/Aadhar ID Proof & Phone Number (side-by-side) */}
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Ration/Aadhar ID Proof</label>
+                  <input 
+                    type="text" 
+                    placeholder="ID Proof..."
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    value={offlineLoanForm.idProof}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, idProof: e.target.value }))}
+                  />
+                </div>
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Phone Number</label>
                   <input 
@@ -3694,29 +3718,7 @@ export default function Dashboard() {
                   />
                 </div>
 
-                {/* Row 3: Father's Name & ID Proof */}
-                <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Father's/Husband's Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="Father's/Husband's Name..."
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                    value={offlineLoanForm.father}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, father: e.target.value }))}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Ration/Aadhar ID Proof</label>
-                  <input 
-                    type="text" 
-                    placeholder="ID Proof..."
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                    value={offlineLoanForm.idProof}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, idProof: e.target.value }))}
-                  />
-                </div>
-
-                {/* Row 4: Address (with suggestions) - placed above Mandal */}
+                {/* Row 5: Address (with suggestions) */}
                 <div className="form-group col-span-2 relative">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Address</label>
                   <input 
@@ -3752,7 +3754,7 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                {/* Row 5: Mandal (with suggestions) - placed below Address */}
+                {/* Row 6: Mandal (with suggestions) */}
                 <div className="form-group col-span-2 relative">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Mandal</label>
                   <input 
