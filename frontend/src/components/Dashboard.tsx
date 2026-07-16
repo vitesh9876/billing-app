@@ -437,7 +437,8 @@ export default function Dashboard() {
 
   const getLoanInterest = (txn: any) => {
     const startDateStr = txn.loanDetails?.interestPaidUpto || txn.loanDetails?.takenDate || txn.date;
-    const res = calculateLoanInterest(txn.category || "gold", txn.amount, startDateStr, new Date().toISOString());
+    const endDateStr = txn.status === "Cleared" ? (txn.clearedDate || txn.loanDetails?.clearedDate || new Date().toISOString()) : new Date().toISOString();
+    const res = calculateLoanInterest(txn.category || "gold", txn.amount, startDateStr, endDateStr);
     return res.totalInterest;
   };
 
@@ -3538,7 +3539,8 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {selectedLoanTxn.loanDetails?.interestPaidUpto && (
+                  {selectedLoanTxn.loanDetails?.interestPaidUpto && 
+                   selectedLoanTxn.loanDetails.interestPaidUpto !== (selectedLoanTxn.loanDetails.takenDate || selectedLoanTxn.date) && (
                     <div className="col-span-2 text-slate-600 bg-slate-100 p-1.5 rounded font-bold">
                       Last Cleared Upto: <span className="font-technical text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
                     </div>
@@ -3552,7 +3554,11 @@ export default function Dashboard() {
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-blue-400 uppercase tracking-wider block font-bold">Total Due</span>
-                    <span className="text-lg font-extrabold text-blue-600">₹{(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                    <span className="text-lg font-extrabold text-blue-600">
+                      {selectedLoanTxn.status === "Cleared" 
+                        ? "₹0 (Cleared)" 
+                        : `₹${(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
+                    </span>
                   </div>
                 </div>
               </div>
