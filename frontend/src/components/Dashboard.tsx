@@ -3419,31 +3419,6 @@ export default function Dashboard() {
                 <div className="col-span-2 pt-2"><strong>Mandal:</strong> {selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mb-4">
-                <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Financial Details</h4>
-                <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
-                  <div>Principal: <strong className="text-slate-800">₹{selectedLoanTxn.amount.toLocaleString('en-IN')}</strong></div>
-                  <div>Interest Rate: <strong className="text-slate-800">{selectedLoanTxn.loanDetails?.interestRate} per month</strong></div>
-                  <div>Taken Date: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}</strong></div>
-                  <div>Period End: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.endDate)}</strong></div>
-                  
-                  {selectedLoanTxn.status === "Cleared" && (
-                    <div className="col-span-2 text-slate-600 bg-emerald-50 border border-emerald-100 p-1.5 rounded font-bold">
-                      Cleared On: <span className="font-technical text-emerald-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || selectedLoanTxn.date)}</span>
-                    </div>
-                  )}
-
-                  {selectedLoanTxn.loanDetails?.interestPaidUpto && (
-                    <div className="col-span-2 text-slate-600 bg-slate-100 p-1.5 rounded font-bold">
-                      Last Cleared Upto: <span className="font-technical text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
-                    </div>
-                  )}
-                  
-                  <div className="text-rose-600">Interest Generated: <strong>₹{getLoanInterest(selectedLoanTxn).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
-                  <div className="text-blue-600">Total Due: <strong>₹{(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
-                </div>
-              </div>
-
               <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Pledged Items</h4>
               <table className="w-full text-left text-xs divide-y divide-slate-100 mb-4 border border-slate-100 rounded-lg">
                 <thead>
@@ -3467,6 +3442,39 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+
+              <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mb-4">
+                <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3">Financial Details</h4>
+                <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600 mb-4">
+                  <div>Interest Rate: <strong className="text-slate-800">{selectedLoanTxn.loanDetails?.interestRate} per month</strong></div>
+                  <div>Interest Generated: <strong className="text-rose-600">₹{getLoanInterest(selectedLoanTxn).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
+                  <div>Taken Date: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}</strong></div>
+                  <div>Period End: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.endDate)}</strong></div>
+                  
+                  {selectedLoanTxn.status === "Cleared" && (
+                    <div className="col-span-2 text-slate-600 bg-emerald-50 border border-emerald-100 p-1.5 rounded font-bold">
+                      Cleared On: <span className="font-technical text-emerald-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || selectedLoanTxn.date)}</span>
+                    </div>
+                  )}
+
+                  {selectedLoanTxn.loanDetails?.interestPaidUpto && (
+                    <div className="col-span-2 text-slate-600 bg-slate-100 p-1.5 rounded font-bold">
+                      Last Cleared Upto: <span className="font-technical text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-200/60 pt-3 flex justify-between items-center">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Principal Amount</span>
+                    <span className="text-lg font-extrabold text-slate-800">₹{selectedLoanTxn.amount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-blue-400 uppercase tracking-wider block font-bold">Total Due</span>
+                    <span className="text-lg font-extrabold text-blue-600">₹{(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              </div>
 
               {/* Interest Payment History Ledger */}
               {selectedLoanTxn.loanDetails?.interestPayments?.length > 0 && (
