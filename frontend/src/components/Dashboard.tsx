@@ -181,6 +181,7 @@ export default function Dashboard() {
     interestPaidUpto: "",
     clearedDate: "",
     pledgedItemsStr: "",
+    qty: "1",
     yield: "60%",
     grossWeight: "",
     netWeight: "",
@@ -1068,8 +1069,8 @@ export default function Dashboard() {
   const handleSaveOfflineLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     const form = offlineLoanForm;
-    if (!form.custName.trim() || !form.phone.trim() || !form.amount) {
-      alert("Please enter customer name, phone number, and loan amount.");
+    if (!form.custName.trim() || !form.amount) {
+      alert("Please enter customer name and loan amount.");
       return;
     }
 
@@ -1170,7 +1171,7 @@ export default function Dashboard() {
             {
               id: 1,
               name: form.pledgedItemsStr.trim() || "Pledged Item",
-              qty: 1,
+              qty: Number(form.qty) || 1,
               yield: form.yield.trim() || "60%",
               grossWeight: form.grossWeight.trim(),
               netWeight: form.netWeight.trim(),
@@ -1208,6 +1209,7 @@ export default function Dashboard() {
         interestPaidUpto: "",
         clearedDate: "",
         pledgedItemsStr: "",
+        qty: "1",
         yield: "60%",
         grossWeight: "",
         netWeight: "",
@@ -2673,6 +2675,7 @@ export default function Dashboard() {
                         interestPaidUpto: "",
                         clearedDate: "",
                         pledgedItemsStr: "",
+                        qty: "1",
                         yield: "60%",
                         grossWeight: "",
                         netWeight: "",
@@ -3572,6 +3575,7 @@ export default function Dashboard() {
                       interestPaidUpto: selectedLoanTxn.loanDetails?.interestPaidUpto || "",
                       clearedDate: selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || "",
                       pledgedItemsStr: selectedLoanTxn.loanDetails?.items?.map((i: any) => i.name).join("; ") || "",
+                      qty: String(firstItem?.qty || "1"),
                       yield: firstItem?.yield || "60%",
                       grossWeight: firstItem?.grossWeight || "",
                       netWeight: firstItem?.netWeight || "",
@@ -3680,11 +3684,10 @@ export default function Dashboard() {
                   )}
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Phone Number *</label>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Phone Number</label>
                   <input 
                     type="tel" 
-                    required 
-                    placeholder="Enter phone number..."
+                    placeholder="Enter phone number (optional)..."
                     className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
                     value={offlineLoanForm.phone}
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, phone: e.target.value }))}
@@ -3801,39 +3804,53 @@ export default function Dashboard() {
                   <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider">Pledged Items Block</h4>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Item name string (with autocomplete) */}
-                    <div className="form-group col-span-2 relative">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Pledged Items (e.g. 2x Gold Ring; 1x Gold Chain)</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="Type items separated by semicolon..."
-                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                        value={offlineLoanForm.pledgedItemsStr}
-                        onChange={(e) => {
-                          setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: e.target.value }));
-                          setShowItemSuggestions(true);
-                        }}
-                        onFocus={() => setShowItemSuggestions(true)}
-                        onBlur={() => setTimeout(() => setShowItemSuggestions(false), 200)}
-                      />
-                      {showItemSuggestions && (
-                        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
-                          {uniqueItemNames.filter(name => {
-                            const typedTerm = getPledgedItemSearchTerm(offlineLoanForm.pledgedItemsStr);
-                            return typedTerm && name.toLowerCase().includes(typedTerm.toLowerCase());
-                          }).slice(0, 8).map(suggestedName => (
-                            <button
-                              key={suggestedName}
-                              type="button"
-                              onMouseDown={() => handleSelectPledgedItemSuggestion(suggestedName)}
-                              className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 text-slate-700 font-bold border-b border-slate-100 last:border-0"
-                            >
-                              {suggestedName}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                    {/* Item name string (with autocomplete) and Qty beside it */}
+                    <div className="col-span-2 grid grid-cols-4 gap-4">
+                      <div className="form-group col-span-3 relative">
+                        <label className="text-xs font-bold text-slate-400 block mb-1">Pledged Items (e.g. Gold Ring; Gold Chain)</label>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Type items separated by semicolon..."
+                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                          value={offlineLoanForm.pledgedItemsStr}
+                          onChange={(e) => {
+                            setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: e.target.value }));
+                            setShowItemSuggestions(true);
+                          }}
+                          onFocus={() => setShowItemSuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowItemSuggestions(false), 200)}
+                        />
+                        {showItemSuggestions && (
+                          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                            {uniqueItemNames.filter(name => {
+                              const typedTerm = getPledgedItemSearchTerm(offlineLoanForm.pledgedItemsStr);
+                              return typedTerm && name.toLowerCase().includes(typedTerm.toLowerCase());
+                            }).slice(0, 8).map(suggestedName => (
+                              <button
+                                key={suggestedName}
+                                type="button"
+                                onMouseDown={() => handleSelectPledgedItemSuggestion(suggestedName)}
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 text-slate-700 font-bold border-b border-slate-100 last:border-0"
+                              >
+                                {suggestedName}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="form-group col-span-1">
+                        <label className="text-xs font-bold text-slate-400 block mb-1">Qty</label>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Qty..."
+                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                          value={offlineLoanForm.qty}
+                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, qty: e.target.value }))}
+                        />
+                      </div>
                     </div>
 
                     {/* Weights & Worth */}
