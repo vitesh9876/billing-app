@@ -3621,7 +3621,7 @@ export default function Dashboard() {
          {/* ADD CUSTOM OFFLINE LOAN MODAL */}
       {showOfflineLoanModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center p-4 overflow-y-auto items-start">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-4xl p-6 flex flex-col my-8">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-2xl p-6 flex flex-col my-8">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
               <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
                 <PlusCircle className="text-emerald-600" size={20} /> Add Custom Offline Loan
@@ -3653,8 +3653,8 @@ export default function Dashboard() {
                   />
                 </div>
 
-                {/* Row 2: Customer Name (with suggestions) - spans full width */}
-                <div className="form-group col-span-2 relative">
+                {/* Row 2: Customer Name (with suggestions) */}
+                <div className="form-group relative">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Customer Name *</label>
                   <input 
                     type="text" 
@@ -3698,8 +3698,8 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                {/* Row 3: Father's/Husband's Name - spans full width */}
-                <div className="form-group col-span-2">
+                {/* Row 3: Father's/Husband's Name */}
+                <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Father's/Husband's Name</label>
                   <input 
                     type="text" 
@@ -3733,7 +3733,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Row 5: Address (with suggestions) */}
-                <div className="form-group col-span-2 relative">
+                <div className="form-group relative">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Address</label>
                   <input 
                     type="text" 
@@ -3769,7 +3769,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Row 6: Mandal (with suggestions) */}
-                <div className="form-group col-span-2 relative">
+                <div className="form-group relative">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Mandal</label>
                   <input 
                     type="text" 
