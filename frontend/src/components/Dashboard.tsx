@@ -3411,10 +3411,12 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50">
                 <div><strong>Bill No:</strong> {formatBillNoForDisplay(selectedLoanTxn.id)}</div>
                 <div className="pt-0"><strong>Date:</strong> {formatDateToDDMMYYYY(selectedLoanTxn.date)}</div>
-                <div className="pt-2"><strong>Pledger Name:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</div>
-                <div className="pt-2"><strong>Phone No:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</div>
-                <div className="pt-2"><strong>Father's Name:</strong> {selectedLoanTxn.loanDetails?.father || "-"}</div>
+                <div className="col-span-2 pt-2"><strong>Pledger Name:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</div>
+                <div className="col-span-2 pt-2"><strong>Father's Name:</strong> {selectedLoanTxn.loanDetails?.father || "-"}</div>
                 <div className="pt-2"><strong>ID Proof:</strong> {selectedLoanTxn.loanDetails?.idProof || "-"}</div>
+                <div className="pt-2"><strong>Phone No:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</div>
+                <div className="col-span-2 pt-2"><strong>Address:</strong> {selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}</div>
+                <div className="col-span-2 pt-2"><strong>Mandal:</strong> {selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</div>
               </div>
 
               <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mb-4">
