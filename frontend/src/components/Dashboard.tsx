@@ -1069,33 +1069,36 @@ export default function Dashboard() {
     try {
       // Find or create customer
       let custId = null;
-      if (editingTxnId) {
+      const cleanPhone = form.phone.trim();
+      const cleanName = form.custName.trim().toLowerCase();
+      const isValidPhone = (p: string) => {
+        const clean = p.trim();
+        return clean !== "" && clean !== "-" && clean !== "null" && clean !== "undefined" && clean !== "None" && clean.length > 5;
+      };
+
+      // 1. Search for an existing customer in database matching name or valid phone
+      let cust = null;
+      if (cleanPhone && isValidPhone(cleanPhone)) {
+        cust = customers.find(c => c.phone && c.phone.trim() === cleanPhone);
+      }
+      if (!cust) {
+        cust = customers.find(c => c.name.toLowerCase() === cleanName);
+      }
+
+      if (cust) {
+        custId = cust.id;
+      } else if (editingTxnId) {
+        // 2. If we are editing, check if name matches the original customer name
         const existingTxn = transactions.find(t => t.id === editingTxnId);
-        if (existingTxn) {
-          custId = existingTxn.customerId;
+        const originalCust = existingTxn ? customers.find(c => c.id === existingTxn.customerId) : null;
+        if (originalCust && originalCust.name.toLowerCase() === cleanName) {
+          // Name is the same, so we are editing details of the same customer
+          custId = originalCust.id;
         }
       }
 
       if (!custId) {
-        let cust = null;
-        const cleanPhone = form.phone.trim();
-        const cleanName = form.custName.trim().toLowerCase();
-        const isValidPhone = (p: string) => {
-          const clean = p.trim();
-          return clean !== "" && clean !== "-" && clean !== "null" && clean !== "undefined" && clean !== "None" && clean.length > 5;
-        };
-
-        if (cleanPhone && isValidPhone(cleanPhone)) {
-          cust = customers.find(c => c.phone && c.phone.trim() === cleanPhone);
-        }
-        if (!cust) {
-          cust = customers.find(c => c.name.toLowerCase() === cleanName);
-        }
-        custId = cust?.id;
-      }
-
-      if (!custId) {
-        // Generate new customer ID
+        // 3. Name changed to a new one, so create a new customer record
         custId = "CUST-" + Date.now();
       }
 
