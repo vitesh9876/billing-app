@@ -1151,7 +1151,7 @@ export default function Dashboard() {
         customerId: custId,
         type: "loan",
         amount: Number(form.amount),
-        category: "Jewelry", // Default
+        category: offlineLoanMetalType,
         date: form.takenDate,
         status: form.status,
         clearedDate: form.status === "Cleared" ? (form.clearedDate || new Date().toISOString().split('T')[0]) : null,
