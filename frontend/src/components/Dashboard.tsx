@@ -4100,6 +4100,28 @@ export default function Dashboard() {
                   )}
                 </div>
 
+                {/* Amount and Interest Rate */}
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Loan Finance Amount * (₹)</label>
+                  <input 
+                    type="text" 
+                    required 
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-rose-600 animate-pulse"
+                    value={offlineLoanForm.amount}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, amount: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Interest Rate (Auto per month)</label>
+                  <input 
+                    type="number" 
+                    step="any"
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-blue-600"
+                    value={offlineLoanForm.interestRate.replace("%", "")}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestRate: e.target.value + "%" }))}
+                  />
+                </div>
+
                 {/* Metal Type Radio Bar */}
                 <div className="flex items-center gap-6 py-2 border-b border-slate-100 col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metal Type:</label>
@@ -4219,27 +4241,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Amount, Interest Rate, End Date, Status */}
-                <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Loan Finance Amount * (₹)</label>
-                  <input 
-                    type="text" 
-                    required 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-rose-600 animate-pulse"
-                    value={offlineLoanForm.amount}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, amount: e.target.value }))}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Interest Rate (Auto per month)</label>
-                  <input 
-                    type="number" 
-                    step="any"
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-blue-600"
-                    value={offlineLoanForm.interestRate.replace("%", "")}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestRate: e.target.value + "%" }))}
-                  />
-                </div>
+
 
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">To be released Date *</label>
