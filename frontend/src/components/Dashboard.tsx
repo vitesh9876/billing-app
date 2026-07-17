@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -38,6 +38,15 @@ export default function Dashboard() {
   const [remindersStatus, setRemindersStatus] = useState<any[]>([]);
   const [showConnectionGuide, setShowConnectionGuide] = useState(false);
   const [readmeSubTab, setReadmeSubTab] = useState("Overview");
+  const isDeleteKey = useRef(false);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      isDeleteKey.current = e.key === "Backspace" || e.key === "Delete";
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
   
   // Theme state
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -1198,7 +1207,14 @@ export default function Dashboard() {
           }));
           setShowCustSuggestions(false);
         } else if (isAddressField) {
-          setOfflineLoanForm(prev => ({ ...prev, address: selected }));
+          setOfflineLoanForm(prev => {
+            const updated = { ...prev, address: selected };
+            const lowerAddr = selected.trim().toLowerCase();
+            if (lowerAddr === 'kesarapalli' || lowerAddr === 'b. b. guddem' || lowerAddr === 'b.b.guddem' || lowerAddr === 'b. b. gudem' || lowerAddr === 'b.b.gudem' || lowerAddr === 'b.b. guddem') {
+              updated.mandal = 'Gannavaram';
+            }
+            return updated;
+          });
           setShowAddressSuggestions(false);
         } else if (isMandalField) {
           setOfflineLoanForm(prev => ({ ...prev, mandal: selected }));
@@ -1229,6 +1245,63 @@ export default function Dashboard() {
               return;
             }
             nextIndex++;
+          }
+        }
+      }
+    }
+  };
+
+  const handleAutocompleteInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldName: string,
+    suggestionPool: string[]
+  ) => {
+    const value = e.target.value;
+    
+    // Update form state first
+    setOfflineLoanForm(prev => {
+      const updated = { ...prev, [fieldName]: value };
+      
+      // Auto-adjust Mandal if Address changes
+      if (fieldName === 'address') {
+        const lowerAddr = value.trim().toLowerCase();
+        if (lowerAddr === 'kesarapalli' || lowerAddr === 'b. b. guddem' || lowerAddr === 'b.b.guddem' || lowerAddr === 'b. b. gudem' || lowerAddr === 'b.b.gudem' || lowerAddr === 'b.b. guddem') {
+          updated.mandal = 'Gannavaram';
+        }
+      }
+      return updated;
+    });
+
+    if (isDeleteKey.current) return;
+
+    // Inline autocompletion (typeahead)
+    if (!value) return;
+    const typedLower = value.toLowerCase();
+    const match = suggestionPool.find(item => item && item.toLowerCase().startsWith(typedLower));
+    
+    if (match) {
+      const typedWords = value.split(/\s+/);
+      const matchWords = match.split(/\s+/);
+      
+      const endsWithSpace = value.endsWith(" ");
+      const targetWordCount = typedWords.filter(Boolean).length + (endsWithSpace ? 1 : 0);
+      
+      if (targetWordCount <= matchWords.length) {
+        const completedText = matchWords.slice(0, targetWordCount).join(" ");
+        if (completedText.toLowerCase().startsWith(typedLower)) {
+          const suffix = completedText.slice(value.length);
+          if (suffix) {
+            const inputEl = e.target;
+            const startSel = value.length;
+            const endSel = completedText.length;
+            
+            // Set form state with suffix
+            setOfflineLoanForm(prev => ({ ...prev, [fieldName]: completedText }));
+            
+            // Highlight/select suffix after render
+            requestAnimationFrame(() => {
+              inputEl.setSelectionRange(startSel, endSel);
+            });
           }
         }
       }
@@ -1611,8 +1684,28 @@ export default function Dashboard() {
     setShowCustomerModal(true);
   };
 
-  const uniqueAddresses = Array.from(new Set(customers.map(c => c.address).filter(Boolean)));
-  const uniqueMandals = Array.from(new Set(customers.map(c => c.mandal).filter(Boolean)));
+  // Deduplicate case-insensitively to prevent duplicates due to case variations
+  const uniqueAddressesMap = new Map<string, string>();
+  customers.forEach(c => {
+    if (c.address) {
+      const lower = c.address.trim().toLowerCase();
+      if (!uniqueAddressesMap.has(lower)) {
+        uniqueAddressesMap.set(lower, c.address.trim());
+      }
+    }
+  });
+  const uniqueAddresses = Array.from(uniqueAddressesMap.values());
+
+  const uniqueMandalsMap = new Map<string, string>();
+  customers.forEach(c => {
+    if (c.mandal) {
+      const lower = c.mandal.trim().toLowerCase();
+      if (!uniqueMandalsMap.has(lower)) {
+        uniqueMandalsMap.set(lower, c.mandal.trim());
+      }
+    }
+  });
+  const uniqueMandals = Array.from(uniqueMandalsMap.values());
   const uniqueItemNames = Array.from(new Set([
     ...itemsCatalog.map(i => i.name),
     ...transactions.flatMap(t => t.loanDetails?.items?.map((i: any) => i.name) || [])
@@ -3847,7 +3940,7 @@ export default function Dashboard() {
                     className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
                     value={offlineLoanForm.custName}
                     onChange={(e) => {
-                      setOfflineLoanForm(prev => ({ ...prev, custName: e.target.value }));
+                      handleAutocompleteInputChange(e, "custName", customers.map(c => c.name));
                       setShowCustSuggestions(true);
                     }}
                     onFocus={() => setShowCustSuggestions(true)}
@@ -3894,7 +3987,7 @@ export default function Dashboard() {
                     placeholder="Father's/Husband's Name..."
                     className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
                     value={offlineLoanForm.father}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, father: e.target.value }))}
+                    onChange={(e) => handleAutocompleteInputChange(e, "father", customers.map(c => c.father).filter(Boolean))}
                   />
                 </div>
 
@@ -3929,7 +4022,7 @@ export default function Dashboard() {
                     className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
                     value={offlineLoanForm.address}
                     onChange={(e) => {
-                      setOfflineLoanForm(prev => ({ ...prev, address: e.target.value }));
+                      handleAutocompleteInputChange(e, "address", uniqueAddresses);
                       setShowAddressSuggestions(true);
                     }}
                     onFocus={() => setShowAddressSuggestions(true)}
@@ -3944,7 +4037,14 @@ export default function Dashboard() {
                           key={addr}
                           type="button"
                           onMouseDown={() => {
-                            setOfflineLoanForm(prev => ({ ...prev, address: addr }));
+                            setOfflineLoanForm(prev => {
+                              const updated = { ...prev, address: addr };
+                              const lowerAddr = addr.trim().toLowerCase();
+                              if (lowerAddr === 'kesarapalli' || lowerAddr === 'b. b. guddem' || lowerAddr === 'b.b.guddem' || lowerAddr === 'b. b. gudem' || lowerAddr === 'b.b.gudem' || lowerAddr === 'b.b. guddem') {
+                                updated.mandal = 'Gannavaram';
+                              }
+                              return updated;
+                            });
                             setShowAddressSuggestions(false);
                           }}
                           className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
@@ -3969,7 +4069,7 @@ export default function Dashboard() {
                     className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
                     value={offlineLoanForm.mandal}
                     onChange={(e) => {
-                      setOfflineLoanForm(prev => ({ ...prev, mandal: e.target.value }));
+                      handleAutocompleteInputChange(e, "mandal", uniqueMandals);
                       setShowMandalSuggestions(true);
                     }}
                     onFocus={() => setShowMandalSuggestions(true)}
