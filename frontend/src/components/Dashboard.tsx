@@ -1390,7 +1390,6 @@ export default function Dashboard() {
           setShowItemSuggestions(false);
         }
         setActiveSuggestIndex(-1);
-        return;
       }
 
       // Default Enter navigation behavior (if no suggestion is active)
