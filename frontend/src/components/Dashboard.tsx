@@ -3184,8 +3184,7 @@ export default function Dashboard() {
                       <th className="pb-3">Pledged Items</th>
                       <th className="pb-3">Qty</th>
                       <th className="pb-3">Gross Wt (g)</th>
-                      <th className="pb-3">Original Amount</th>
-                      <th className="pb-3">Current Amount</th>
+                      <th className="pb-3">Amount</th>
                       <th className="pb-3">Loan Taken Date</th>
                       <th className="pb-3">Interest Generated</th>
                       <th className="pb-3">Status</th>
@@ -3233,8 +3232,6 @@ export default function Dashboard() {
                         const cust = customers.find(c => c.id === t.customerId);
                         const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
                         const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
-                        const origAmt = t.loanDetails?.topups?.length > 0 ? t.loanDetails.topups[0].oldPrincipal : t.amount;
-                        const currAmt = t.amount;
                         return (
                           <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
                             <td className="py-3 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
@@ -3242,8 +3239,7 @@ export default function Dashboard() {
                             <td className="py-3">{t.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
                             <td className="py-3 text-slate-500">{totalQty}</td>
                             <td className="py-3 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
-                            <td className="py-3 font-semibold text-slate-700">₹{origAmt.toLocaleString('en-IN')}</td>
-                            <td className="py-3 font-bold text-slate-800">₹{currAmt.toLocaleString('en-IN')}</td>
+                            <td className="py-3 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
                             <td className="py-3">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
                             <td className="py-3 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                             <td className="py-3">
