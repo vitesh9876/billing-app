@@ -228,8 +228,11 @@ def get_dashboard_data(db: Session = Depends(get_db)):
     # Calculate reminders status
     today = datetime.date.today()
     loans = db.query(Transaction).filter(Transaction.type == "loan", Transaction.status != "Cleared").all()
-    reminders = []
     
+    # List of tuples (phone, message) for fast in-memory search
+    sms_sent_list = [(s.phone, s.message or "") for s in sms_queue]
+    
+    reminders = []
     for l in loans:
         try:
             details = json.loads(l.itemsJson) if l.itemsJson else {}
@@ -263,13 +266,23 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         
         if days_left <= 30:
             cust = cust_map.get(l.customerId)
-            reminders.append({
-                "txnId": l.id,
-                "customerName": cust.name if cust else "Unknown",
-                "phone": cust.phone if cust else "-",
-                "daysLeft": days_left,
-                "status": "Due" if days_left <= 0 else "Approaching"
-            })
+            if cust:
+                sent_30 = any(phone == cust.phone and str(l.id) in msg and "30 రోజులు" in msg for phone, msg in sms_sent_list)
+                sent_7 = any(phone == cust.phone and str(l.id) in msg and "7 రోజులు" in msg for phone, msg in sms_sent_list)
+                
+                reminders.append({
+                    "loanId": l.id,
+                    "customerId": cust.id,
+                    "customerName": cust.name,
+                    "phone": cust.phone,
+                    "amount": l.amount,
+                    "endDate": end_date_str,
+                    "releaseDate": end_date_str,
+                    "daysLeft": days_left,
+                    "sent30Day": sent_30,
+                    "sent7Day": sent_7,
+                    "status": "Due" if days_left <= 0 else "Approaching"
+                })
             
     catalog_items = ItemCatalogRepository.get_all(db)
     
