@@ -449,3 +449,7 @@
 2026-07-16 11:25:03,208 - SmartShopAPI - INFO - Browser client connected to real-time events.
 2026-07-16 11:25:49,008 - SmartShopAPI - INFO - Browser client disconnected.
 2026-07-16 11:25:49,009 - SmartShopAPI - INFO - Browser client disconnected.
+2026-07-17 11:35:30,699 - SmartShopAPI - INFO - Starting scheduled daily automated loan reminders scan...
+2026-07-17 11:35:30,739 - SmartShopAPI - INFO - Daily automated scan finished. Queued 0 reminders.
+2026-07-17 11:38:48,694 - SmartShopAPI - INFO - Starting scheduled daily automated loan reminders scan...
+2026-07-17 11:38:48,695 - SmartShopAPI - INFO - Daily automated scan finished. Queued 0 reminders.

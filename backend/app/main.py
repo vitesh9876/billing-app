@@ -273,9 +273,30 @@ def get_dashboard_data(db: Session = Depends(get_db)):
     return {
         "customers": [dict(id=c.id, name=c.name, phone=c.phone, address=c.address, father=c.father, idproof=c.idproof, mandal=c.mandal) for c in customers],
         "transactions": transactions,
-        "smsTemplates": sms_templates,
-        "smsQueue": sms_queue,
-        "smsDevices": [dict(uuid=d.uuid, deviceName=d.deviceName, battery=d.battery, operator=d.operator, connectionStatus=d.connectionStatus, lastActive=d.lastActive) for d in sms_devices],
+        "smsTemplates": [dict(id=t.id, name=t.name, content=t.content) for t in sms_templates],
+        "smsQueue": [
+            dict(
+                id=s.uuid,
+                customer_id=s.customerId,
+                phone=s.phone,
+                message=s.message,
+                status=s.status,
+                retry_count=s.retryCount,
+                created_time=s.createdAt
+            ) for s in sms_queue
+        ],
+        "smsDevices": [
+            dict(
+                id=d.deviceUuid,
+                name=d.name,
+                model=d.model,
+                battery=d.battery,
+                sim=d.operator,
+                status=d.connectionStatus,
+                connection=d.connectionStatus,
+                last_seen=d.lastSeen
+            ) for d in sms_devices
+        ],
         "itemsCatalog": catalog_items,
         "remindersStatus": reminders
     }
