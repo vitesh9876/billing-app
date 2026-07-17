@@ -216,6 +216,10 @@ export default function Dashboard() {
   const [selectedLoanTxn, setSelectedLoanTxn] = useState<any>(null);
   const [interestPaidUptoDate, setInterestPaidUptoDate] = useState(new Date().toISOString().split('T')[0]);
   const [interestRemarks, setInterestRemarks] = useState("");
+  const [showTopUpForm, setShowTopUpForm] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState("");
+  const [topUpDate, setTopUpDate] = useState(new Date().toISOString().split('T')[0]);
+  const [topUpRemarks, setTopUpRemarks] = useState("");
 
   // SMS queue filter
   const [smsQueueSearch, setSmsQueueSearch] = useState("");
@@ -448,7 +452,8 @@ export default function Dashboard() {
     const startDateStr = txn.loanDetails?.interestPaidUpto || txn.loanDetails?.takenDate || txn.date;
     const endDateStr = txn.status === "Cleared" ? (txn.clearedDate || txn.loanDetails?.clearedDate || new Date().toISOString()) : new Date().toISOString();
     const res = calculateLoanInterest(txn.category || "gold", txn.amount, startDateStr, endDateStr);
-    return res.totalInterest;
+    const accumulated = txn.loanDetails?.accumulatedInterest || 0;
+    return res.totalInterest + accumulated;
   };
 
   const calculateInterestForRange = (amount: number, rate: number, startStr: string, endStr: string, category: string = "gold") => {
@@ -481,6 +486,7 @@ export default function Dashboard() {
     const updatedLoanDetails = {
       ...currentLoanDetails,
       interestPaidUpto: paidUptoDate,
+      accumulatedInterest: 0,
       interestPayments: [...previousPayments, newPayment]
     };
     
@@ -527,6 +533,100 @@ export default function Dashboard() {
         setTransactions(transactions.map(t => t.id === txnId ? updatedTxn : t));
         setSelectedLoanTxn(updatedTxn);
         setInterestRemarks("");
+        refreshData();
+      });
+  };
+
+  const handleSaveTopUp = () => {
+    const extra = Number(topUpAmount);
+    if (!extra || extra <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    const passcode = prompt("Enter 4-digit passcode to authorize extra money addition:");
+    if (passcode === null) return;
+    if (passcode.trim() !== "1004") {
+      alert("Incorrect passcode! Authorization Denied.");
+      return;
+    }
+
+    const txn = transactions.find(t => t.id === selectedLoanTxn.id);
+    if (!txn) return;
+
+    const originalAmt = txn.amount;
+    const originalDateStr = txn.loanDetails?.interestPaidUpto || txn.loanDetails?.takenDate || txn.date;
+    
+    // Calculate difference in months between originalDate and topUpDate
+    const d0 = new Date(originalDateStr);
+    const d1 = new Date(topUpDate);
+    const diffTime = Math.max(0, d1.getTime() - d0.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffMonths = diffDays / 30.416;
+
+    let newAccumulatedInterest = txn.loanDetails?.accumulatedInterest || 0;
+    let newTakenDate = txn.loanDetails?.takenDate || txn.date;
+    let newInterestPaidUpto = txn.loanDetails?.interestPaidUpto || txn.date;
+
+    let logMessage = "";
+    if (diffMonths < 1.0) {
+      // Rule 1: Within 1 month
+      // Interest on old amount is ignored, and new principal starts from T1
+      newTakenDate = topUpDate;
+      newInterestPaidUpto = topUpDate;
+      logMessage = `Top-up of ₹${extra.toLocaleString('en-IN')} added within 1 month. Interest cycle reset to ${topUpDate}.`;
+    } else {
+      // Rule 2: After 1 month
+      // Interest on old amount is calculated, accumulated, and new principal starts from T1
+      const generatedInterest = calculateInterestForRange(
+        originalAmt,
+        parseFloat(txn.loanDetails?.interestRate) || 0,
+        originalDateStr,
+        topUpDate,
+        txn.category
+      );
+      newAccumulatedInterest += generatedInterest;
+      newTakenDate = topUpDate;
+      newInterestPaidUpto = topUpDate;
+      logMessage = `Top-up of ₹${extra.toLocaleString('en-IN')} added. Interest of ₹${generatedInterest.toLocaleString('en-IN')} accrued and locked up to ${topUpDate}.`;
+    }
+
+    const previousTopups = txn.loanDetails?.topups || [];
+    const newTopupRecord = {
+      date: topUpDate,
+      extraAmount: extra,
+      oldPrincipal: originalAmt,
+      newPrincipal: originalAmt + extra,
+      interestAccrued: diffMonths >= 1.0 ? calculateInterestForRange(originalAmt, parseFloat(txn.loanDetails?.interestRate) || 0, originalDateStr, topUpDate, txn.category) : 0,
+      remarks: topUpRemarks || "Extra money taken"
+    };
+
+    const updatedLoanDetails = {
+      ...txn.loanDetails,
+      takenDate: newTakenDate,
+      interestPaidUpto: newInterestPaidUpto,
+      accumulatedInterest: newAccumulatedInterest,
+      topups: [...previousTopups, newTopupRecord]
+    };
+
+    const updatedTxn = {
+      ...txn,
+      amount: originalAmt + extra,
+      loanDetails: updatedLoanDetails
+    };
+
+    fetch("/api/v1/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedTxn)
+    }).then(res => res.json())
+      .then((savedTxn) => {
+        alert(logMessage);
+        setShowTopUpForm(false);
+        setTopUpAmount("");
+        setTopUpRemarks("");
+        setTransactions(transactions.map(t => t.id === savedTxn.id ? savedTxn : t));
+        setSelectedLoanTxn(savedTxn);
         refreshData();
       });
   };
@@ -1796,7 +1896,7 @@ export default function Dashboard() {
   const activeConnectedDevice = smsDevices.find(d => d.connection === "Connected");
 
   return (
-    <div className={`flex min-h-screen bg-slate-50 font-sans print:bg-white text-slate-900 w-full ${theme}`}>
+    <div className={`flex h-screen overflow-hidden bg-slate-50 font-sans print:bg-white text-slate-900 w-full ${theme}`}>
       
       {/* Sidebar Navigation */}
       <aside className="hidden md:flex w-64 sidebar-premium text-slate-100 flex-col justify-between print:hidden shrink-0">
@@ -2978,17 +3078,18 @@ export default function Dashboard() {
 
           {/* COMBINED LOAN HISTORY TAB */}
           {activeTab === "loan-history" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <div className="mb-4">
-                <button 
-                  onClick={() => setActiveTab("dashboard")}
-                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
-                >
-                  &larr; Back to Dashboard
-                </button>
-              </div>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h3 className="font-bold text-lg text-slate-800">Loans</h3>
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm relative">
+              <div className="sticky -top-6 bg-white z-10 pt-2 pb-4 mb-4 border-b border-slate-100">
+                <div className="mb-4">
+                  <button 
+                    onClick={() => setActiveTab("dashboard")}
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                  >
+                    &larr; Back to Dashboard
+                  </button>
+                </div>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <h3 className="font-bold text-lg text-slate-800">Loans</h3>
                 <div className="flex flex-wrap gap-2 items-center w-full md:w-auto justify-end">
                   <button 
                     onClick={() => {
@@ -3072,6 +3173,7 @@ export default function Dashboard() {
                   </select>
                 </div>
               </div>
+              </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
@@ -3082,6 +3184,8 @@ export default function Dashboard() {
                       <th className="pb-3">Pledged Items</th>
                       <th className="pb-3">Qty</th>
                       <th className="pb-3">Gross Wt (g)</th>
+                      <th className="pb-3">Original Amount</th>
+                      <th className="pb-3">Current Amount</th>
                       <th className="pb-3">Loan Taken Date</th>
                       <th className="pb-3">Interest Generated</th>
                       <th className="pb-3">Status</th>
@@ -3129,6 +3233,8 @@ export default function Dashboard() {
                         const cust = customers.find(c => c.id === t.customerId);
                         const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
                         const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
+                        const origAmt = t.loanDetails?.topups?.length > 0 ? t.loanDetails.topups[0].oldPrincipal : t.amount;
+                        const currAmt = t.amount;
                         return (
                           <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
                             <td className="py-3 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
@@ -3136,6 +3242,8 @@ export default function Dashboard() {
                             <td className="py-3">{t.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
                             <td className="py-3 text-slate-500">{totalQty}</td>
                             <td className="py-3 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
+                            <td className="py-3 font-semibold text-slate-700">₹{origAmt.toLocaleString('en-IN')}</td>
+                            <td className="py-3 font-bold text-slate-800">₹{currAmt.toLocaleString('en-IN')}</td>
                             <td className="py-3">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
                             <td className="py-3 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                             <td className="py-3">
@@ -3821,6 +3929,107 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Top-up History Ledger */}
+              {selectedLoanTxn.loanDetails?.topups?.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Extra Money / Top-up History</h4>
+                  <div className="max-h-24 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
+                    <table className="w-full text-left text-[10px] divide-y divide-slate-100">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold">
+                          <th className="p-2">Date</th>
+                          <th className="p-2">Extra Amount</th>
+                          <th className="p-2">Principal Shift</th>
+                          <th className="p-2">Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
+                        {selectedLoanTxn.loanDetails.topups.map((top: any, tIdx: number) => (
+                          <tr key={tIdx} className="hover:bg-slate-50/50">
+                            <td className="p-2 font-technical">{formatDateToDDMMYYYY(top.date)}</td>
+                            <td className="p-2 font-technical text-blue-600">+₹{top.extraAmount.toLocaleString('en-IN')}</td>
+                            <td className="p-2 text-slate-500 font-technical">₹{top.oldPrincipal.toLocaleString('en-IN')} → ₹{top.newPrincipal.toLocaleString('en-IN')}</td>
+                            <td className="p-2 text-slate-400">{top.remarks}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Extra Principal Additions (Top-up) Panel */}
+              {selectedLoanTxn.status !== "Cleared" && (
+                <div className="mb-4 bg-blue-50/30 border border-blue-100 rounded-lg p-3">
+                  {!showTopUpForm ? (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setShowTopUpForm(true);
+                        setTopUpDate(new Date().toISOString().split('T')[0]);
+                      }}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      <PlusCircle size={14} /> Take Extra Money (Principal Top-up)
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-700">Add Extra Money</span>
+                        <button type="button" onClick={() => setShowTopUpForm(false)} className="text-slate-400 hover:text-slate-600 text-xs">Cancel</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="form-group">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Extra Amount (₹)</label>
+                          <input 
+                            type="number" 
+                            placeholder="e.g. 1000"
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={topUpAmount}
+                            onChange={(e) => setTopUpAmount(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Taken Date</label>
+                          <input 
+                            type="date" 
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={topUpDate}
+                            onChange={(e) => setTopUpDate(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group col-span-2">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks / Reason</label>
+                          <input 
+                            type="text" 
+                            placeholder="Remarks..."
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={topUpRemarks}
+                            onChange={(e) => setTopUpRemarks(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          type="button" 
+                          onClick={() => setShowTopUpForm(false)}
+                          className="px-2.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={handleSaveTopUp}
+                          className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold"
+                        >
+                          Save Top-up
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Interest Payment History Ledger */}
               {selectedLoanTxn.loanDetails?.interestPayments?.length > 0 && (
