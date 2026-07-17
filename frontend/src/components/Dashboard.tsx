@@ -220,6 +220,10 @@ export default function Dashboard() {
   const [topUpAmount, setTopUpAmount] = useState("");
   const [topUpDate, setTopUpDate] = useState(new Date().toISOString().split('T')[0]);
   const [topUpRemarks, setTopUpRemarks] = useState("");
+  const [bulkReminderMessage, setBulkReminderMessage] = useState(
+    "ప్రియమైన {CustomerName}, మీ తాకట్టు గడువు పూర్తి అయ్యింది (లోన్ నెం: {LoanId}). దయచేసి విడుదల చేసుకోండి లేదా వడ్డీ కట్టుకోగలరు. ధన్యవాదములు."
+  );
+  const [selectedBulkReminderTxnIds, setSelectedBulkReminderTxnIds] = useState<string[]>([]);
 
   // SMS queue filter
   const [smsQueueSearch, setSmsQueueSearch] = useState("");
@@ -629,6 +633,51 @@ export default function Dashboard() {
         setSelectedLoanTxn(savedTxn);
         refreshData();
       });
+  };
+
+  const handleSendBulkReminders = async () => {
+    if (selectedBulkReminderTxnIds.length === 0) {
+      alert("No loans selected for sending reminders.");
+      return;
+    }
+    const passcode = prompt(`Enter 4-digit passcode to send ${selectedBulkReminderTxnIds.length} bulk reminders:`);
+    if (passcode === null) return;
+    if (passcode.trim() !== "1004") {
+      alert("Incorrect passcode! Authorization Denied.");
+      return;
+    }
+
+    let successCount = 0;
+    for (const txnId of selectedBulkReminderTxnIds) {
+      const rem = remindersStatus.find(r => r.loanId === txnId);
+      if (!rem || !rem.phone || rem.phone === "-") continue;
+
+      const formattedMsg = bulkReminderMessage
+        .replace("{CustomerName}", rem.customerName)
+        .replace("{LoanId}", formatBillNoForDisplay(rem.loanId));
+
+      try {
+        await fetch("/api/v1/sms/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: "SMS-BULK-" + txnId + "-" + Date.now(),
+            customerId: rem.customerId,
+            phone: rem.phone,
+            message: formattedMsg,
+            priority: 1,
+            createdBy: "System"
+          })
+        });
+        successCount++;
+      } catch (err) {
+        console.error("Failed to send bulk reminder for:", txnId, err);
+      }
+    }
+
+    alert(`Successfully queued ${successCount} reminders in the SMS queue!`);
+    setSelectedBulkReminderTxnIds([]);
+    refreshData();
   };
 
   // Autocomplete search handlers
@@ -3707,6 +3756,84 @@ export default function Dashboard() {
               >
                 ← BACK TO LOAN HISTORY
               </button>
+
+              {/* BULK BROADCAST REMINDER PANEL */}
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                      <MessageSquare size={16} className="text-blue-600" /> Bulk Broadcast Reminder (One-Click SMS)
+                    </h4>
+                    <p className="text-[11px] text-slate-400 font-semibold mt-0.5">
+                      Draft a message and send it to all customers with pending (due/overdue) loans in one click.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const pendingWithPhones = remindersStatus.filter(r => r.daysLeft <= 0 && r.phone && r.phone !== "-");
+                        setSelectedBulkReminderTxnIds(pendingWithPhones.map(r => r.loanId));
+                      }}
+                      className="px-3 py-1.5 border border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-lg text-xs transition-all bg-white"
+                    >
+                      Select All Pending Loans ({remindersStatus.filter(r => r.daysLeft <= 0 && r.phone && r.phone !== "-").length})
+                    </button>
+                    {selectedBulkReminderTxnIds.length > 0 && (
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedBulkReminderTxnIds([])}
+                        className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold rounded-lg text-xs transition-all bg-white"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-bold text-slate-400 block">Edit SMS Message Template</label>
+                    <textarea 
+                      rows={3}
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-xs outline-none bg-white font-semibold text-slate-700 focus:border-blue-500 transition-colors"
+                      value={bulkReminderMessage}
+                      onChange={(e) => setBulkReminderMessage(e.target.value)}
+                    />
+                    <div className="text-[10px] text-slate-400 font-semibold flex gap-3">
+                      <span>Use <strong>{`{CustomerName}`}</strong> and <strong>{`{LoanId}`}</strong> as automatic placeholders.</span>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Selected Recipients</span>
+                      <span className="text-xl font-extrabold text-blue-600">{selectedBulkReminderTxnIds.length} Customers</span>
+                      {selectedBulkReminderTxnIds.length > 0 && (
+                        <div className="max-h-20 overflow-y-auto text-[10px] text-slate-500 font-semibold space-y-0.5 mt-2 bg-white p-1.5 rounded border border-slate-200">
+                          {selectedBulkReminderTxnIds.map(txnId => {
+                            const r = remindersStatus.find(rem => rem.loanId === txnId);
+                            return r ? (
+                              <div key={txnId} className="flex justify-between">
+                                <span>{r.customerName}</span>
+                                <span className="text-slate-400">{r.phone}</span>
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <button 
+                      type="button"
+                      disabled={selectedBulkReminderTxnIds.length === 0}
+                      onClick={handleSendBulkReminders}
+                      className="w-full mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <Send size={12} /> Send Bulk Reminders
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
               <div className="flex justify-between items-center gap-4 border-b border-slate-100 pb-4">
                 <div>
