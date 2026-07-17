@@ -1156,6 +1156,7 @@ export default function Dashboard() {
     const isNameField = target.placeholder === "Enter customer name...";
     const isAddressField = target.placeholder === "Enter address...";
     const isMandalField = target.placeholder === "Enter mandal...";
+    const isItemField = target.placeholder === "Type items separated by semicolon...";
 
     // Determine currently active suggestions list
     let suggestionsList: any[] = [];
@@ -1171,6 +1172,11 @@ export default function Dashboard() {
       suggestionsList = uniqueMandals.filter(m => 
         m.toLowerCase().includes(offlineLoanForm.mandal.toLowerCase())
       ).slice(0, 5);
+    } else if (isItemField && showItemSuggestions && offlineLoanForm.pledgedItemsStr.trim()) {
+      const typedTerm = getPledgedItemSearchTerm(offlineLoanForm.pledgedItemsStr);
+      suggestionsList = uniqueItemNames.filter(name => 
+        typedTerm && name.toLowerCase().includes(typedTerm.toLowerCase())
+      ).slice(0, 8);
     }
 
     const hasSuggestions = suggestionsList.length > 0;
@@ -1219,6 +1225,9 @@ export default function Dashboard() {
         } else if (isMandalField) {
           setOfflineLoanForm(prev => ({ ...prev, mandal: selected }));
           setShowMandalSuggestions(false);
+        } else if (isItemField) {
+          handleSelectPledgedItemSuggestion(selected);
+          setShowItemSuggestions(false);
         }
         setActiveSuggestIndex(-1);
         return;
@@ -4149,8 +4158,43 @@ export default function Dashboard() {
                           className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
                           value={offlineLoanForm.pledgedItemsStr}
                           onChange={(e) => {
-                            setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: e.target.value }));
+                            const val = e.target.value;
+                            setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: val }));
                             setShowItemSuggestions(true);
+                            
+                            if (isDeleteKey.current) return;
+                            if (!val) return;
+                            
+                            const typedTerm = getPledgedItemSearchTerm(val);
+                            if (!typedTerm) return;
+                            const typedTermLower = typedTerm.toLowerCase();
+                            
+                            const match = uniqueItemNames.find(item => item && item.toLowerCase().startsWith(typedTermLower));
+                            if (match) {
+                              const typedWords = typedTerm.split(/\s+/);
+                              const matchWords = match.split(/\s+/);
+                              
+                              const endsWithSpace = typedTerm.endsWith(" ");
+                              const targetWordCount = typedWords.filter(Boolean).length + (endsWithSpace ? 1 : 0);
+                              
+                              if (targetWordCount <= matchWords.length) {
+                                const completedWord = matchWords.slice(0, targetWordCount).join(" ");
+                                if (completedWord.toLowerCase().startsWith(typedTermLower)) {
+                                  const suffix = completedWord.slice(typedTerm.length);
+                                  if (suffix) {
+                                    const inputEl = e.target;
+                                    const startSel = val.length;
+                                    const completedVal = val + suffix;
+                                    
+                                    setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: completedVal }));
+                                    
+                                    requestAnimationFrame(() => {
+                                      inputEl.setSelectionRange(startSel, completedVal.length);
+                                    });
+                                  }
+                                }
+                              }
+                            }
                           }}
                           onFocus={() => setShowItemSuggestions(true)}
                           onBlur={() => setTimeout(() => setShowItemSuggestions(false), 200)}
@@ -4160,12 +4204,16 @@ export default function Dashboard() {
                             {uniqueItemNames.filter(name => {
                               const typedTerm = getPledgedItemSearchTerm(offlineLoanForm.pledgedItemsStr);
                               return typedTerm && name.toLowerCase().includes(typedTerm.toLowerCase());
-                            }).slice(0, 8).map(suggestedName => (
+                            }).slice(0, 8).map((suggestedName, index) => (
                               <button
                                 key={suggestedName}
                                 type="button"
                                 onMouseDown={() => handleSelectPledgedItemSuggestion(suggestedName)}
-                                className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 text-slate-700 font-bold border-b border-slate-100 last:border-0"
+                                className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                                  activeSuggestIndex === index 
+                                    ? 'bg-blue-600 text-white' 
+                                    : 'hover:bg-blue-50 text-slate-700'
+                                }`}
                               >
                                 {suggestedName}
                               </button>
