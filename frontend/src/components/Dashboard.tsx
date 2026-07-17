@@ -3908,6 +3908,12 @@ export default function Dashboard() {
                       Last Cleared Upto: <span className="font-technical text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
                     </div>
                   )}
+
+                  {selectedLoanTxn.loanDetails?.note && (
+                    <div className="col-span-2 text-slate-600 bg-amber-50 border border-amber-100 p-2 rounded text-[11px]">
+                      <strong>Note:</strong> <span className="italic font-medium">{selectedLoanTxn.loanDetails.note}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-slate-200/60 pt-3 flex justify-between items-center">
