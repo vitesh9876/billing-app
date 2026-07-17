@@ -196,6 +196,7 @@ export default function Dashboard() {
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [showMandalSuggestions, setShowMandalSuggestions] = useState(false);
   const [showItemSuggestions, setShowItemSuggestions] = useState(false);
+  const [activeSuggestIndex, setActiveSuggestIndex] = useState(-1);
   const [editingTxnId, setEditingTxnId] = useState<string | null>(null);
 
   // Bulk Import States
@@ -1142,29 +1143,93 @@ export default function Dashboard() {
   };
 
   const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    const target = e.target as HTMLElement;
-    // Intercept Enter key presses on inputs and selects to focus the next field instead of saving
-    if (e.key === "Enter" && target.tagName !== "TEXTAREA" && target.getAttribute("type") !== "submit") {
-      e.preventDefault();
-      
-      const form = e.currentTarget;
-      const elements = Array.from(form.elements) as HTMLElement[];
-      const index = elements.indexOf(target);
-      
-      if (index > -1) {
-        let nextIndex = index + 1;
-        while (nextIndex < elements.length) {
-          const nextEl = elements[nextIndex];
-          const isFocusable = nextEl.tagName !== "FIELDSET" && 
-                              !nextEl.hasAttribute("disabled") && 
-                              nextEl.getAttribute("type") !== "hidden" && 
-                              nextEl.tabIndex !== -1;
-          
-          if (isFocusable) {
-            nextEl.focus();
-            return;
+    const target = e.target as HTMLInputElement;
+    const isNameField = target.placeholder === "Enter customer name...";
+    const isAddressField = target.placeholder === "Enter address...";
+    const isMandalField = target.placeholder === "Enter mandal...";
+
+    // Determine currently active suggestions list
+    let suggestionsList: any[] = [];
+    if (isNameField && showCustSuggestions && offlineLoanForm.custName.trim()) {
+      suggestionsList = customers.filter(c => 
+        c.name.toLowerCase().includes(offlineLoanForm.custName.toLowerCase())
+      ).slice(0, 8);
+    } else if (isAddressField && showAddressSuggestions && offlineLoanForm.address.trim()) {
+      suggestionsList = uniqueAddresses.filter(a => 
+        a.toLowerCase().includes(offlineLoanForm.address.toLowerCase())
+      ).slice(0, 5);
+    } else if (isMandalField && showMandalSuggestions && offlineLoanForm.mandal.trim()) {
+      suggestionsList = uniqueMandals.filter(m => 
+        m.toLowerCase().includes(offlineLoanForm.mandal.toLowerCase())
+      ).slice(0, 5);
+    }
+
+    const hasSuggestions = suggestionsList.length > 0;
+
+    if (e.key === "ArrowDown") {
+      if (hasSuggestions) {
+        e.preventDefault();
+        setActiveSuggestIndex(prev => (prev + 1) % suggestionsList.length);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      if (hasSuggestions) {
+        e.preventDefault();
+        setActiveSuggestIndex(prev => (prev - 1 + suggestionsList.length) % suggestionsList.length);
+      }
+      return;
+    }
+
+    if (e.key === "Enter") {
+      if (hasSuggestions && activeSuggestIndex >= 0 && activeSuggestIndex < suggestionsList.length) {
+        e.preventDefault();
+        const selected = suggestionsList[activeSuggestIndex];
+        if (isNameField) {
+          setOfflineLoanForm(prev => ({
+            ...prev,
+            custName: selected.name,
+            phone: selected.phone,
+            father: selected.father || "",
+            idProof: selected.idproof || "",
+            address: selected.address || "",
+            mandal: selected.mandal || ""
+          }));
+          setShowCustSuggestions(false);
+        } else if (isAddressField) {
+          setOfflineLoanForm(prev => ({ ...prev, address: selected }));
+          setShowAddressSuggestions(false);
+        } else if (isMandalField) {
+          setOfflineLoanForm(prev => ({ ...prev, mandal: selected }));
+          setShowMandalSuggestions(false);
+        }
+        setActiveSuggestIndex(-1);
+        return;
+      }
+
+      // Default Enter navigation behavior (if no suggestion is active)
+      if (target.tagName !== "TEXTAREA" && target.getAttribute("type") !== "submit") {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const elements = Array.from(form.elements) as HTMLElement[];
+        const index = elements.indexOf(target);
+        
+        if (index > -1) {
+          let nextIndex = index + 1;
+          while (nextIndex < elements.length) {
+            const nextEl = elements[nextIndex];
+            const isFocusable = nextEl.tagName !== "FIELDSET" && 
+                                !nextEl.hasAttribute("disabled") && 
+                                nextEl.getAttribute("type") !== "hidden" && 
+                                nextEl.tabIndex !== -1;
+            
+            if (isFocusable) {
+              nextEl.focus();
+              return;
+            }
+            nextIndex++;
           }
-          nextIndex++;
         }
       }
     }
@@ -3792,7 +3857,7 @@ export default function Dashboard() {
                     <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
                       {customers.filter(c => 
                         c.name.toLowerCase().includes(offlineLoanForm.custName.toLowerCase())
-                      ).slice(0, 8).map(c => (
+                      ).slice(0, 8).map((c, index) => (
                         <button
                           key={c.id}
                           type="button"
@@ -3808,7 +3873,11 @@ export default function Dashboard() {
                             }));
                             setShowCustSuggestions(false);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 text-slate-700 font-bold border-b border-slate-100 last:border-0"
+                          className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                            activeSuggestIndex === index 
+                              ? 'bg-blue-600 text-white' 
+                              : 'hover:bg-blue-50 text-slate-700'
+                          }`}
                         >
                           {c.name} ({c.phone} - {c.address})
                         </button>
@@ -3870,7 +3939,7 @@ export default function Dashboard() {
                     <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-50">
                       {uniqueAddresses.filter(a => 
                         a.toLowerCase().includes(offlineLoanForm.address.toLowerCase())
-                      ).slice(0, 5).map(addr => (
+                      ).slice(0, 5).map((addr, index) => (
                         <button
                           key={addr}
                           type="button"
@@ -3878,7 +3947,11 @@ export default function Dashboard() {
                             setOfflineLoanForm(prev => ({ ...prev, address: addr }));
                             setShowAddressSuggestions(false);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 text-slate-700 font-bold border-b border-slate-100 last:border-0"
+                          className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                            activeSuggestIndex === index 
+                              ? 'bg-blue-600 text-white' 
+                              : 'hover:bg-blue-50 text-slate-700'
+                          }`}
                         >
                           {addr}
                         </button>
@@ -3906,7 +3979,7 @@ export default function Dashboard() {
                     <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-50">
                       {uniqueMandals.filter(m => 
                         m.toLowerCase().includes(offlineLoanForm.mandal.toLowerCase())
-                      ).slice(0, 5).map(mnd => (
+                      ).slice(0, 5).map((mnd, index) => (
                         <button
                           key={mnd}
                           type="button"
@@ -3914,7 +3987,11 @@ export default function Dashboard() {
                             setOfflineLoanForm(prev => ({ ...prev, mandal: mnd }));
                             setShowMandalSuggestions(false);
                           }}
-                          className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 text-slate-700 font-bold border-b border-slate-100 last:border-0"
+                          className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                            activeSuggestIndex === index 
+                              ? 'bg-blue-600 text-white' 
+                              : 'hover:bg-blue-50 text-slate-700'
+                          }`}
                         >
                           {mnd}
                         </button>
