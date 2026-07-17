@@ -233,8 +233,12 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         except Exception:
             details = {}
             
-        taken_date_str = details.get("takenDate", l.date)
-        end_date_str = details.get("endDate")
+        if isinstance(details, dict):
+            taken_date_str = details.get("takenDate", l.date)
+            end_date_str = details.get("endDate")
+        else:
+            taken_date_str = l.date
+            end_date_str = None
         
         if not end_date_str:
             try:
