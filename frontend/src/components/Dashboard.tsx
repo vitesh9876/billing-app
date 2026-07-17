@@ -186,7 +186,9 @@ export default function Dashboard() {
     grossWeight: "",
     netWeight: "",
     worth: "",
-    remarks: ""
+    remarks: "",
+    interestAmountPaid: "",
+    note: ""
   });
 
   // Autocomplete UI states
@@ -257,22 +259,18 @@ export default function Dashboard() {
   }, []);
 
   const refreshData = () => {
-    fetch("/api/v1/customers").then(res => res.json()).then(setCustomers);
-    fetch("/api/v1/transactions").then(res => res.json()).then(setTransactions);
-    fetch("/api/v1/sms/templates").then(res => res.json()).then(setSmsTemplates);
-    fetch("/api/v1/sms/queue").then(res => res.json()).then(setSmsQueue);
-    fetch("/api/v1/devices").then(res => res.json()).then(setSmsDevices);
-    fetch("/api/v1/items")
+    fetch("/api/v1/dashboard-data")
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setItemsCatalog(data);
-        else setItemsCatalog([]);
+        if (data.customers) setCustomers(data.customers);
+        if (data.transactions) setTransactions(data.transactions);
+        if (data.smsTemplates) setSmsTemplates(data.smsTemplates);
+        if (data.smsQueue) setSmsQueue(data.smsQueue);
+        if (data.smsDevices) setSmsDevices(data.smsDevices);
+        if (Array.isArray(data.itemsCatalog)) setItemsCatalog(data.itemsCatalog);
+        if (Array.isArray(data.remindersStatus)) setRemindersStatus(data.remindersStatus);
       })
-      .catch(() => setItemsCatalog([]));
-    fetch("/api/v1/loans/reminders-status").then(res => res.json()).then(data => {
-      if (Array.isArray(data)) setRemindersStatus(data);
-      else setRemindersStatus([]);
-    }).catch(() => setRemindersStatus([]));
+      .catch(err => console.error("Error loading dashboard data:", err));
   };
 
   // Clear suggestions when navigating tabs
@@ -1143,6 +1141,35 @@ export default function Dashboard() {
     });
   };
 
+  const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    const target = e.target as HTMLElement;
+    // Intercept Enter key presses on inputs and selects to focus the next field instead of saving
+    if (e.key === "Enter" && target.tagName !== "TEXTAREA" && target.getAttribute("type") !== "submit") {
+      e.preventDefault();
+      
+      const form = e.currentTarget;
+      const elements = Array.from(form.elements) as HTMLElement[];
+      const index = elements.indexOf(target);
+      
+      if (index > -1) {
+        let nextIndex = index + 1;
+        while (nextIndex < elements.length) {
+          const nextEl = elements[nextIndex];
+          const isFocusable = nextEl.tagName !== "FIELDSET" && 
+                              !nextEl.hasAttribute("disabled") && 
+                              nextEl.getAttribute("type") !== "hidden" && 
+                              nextEl.tabIndex !== -1;
+          
+          if (isFocusable) {
+            nextEl.focus();
+            return;
+          }
+          nextIndex++;
+        }
+      }
+    }
+  };
+
   const handleSaveOfflineLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     const form = offlineLoanForm;
@@ -1212,7 +1239,7 @@ export default function Dashboard() {
       if (form.interestPaidUpto && form.interestPaidUpto !== form.takenDate) {
         interestPayments = [{
           date: new Date().toISOString().split('T')[0],
-          amountPaid: calculateInterestForRange(
+          amountPaid: form.interestAmountPaid ? Number(form.interestAmountPaid) : calculateInterestForRange(
             Number(form.amount),
             parseFloat(form.interestRate) || 0,
             form.takenDate,
@@ -1245,6 +1272,7 @@ export default function Dashboard() {
           clearedDate: form.status === "Cleared" ? (form.clearedDate || new Date().toISOString().split('T')[0]) : null,
           interestPaidUpto: form.interestPaidUpto || form.takenDate,
           interestPayments: interestPayments,
+          note: form.note.trim(),
           items: [
             {
               id: 1,
@@ -1292,7 +1320,9 @@ export default function Dashboard() {
         grossWeight: "",
         netWeight: "",
         worth: "",
-        remarks: ""
+        remarks: "",
+        interestAmountPaid: "",
+        note: ""
       });
       refreshData();
     } catch (err: any) {
@@ -2758,7 +2788,9 @@ export default function Dashboard() {
                         grossWeight: "",
                         netWeight: "",
                         worth: "",
-                        remarks: ""
+                        remarks: "",
+                        interestAmountPaid: "",
+                        note: ""
                       });
                       setShowOfflineLoanModal(true);
                     }}
@@ -3679,7 +3711,9 @@ export default function Dashboard() {
                       grossWeight: firstItem?.grossWeight || "",
                       netWeight: firstItem?.netWeight || "",
                       worth: firstItem?.value || "",
-                      remarks: firstItem?.remarks || ""
+                      remarks: firstItem?.remarks || "",
+                      interestAmountPaid: selectedLoanTxn.loanDetails?.interestPayments?.[0]?.amountPaid ? String(selectedLoanTxn.loanDetails.interestPayments[0].amountPaid) : "",
+                      note: selectedLoanTxn.loanDetails?.note || ""
                     });
                     setOfflineLoanMetalType(selectedLoanTxn.category || "Gold");
                     setEditingTxnId(selectedLoanTxn.id);
@@ -3714,7 +3748,7 @@ export default function Dashboard() {
               <button type="button" onClick={() => setShowOfflineLoanModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
             
-            <form onSubmit={handleSaveOfflineLoan} className="space-y-4 text-sm font-semibold">
+            <form onSubmit={handleSaveOfflineLoan} onKeyDown={handleFormKeyDown} className="space-y-4 text-sm font-semibold">
               <div className="grid grid-cols-2 gap-4">
                 {/* Row 1: Custom Bill No & Taken Date */}
                 <div className="form-group">
@@ -4064,7 +4098,7 @@ export default function Dashboard() {
                     />
                   </div>
                 )}
-                <div className="form-group">
+                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Interest Paid Upto Date</label>
                   <input 
                     type="date" 
@@ -4073,6 +4107,28 @@ export default function Dashboard() {
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestPaidUpto: e.target.value }))}
                   />
                 </div>
+                {offlineLoanForm.interestPaidUpto && offlineLoanForm.interestPaidUpto !== offlineLoanForm.takenDate && (
+                  <div className="form-group">
+                    <label className="text-xs font-bold text-slate-400 block mb-1">Interest Amount Cleared (₹)</label>
+                    <input 
+                      type="number" 
+                      placeholder="Enter amount cleared..."
+                      className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                      value={offlineLoanForm.interestAmountPaid}
+                      onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestAmountPaid: e.target.value }))}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group mt-4">
+                <label className="text-xs font-bold text-slate-400 block mb-1">Note</label>
+                <textarea 
+                  placeholder="Add any internal notes or remarks..."
+                  className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold min-h-[60px]"
+                  value={offlineLoanForm.note}
+                  onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, note: e.target.value }))}
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-6">

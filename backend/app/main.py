@@ -214,6 +214,68 @@ class BrowserWSManager:
 browser_ws = BrowserWSManager()
 
 # Version 1 Endpoints
+@app.get("/api/v1/dashboard-data")
+def get_dashboard_data(db: Session = Depends(get_db)):
+    customers = CustomerRepository.get_all(db)
+    transactions = TransactionRepository.get_all(db)
+    sms_templates = SMSTemplateRepository.get_all(db)
+    sms_queue = SMSQueueRepository.get_all(db)
+    sms_devices = DeviceRepository.get_all(db)
+    
+    # Calculate reminders status
+    today = datetime.date.today()
+    loans = db.query(Transaction).filter(Transaction.type == "loan", Transaction.status != "Cleared").all()
+    reminders = []
+    
+    for l in loans:
+        try:
+            details = json.loads(l.itemsJson) if l.itemsJson else {}
+        except Exception:
+            details = {}
+            
+        taken_date_str = details.get("takenDate", l.date)
+        end_date_str = details.get("endDate")
+        
+        if not end_date_str:
+            try:
+                taken_dt = datetime.datetime.strptime(taken_date_str, "%Y-%m-%d").date()
+            except Exception:
+                taken_dt = today
+            if l.category == "Silver":
+                end_dt = taken_dt + datetime.timedelta(days=90)
+            else:
+                end_dt = taken_dt + datetime.timedelta(days=365)
+            end_date_str = end_dt.strftime("%Y-%m-%d")
+            
+        try:
+            end_dt = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except Exception:
+            end_dt = today
+            
+        days_left = (end_dt - today).days
+        
+        if days_left <= 30:
+            cust = db.query(Customer).filter(Customer.id == l.customerId).first()
+            reminders.append({
+                "txnId": l.id,
+                "customerName": cust.name if cust else "Unknown",
+                "phone": cust.phone if cust else "-",
+                "daysLeft": days_left,
+                "status": "Due" if days_left <= 0 else "Approaching"
+            })
+            
+    catalog_items = ItemCatalogRepository.get_all(db)
+    
+    return {
+        "customers": [dict(id=c.id, name=c.name, phone=c.phone, address=c.address, father=c.father, idproof=c.idproof, mandal=c.mandal) for c in customers],
+        "transactions": transactions,
+        "smsTemplates": sms_templates,
+        "smsQueue": sms_queue,
+        "smsDevices": [dict(uuid=d.uuid, deviceName=d.deviceName, battery=d.battery, operator=d.operator, connectionStatus=d.connectionStatus, lastActive=d.lastActive) for d in sms_devices],
+        "itemsCatalog": catalog_items,
+        "remindersStatus": reminders
+    }
+
 @app.get("/api/v1/customers")
 def get_customers(db: Session = Depends(get_db)):
     customers = CustomerRepository.get_all(db)
