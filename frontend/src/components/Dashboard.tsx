@@ -205,6 +205,7 @@ export default function Dashboard() {
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [showMandalSuggestions, setShowMandalSuggestions] = useState(false);
   const [showItemSuggestions, setShowItemSuggestions] = useState(false);
+  const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
   const [activeSuggestIndex, setActiveSuggestIndex] = useState(-1);
   const [editingTxnId, setEditingTxnId] = useState<string | null>(null);
 
@@ -701,6 +702,64 @@ export default function Dashboard() {
     setOfflineLoanPledgedItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const handlePledgedItemRowChange = (
+    idx: number,
+    key: string,
+    val: any,
+    e?: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setOfflineLoanPledgedItems(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [key]: val };
+      return updated;
+    });
+
+    if (key === "name" && e) {
+      if (isDeleteKey.current) return;
+      if (!val) return;
+      const typedLower = val.toLowerCase();
+      const match = uniqueItemNames.find(item => item && item.toLowerCase().startsWith(typedLower));
+      if (match) {
+        const typedWords = val.split(/\s+/);
+        const matchWords = match.split(/\s+/);
+        
+        const endsWithSpace = val.endsWith(" ");
+        const targetWordCount = typedWords.filter(Boolean).length + (endsWithSpace ? 1 : 0);
+        
+        if (targetWordCount <= matchWords.length) {
+          const completedWord = matchWords.slice(0, targetWordCount).join(" ");
+          if (completedWord.toLowerCase().startsWith(typedLower)) {
+            const suffix = completedWord.slice(val.length);
+            if (suffix) {
+              const inputEl = e.target;
+              const startSel = val.length;
+              const completedVal = val + suffix;
+              
+              setOfflineLoanPledgedItems(prev => {
+                const updated = [...prev];
+                updated[idx] = { ...updated[idx], name: completedVal };
+                return updated;
+              });
+              
+              requestAnimationFrame(() => {
+                inputEl.setSelectionRange(startSel, completedVal.length);
+              });
+            }
+          }
+        }
+      }
+    }
+  };
+
+  const handleSelectPledgedItemRowSuggestion = (idx: number, name: string) => {
+    setOfflineLoanPledgedItems(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], name };
+      return updated;
+    });
+    setShowItemSuggestions(false);
+  };
+
   // Handle forms submit
   const handleSavePurchase = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1156,7 +1215,7 @@ export default function Dashboard() {
     const isNameField = target.placeholder === "Enter customer name...";
     const isAddressField = target.placeholder === "Enter address...";
     const isMandalField = target.placeholder === "Enter mandal...";
-    const isItemField = target.placeholder === "Type items separated by semicolon...";
+    const isItemField = target.placeholder && target.placeholder.startsWith("Item");
 
     // Determine currently active suggestions list
     let suggestionsList: any[] = [];
@@ -1172,11 +1231,12 @@ export default function Dashboard() {
       suggestionsList = uniqueMandals.filter(m => 
         m.toLowerCase().includes(offlineLoanForm.mandal.toLowerCase())
       ).slice(0, 5);
-    } else if (isItemField && showItemSuggestions && offlineLoanForm.pledgedItemsStr.trim()) {
-      const typedTerm = getPledgedItemSearchTerm(offlineLoanForm.pledgedItemsStr);
+    } else if (isItemField && showItemSuggestions && focusedItemIndex !== null) {
+      const activeItem = offlineLoanPledgedItems[focusedItemIndex];
+      const typedTerm = activeItem?.name || "";
       suggestionsList = uniqueItemNames.filter(name => 
         typedTerm && name.toLowerCase().includes(typedTerm.toLowerCase())
-      ).slice(0, 8);
+      ).slice(0, 5);
     }
 
     const hasSuggestions = suggestionsList.length > 0;
@@ -1225,8 +1285,8 @@ export default function Dashboard() {
         } else if (isMandalField) {
           setOfflineLoanForm(prev => ({ ...prev, mandal: selected }));
           setShowMandalSuggestions(false);
-        } else if (isItemField) {
-          handleSelectPledgedItemSuggestion(selected);
+        } else if (isItemField && focusedItemIndex !== null) {
+          handleSelectPledgedItemRowSuggestion(focusedItemIndex, selected);
           setShowItemSuggestions(false);
         }
         setActiveSuggestIndex(-1);
@@ -1420,18 +1480,16 @@ export default function Dashboard() {
           interestPaidUpto: form.interestPaidUpto || form.takenDate,
           interestPayments: interestPayments,
           note: form.note.trim(),
-          items: [
-            {
-              id: 1,
-              name: form.pledgedItemsStr.trim() || "Pledged Item",
-              qty: Number(form.qty) || 1,
-              yield: form.yield.trim() || "60%",
-              grossWeight: form.grossWeight.trim(),
-              netWeight: form.netWeight.trim(),
-              value: form.worth.trim(),
-              remarks: form.remarks.trim()
-            }
-          ]
+          items: offlineLoanPledgedItems.map((item, idx) => ({
+            id: idx + 1,
+            name: item.name.trim() || "Pledged Item",
+            qty: Number(item.qty) || 1,
+            yield: form.yield.trim() || "60%",
+            grossWeight: form.grossWeight.trim(),
+            netWeight: form.netWeight.trim(),
+            value: form.worth.trim(),
+            remarks: form.remarks.trim()
+          }))
         }
       };
 
@@ -1446,6 +1504,7 @@ export default function Dashboard() {
       alert("Offline loan saved successfully!");
       setShowOfflineLoanModal(false);
       setEditingTxnId(null);
+      setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
       setOfflineLoanForm({
         billNo: "",
         custName: "",
@@ -2959,6 +3018,7 @@ export default function Dashboard() {
                         interestAmountPaid: "",
                         note: ""
                       });
+                      setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
                       setShowOfflineLoanModal(true);
                     }}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
@@ -3883,6 +3943,15 @@ export default function Dashboard() {
                       note: selectedLoanTxn.loanDetails?.note || ""
                     });
                     setOfflineLoanMetalType(selectedLoanTxn.category || "Gold");
+                    if (selectedLoanTxn.loanDetails?.items?.length) {
+                      setOfflineLoanPledgedItems(selectedLoanTxn.loanDetails.items.map((i: any, idx: number) => ({
+                        id: i.id || idx + 1,
+                        name: i.name,
+                        qty: i.qty || 1
+                      })));
+                    } else {
+                      setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
+                    }
                     setEditingTxnId(selectedLoanTxn.id);
                     setSelectedLoanTxn(null);
                     setShowOfflineLoanModal(true);
@@ -4109,7 +4178,7 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                {/* Amount and Interest Rate */}
+                {/* Amount and Metal Type side-by-side */}
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Loan Finance Amount * (₹)</label>
                   <input 
@@ -4121,121 +4190,120 @@ export default function Dashboard() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Interest Rate (Auto per month)</label>
-                  <input 
-                    type="number" 
-                    step="any"
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-blue-600"
-                    value={offlineLoanForm.interestRate.replace("%", "")}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestRate: e.target.value + "%" }))}
-                  />
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Metal Type</label>
+                  <div className="flex items-center gap-4 h-[38px] border border-slate-200 rounded-lg px-3 bg-white">
+                    <label className="flex items-center gap-1.5 text-sm font-semibold cursor-pointer text-slate-700">
+                      <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Gold"} onChange={() => setOfflineLoanMetalType("Gold")} /> Gold
+                    </label>
+                    <label className="flex items-center gap-1.5 text-sm font-semibold cursor-pointer text-slate-700">
+                      <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Silver"} onChange={() => setOfflineLoanMetalType("Silver")} /> Silver
+                    </label>
+                  </div>
                 </div>
 
-                {/* Metal Type Radio Bar */}
-                <div className="flex items-center gap-6 py-2 border-b border-slate-100 col-span-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metal Type:</label>
-                  <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
-                    <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Gold"} onChange={() => setOfflineLoanMetalType("Gold")} /> Gold
-                  </label>
-                  <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
-                    <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Silver"} onChange={() => setOfflineLoanMetalType("Silver")} /> Silver
-                  </label>
-                </div>
-
-                {/* Simplified Pledged Items Block */}
-                <div className="col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-4">
-                  <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider">Pledged Items Block</h4>
+                {/* Dynamic Pledged Items Block */}
+                <div className="col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3">
+                  <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Pledged Items Block</h4>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Item name string (with autocomplete) and Qty beside it */}
-                    <div className="col-span-2 grid grid-cols-4 gap-4">
-                      <div className="form-group col-span-3 relative">
-                        <label className="text-xs font-bold text-slate-400 block mb-1">Pledged Items (e.g. Gold Ring; Gold Chain)</label>
-                        <input 
-                          type="text" 
-                          required
-                          placeholder="Type items separated by semicolon..."
-                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                          value={offlineLoanForm.pledgedItemsStr}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: val }));
-                            setShowItemSuggestions(true);
-                            
-                            if (isDeleteKey.current) return;
-                            if (!val) return;
-                            
-                            const typedTerm = getPledgedItemSearchTerm(val);
-                            if (!typedTerm) return;
-                            const typedTermLower = typedTerm.toLowerCase();
-                            
-                            const match = uniqueItemNames.find(item => item && item.toLowerCase().startsWith(typedTermLower));
-                            if (match) {
-                              const typedWords = typedTerm.split(/\s+/);
-                              const matchWords = match.split(/\s+/);
-                              
-                              const endsWithSpace = typedTerm.endsWith(" ");
-                              const targetWordCount = typedWords.filter(Boolean).length + (endsWithSpace ? 1 : 0);
-                              
-                              if (targetWordCount <= matchWords.length) {
-                                const completedWord = matchWords.slice(0, targetWordCount).join(" ");
-                                if (completedWord.toLowerCase().startsWith(typedTermLower)) {
-                                  const suffix = completedWord.slice(typedTerm.length);
-                                  if (suffix) {
-                                    const inputEl = e.target;
-                                    const startSel = val.length;
-                                    const completedVal = val + suffix;
-                                    
-                                    setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: completedVal }));
-                                    
-                                    requestAnimationFrame(() => {
-                                      inputEl.setSelectionRange(startSel, completedVal.length);
-                                    });
-                                  }
-                                }
+                  <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                    {offlineLoanPledgedItems.map((item, idx) => (
+                      <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
+                        {/* Item Name (with autocomplete) */}
+                        <div className="col-span-9 relative">
+                          <input 
+                            type="text" 
+                            required
+                            placeholder={`Item ${idx + 1}...`}
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                            value={item.name}
+                            onChange={(e) => handlePledgedItemRowChange(idx, "name", e.target.value, e)}
+                            onFocus={() => {
+                              setFocusedItemIndex(idx);
+                              setShowItemSuggestions(true);
+                            }}
+                            onBlur={() => setTimeout(() => {
+                              if (focusedItemIndex === idx) {
+                                setShowItemSuggestions(false);
                               }
-                            }
-                          }}
-                          onFocus={() => setShowItemSuggestions(true)}
-                          onBlur={() => setTimeout(() => setShowItemSuggestions(false), 200)}
-                        />
-                        {showItemSuggestions && (
-                          <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
-                            {uniqueItemNames.filter(name => {
-                              const typedTerm = getPledgedItemSearchTerm(offlineLoanForm.pledgedItemsStr);
-                              return typedTerm && name.toLowerCase().includes(typedTerm.toLowerCase());
-                            }).slice(0, 8).map((suggestedName, index) => (
-                              <button
-                                key={suggestedName}
-                                type="button"
-                                onMouseDown={() => handleSelectPledgedItemSuggestion(suggestedName)}
-                                className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
-                                  activeSuggestIndex === index 
-                                    ? 'bg-blue-600 text-white' 
-                                    : 'hover:bg-blue-50 text-slate-700'
-                                }`}
-                              >
-                                {suggestedName}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                            }, 200)}
+                          />
+                          {showItemSuggestions && focusedItemIndex === idx && item.name.trim() && (
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-50">
+                              {uniqueItemNames.filter(name => 
+                                name.toLowerCase().includes(item.name.toLowerCase())
+                              ).slice(0, 5).map((suggestedName, sIdx) => (
+                                <button
+                                  key={suggestedName}
+                                  type="button"
+                                  onMouseDown={() => handleSelectPledgedItemRowSuggestion(idx, suggestedName)}
+                                  className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                                    activeSuggestIndex === sIdx 
+                                      ? 'bg-blue-600 text-white' 
+                                      : 'hover:bg-blue-50 text-slate-700'
+                                  }`}
+                                >
+                                  {suggestedName}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {/* Qty */}
+                        <div className="col-span-2">
+                          <input 
+                            type="number" 
+                            required
+                            placeholder="Qty"
+                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-center"
+                            value={item.qty || ""}
+                            onChange={(e) => handlePledgedItemRowChange(idx, "qty", parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+                        {/* Delete row button */}
+                        <div className="col-span-1 flex justify-center">
+                          {offlineLoanPledgedItems.length > 1 && (
+                            <button 
+                              type="button" 
+                              onClick={() => removeOfflineLoanRow(item.id)}
+                              className="text-rose-500 hover:text-rose-700"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
                       </div>
+                    ))}
+                  </div>
 
-                      <div className="form-group col-span-1">
-                        <label className="text-xs font-bold text-slate-400 block mb-1">Qty</label>
-                        <input 
-                          type="text" 
-                          required
-                          placeholder="Qty..."
-                          className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                          value={offlineLoanForm.qty}
-                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, qty: e.target.value }))}
-                        />
-                      </div>
+                  <button 
+                    type="button" 
+                    onClick={addOfflineLoanRow}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1"
+                  >
+                    <PlusCircle size={14} /> + Add Item
+                  </button>
+
+                  {/* Weights & Worth details */}
+                  <div className="grid grid-cols-5 gap-3 mt-4 pt-3 border-t border-slate-200">
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-400 block mb-1">Total Qty</label>
+                      <input 
+                        type="text" 
+                        readOnly
+                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-slate-100 font-bold text-center text-slate-600"
+                        value={offlineLoanPledgedItems.reduce((sum, item) => sum + (item.qty || 0), 0)}
+                      />
                     </div>
-
-                    {/* Weights & Worth */}
+                    <div className="form-group">
+                      <label className="text-xs font-bold text-slate-400 block mb-1">Yield/KDM</label>
+                      <input 
+                        type="text" 
+                        placeholder="60%"
+                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                        value={offlineLoanForm.yield}
+                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, yield: e.target.value }))}
+                      />
+                    </div>
                     <div className="form-group">
                       <label className="text-xs font-bold text-slate-400 block mb-1">Gross Weight (g)</label>
                       <input 
@@ -4247,7 +4315,7 @@ export default function Dashboard() {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Net Weight (g)</label>
+                      <label className="text-xs font-bold text-slate-400 block mb-1">Net Wt. (g)</label>
                       <input 
                         type="text" 
                         placeholder="0.00"
@@ -4256,16 +4324,12 @@ export default function Dashboard() {
                         onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, netWeight: e.target.value }))}
                       />
                     </div>
-                    <div className="form-group">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Yield/KDM</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 60%"
-                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                        value={offlineLoanForm.yield}
-                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, yield: e.target.value }))}
-                      />
+                    <div className="form-group col-span-1">
+                      {/* Empty cell or spacer */}
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-2">
                     <div className="form-group">
                       <label className="text-xs font-bold text-slate-400 block mb-1">Worth (₹)</label>
                       <input 
@@ -4276,7 +4340,7 @@ export default function Dashboard() {
                         onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, worth: e.target.value }))}
                       />
                     </div>
-                    <div className="form-group col-span-2">
+                    <div className="form-group">
                       <label className="text-xs font-bold text-slate-400 block mb-1">Remarks</label>
                       <input 
                         type="text" 
@@ -4290,6 +4354,19 @@ export default function Dashboard() {
                 </div>
 
 
+
+
+
+                <div className="form-group">
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Interest Rate (Auto per month)</label>
+                  <input 
+                    type="number" 
+                    step="any"
+                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-blue-600"
+                    value={offlineLoanForm.interestRate.replace("%", "")}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestRate: e.target.value + "%" }))}
+                  />
+                </div>
 
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">To be released Date *</label>
