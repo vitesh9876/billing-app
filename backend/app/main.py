@@ -222,6 +222,9 @@ def get_dashboard_data(db: Session = Depends(get_db)):
     sms_queue = SMSQueueRepository.get_all(db)
     sms_devices = DeviceRepository.get_all(db)
     
+    # Map customers in-memory to avoid N+1 database queries
+    cust_map = {c.id: c for c in customers}
+    
     # Calculate reminders status
     today = datetime.date.today()
     loans = db.query(Transaction).filter(Transaction.type == "loan", Transaction.status != "Cleared").all()
@@ -259,7 +262,7 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         days_left = (end_dt - today).days
         
         if days_left <= 30:
-            cust = db.query(Customer).filter(Customer.id == l.customerId).first()
+            cust = cust_map.get(l.customerId)
             reminders.append({
                 "txnId": l.id,
                 "customerName": cust.name if cust else "Unknown",
@@ -475,8 +478,15 @@ def get_reminders_status(db: Session = Depends(get_db)):
     from backend.app.models.models import SMSQueue, Customer
     today = datetime.date.today()
     loans = db.query(Transaction).filter(Transaction.type == "loan", Transaction.status != "Cleared").all()
-    result = []
     
+    customers = db.query(Customer).all()
+    cust_map = {c.id: c for c in customers}
+    
+    sms_queue = db.query(SMSQueue).all()
+    # List of tuples (phone, message) for fast in-memory search
+    sms_sent_list = [(s.phone, s.message or "") for s in sms_queue]
+    
+    result = []
     for l in loans:
         try:
             details = json.loads(l.itemsJson) if l.itemsJson else {}
@@ -497,22 +507,13 @@ def get_reminders_status(db: Session = Depends(get_db)):
         end_dt = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
         days_left = (end_dt - today).days
         
-        cust = db.query(Customer).filter(Customer.id == l.customerId).first()
+        cust = cust_map.get(l.customerId)
         if not cust:
             continue
             
-        # Check if 30-day and 7-day reminders are sent
-        sent_30 = db.query(SMSQueue).filter(
-            SMSQueue.phone == cust.phone,
-            SMSQueue.message.like(f"%{l.id}%"),
-            SMSQueue.message.like(f"%30 రోజులు%")
-        ).first() is not None
-        
-        sent_7 = db.query(SMSQueue).filter(
-            SMSQueue.phone == cust.phone,
-            SMSQueue.message.like(f"%{l.id}%"),
-            SMSQueue.message.like(f"%7 రోజులు%")
-        ).first() is not None
+        # Check if 30-day and 7-day reminders are sent (in-memory scan instead of db queries)
+        sent_30 = any(phone == cust.phone and str(l.id) in msg and "30 రోజులు" in msg for phone, msg in sms_sent_list)
+        sent_7 = any(phone == cust.phone and str(l.id) in msg and "7 రోజులు" in msg for phone, msg in sms_sent_list)
         
         result.append({
             "loanId": l.id,
