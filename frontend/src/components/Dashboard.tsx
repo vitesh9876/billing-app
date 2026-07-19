@@ -174,7 +174,37 @@ export default function Dashboard() {
   const [offlineLoanPledgedItems, setOfflineLoanPledgedItems] = useState<any[]>([
     { id: 1, name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", remarks: "" }
   ]);
-  const [offlineLoanForm, setOfflineLoanForm] = useState({
+  interface OfflineLoanFormState {
+    billNo: string;
+    custName: string;
+    phone: string;
+    father: string;
+    idProof: string;
+    address: string;
+    mandal: string;
+    amount: string;
+    interestRate: string;
+    takenDate: string;
+    endDate: string;
+    status: string;
+    interestPaidUpto: string;
+    clearedDate: string;
+    pledgedItemsStr: string;
+    qty: string;
+    yield: string;
+    grossWeight: string;
+    netWeight: string;
+    worth: string;
+    remarks: string;
+    interestAmountPaid: string;
+    note: string;
+    topups: any[];
+    newTopUpAmount: string;
+    newTopUpDate: string;
+    newTopUpRemarks: string;
+  }
+
+  const [offlineLoanForm, setOfflineLoanForm] = useState<OfflineLoanFormState>({
     billNo: "",
     custName: "",
     phone: "",
@@ -197,7 +227,11 @@ export default function Dashboard() {
     worth: "",
     remarks: "",
     interestAmountPaid: "",
-    note: ""
+    note: "",
+    topups: [],
+    newTopUpAmount: "",
+    newTopUpDate: new Date().toISOString().split('T')[0],
+    newTopUpRemarks: ""
   });
 
   // Autocomplete UI states
@@ -571,28 +605,24 @@ export default function Dashboard() {
     let newAccumulatedInterest = txn.loanDetails?.accumulatedInterest || 0;
     let newTakenDate = txn.loanDetails?.takenDate || txn.date;
     let newInterestPaidUpto = txn.loanDetails?.interestPaidUpto || txn.date;
+    let interestAccrued = 0;
 
     let logMessage = "";
     if (diffMonths < 1.0) {
-      // Rule 1: Within 1 month
-      // Interest on old amount is ignored, and new principal starts from T1
-      newTakenDate = topUpDate;
-      newInterestPaidUpto = topUpDate;
-      logMessage = `Top-up of ₹${extra.toLocaleString('en-IN')} added within 1 month. Interest cycle reset to ${topUpDate}.`;
+      // Scenario A: Within 1 month
+      // Interest on total amount starts calculating from the old date. No date change.
+      logMessage = `Top-up of ₹${extra.toLocaleString('en-IN')} added within 1 month. Total amount is now ₹${(originalAmt + extra).toLocaleString('en-IN')}, and interest will be calculated from the original date.`;
     } else {
-      // Rule 2: After 1 month
-      // Interest on old amount is calculated, accumulated, and new principal starts from T1
-      const generatedInterest = calculateInterestForRange(
-        originalAmt,
-        parseFloat(txn.loanDetails?.interestRate) || 0,
-        originalDateStr,
-        topUpDate,
-        txn.category
-      );
-      newAccumulatedInterest += generatedInterest;
+      // Scenario B: After 1 month
+      // Interest on old amount is generated for the completed months, new cycle starts from top-up date.
+      const completedMonths = Math.max(1, Math.floor(diffMonths));
+      const rate = (parseFloat(txn.loanDetails?.interestRate) || 0) / 100;
+      interestAccrued = Math.round(originalAmt * rate * completedMonths);
+
+      newAccumulatedInterest += interestAccrued;
       newTakenDate = topUpDate;
       newInterestPaidUpto = topUpDate;
-      logMessage = `Top-up of ₹${extra.toLocaleString('en-IN')} added. Interest of ₹${generatedInterest.toLocaleString('en-IN')} accrued and locked up to ${topUpDate}.`;
+      logMessage = `Top-up of ₹${extra.toLocaleString('en-IN')} added. Interest of ₹${interestAccrued.toLocaleString('en-IN')} (${completedMonths} completed month(s)) accrued and locked up to ${topUpDate}.`;
     }
 
     const previousTopups = txn.loanDetails?.topups || [];
@@ -601,7 +631,7 @@ export default function Dashboard() {
       extraAmount: extra,
       oldPrincipal: originalAmt,
       newPrincipal: originalAmt + extra,
-      interestAccrued: diffMonths >= 1.0 ? calculateInterestForRange(originalAmt, parseFloat(txn.loanDetails?.interestRate) || 0, originalDateStr, topUpDate, txn.category) : 0,
+      interestAccrued: interestAccrued,
       remarks: topUpRemarks || "Extra money taken"
     };
 
@@ -1215,7 +1245,7 @@ export default function Dashboard() {
         calculatedEndDate = start.toISOString().split("T")[0];
       }
 
-      setOfflineLoanForm(prev => ({ ...prev, interestRate: rate, endDate: calculatedEndDate }));
+      setOfflineLoanForm((prev: any) => ({ ...prev, interestRate: rate, endDate: calculatedEndDate }));
     }
   }, [offlineLoanMetalType, offlineLoanForm.amount, offlineLoanForm.takenDate, showOfflineLoanModal]);
 
@@ -1606,11 +1636,59 @@ export default function Dashboard() {
         }];
       }
 
+      let originalAmt = Number(form.amount);
+      let updatedTopups = [...(form.topups || [])];
+      let updatedAccumulatedInterest = selectedLoanTxn?.loanDetails?.accumulatedInterest || 0;
+      let updatedTakenDate = form.takenDate;
+      let updatedInterestPaidUpto = form.interestPaidUpto || form.takenDate;
+
+      if (editingTxnId && form.newTopUpAmount) {
+        const extra = Number(form.newTopUpAmount);
+        if (extra > 0) {
+          const topUpDate = form.newTopUpDate || new Date().toISOString().split('T')[0];
+          const topUpRemarks = form.newTopUpRemarks || "Extra money taken";
+          const originalDateStr = form.interestPaidUpto || form.takenDate;
+
+          const d0 = new Date(originalDateStr);
+          const d1 = new Date(topUpDate);
+          const diffTime = Math.max(0, d1.getTime() - d0.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const diffMonths = diffDays / 30.416;
+
+          let interestAccrued = 0;
+          if (diffMonths < 1.0) {
+            // Scenario A: Within 1 month
+            updatedTakenDate = form.takenDate;
+            updatedInterestPaidUpto = form.interestPaidUpto || form.takenDate;
+          } else {
+            // Scenario B: After 1 month
+            const completedMonths = Math.max(1, Math.floor(diffMonths));
+            const rate = (parseFloat(form.interestRate) || 0) / 100;
+            interestAccrued = Math.round(originalAmt * rate * completedMonths);
+
+            updatedAccumulatedInterest += interestAccrued;
+            updatedTakenDate = topUpDate;
+            updatedInterestPaidUpto = topUpDate;
+          }
+
+          updatedTopups.push({
+            date: topUpDate,
+            extraAmount: extra,
+            oldPrincipal: originalAmt,
+            newPrincipal: originalAmt + extra,
+            interestAccrued: interestAccrued,
+            remarks: topUpRemarks
+          });
+
+          originalAmt += extra;
+        }
+      }
+
       const txnPayload = {
         id: txnId,
         customerId: custId,
         type: "loan",
-        amount: Number(form.amount),
+        amount: originalAmt,
         category: offlineLoanMetalType,
         date: form.takenDate,
         status: form.status,
@@ -1620,12 +1698,14 @@ export default function Dashboard() {
           idProof: form.idProof.trim(),
           address: form.address.trim(),
           mandal: form.mandal.trim(),
-          amount: Number(form.amount),
+          amount: originalAmt,
           interestRate: form.interestRate.endsWith("%") ? form.interestRate : (form.interestRate + "%"),
-          takenDate: form.takenDate,
+          takenDate: updatedTakenDate,
           endDate: form.endDate,
           clearedDate: form.status === "Cleared" ? (form.clearedDate || new Date().toISOString().split('T')[0]) : null,
-          interestPaidUpto: form.interestPaidUpto || form.takenDate,
+          interestPaidUpto: updatedInterestPaidUpto,
+          accumulatedInterest: updatedAccumulatedInterest,
+          topups: updatedTopups,
           interestPayments: interestPayments,
           note: form.note.trim(),
           items: offlineLoanPledgedItems.map((item, idx) => ({
@@ -1676,7 +1756,11 @@ export default function Dashboard() {
         worth: "",
         remarks: "",
         interestAmountPaid: "",
-        note: ""
+        note: "",
+        topups: [],
+        newTopUpAmount: "",
+        newTopUpDate: new Date().toISOString().split('T')[0],
+        newTopUpRemarks: ""
       });
       refreshData();
     } catch (err: any) {
@@ -3165,7 +3249,11 @@ export default function Dashboard() {
                         worth: "",
                         remarks: "",
                         interestAmountPaid: "",
-                        note: ""
+                        note: "",
+                        topups: [],
+                        newTopUpAmount: "",
+                        newTopUpDate: new Date().toISOString().split('T')[0],
+                        newTopUpRemarks: ""
                       });
                       setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
                       setShowOfflineLoanModal(true);
@@ -4277,7 +4365,11 @@ export default function Dashboard() {
                       worth: firstItem?.value || "",
                       remarks: firstItem?.remarks || "",
                       interestAmountPaid: selectedLoanTxn.loanDetails?.interestPayments?.[0]?.amountPaid ? String(selectedLoanTxn.loanDetails.interestPayments[0].amountPaid) : "",
-                      note: selectedLoanTxn.loanDetails?.note || ""
+                      note: selectedLoanTxn.loanDetails?.note || "",
+                      topups: selectedLoanTxn.loanDetails?.topups || [],
+                      newTopUpAmount: "",
+                      newTopUpDate: new Date().toISOString().split('T')[0],
+                      newTopUpRemarks: ""
                     });
                     setOfflineLoanMetalType(selectedLoanTxn.category || "Gold");
                     if (selectedLoanTxn.loanDetails?.items?.length) {
@@ -4689,6 +4781,59 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* Top-up Form inside Offline Loan Modal (only when editing) */}
+                {editingTxnId && (
+                  <div className="col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3">
+                    <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                      <PlusCircle size={14} className="text-blue-600" /> Top-up / Extra Money Records
+                    </h4>
+                    {/* List existing topups */}
+                    {offlineLoanForm.topups && offlineLoanForm.topups.length > 0 && (
+                      <div className="space-y-1.5 text-xs max-h-28 overflow-y-auto pr-1">
+                        {offlineLoanForm.topups.map((top: any, tIdx: number) => (
+                          <div key={tIdx} className="flex justify-between bg-white border border-slate-200 p-2 rounded-lg font-semibold text-slate-700 shadow-sm">
+                            <span>{formatDateToDDMMYYYY(top.date)}: <strong className="text-blue-600">+₹{top.extraAmount.toLocaleString('en-IN')}</strong></span>
+                            {top.interestAccrued > 0 && <span className="text-rose-600 font-bold ml-2">(Accrued Interest: ₹{top.interestAccrued.toLocaleString('en-IN')})</span>}
+                            <span className="text-slate-400 font-normal ml-auto">{top.remarks}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Add Top-up inputs inside the form */}
+                    <div className="border-t border-slate-200/60 pt-2 grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Add Extra Amount (₹)</label>
+                        <input 
+                          type="number" 
+                          placeholder="e.g. 1000"
+                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-blue-500"
+                          value={offlineLoanForm.newTopUpAmount || ""}
+                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newTopUpAmount: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Date Taken</label>
+                        <input 
+                          type="date" 
+                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-blue-500"
+                          value={offlineLoanForm.newTopUpDate || new Date().toISOString().split('T')[0]}
+                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newTopUpDate: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks</label>
+                        <input 
+                          type="text" 
+                          placeholder="Remarks..."
+                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-blue-500"
+                          value={offlineLoanForm.newTopUpRemarks || ""}
+                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newTopUpRemarks: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
 
 
