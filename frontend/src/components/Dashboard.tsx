@@ -1652,12 +1652,13 @@ export default function Dashboard() {
       // Use existing transaction ID if editing, otherwise generate
       let txnId = editingTxnId;
       if (!txnId) {
+        const billPrefix = form.starSeries ? "★" : "";
         if (form.billNo.trim()) {
-          txnId = "BILL-" + form.billNo.trim();
+          // If user already typed ★ manually, don't double-add it
+          const rawBill = form.billNo.trim().replace(/^[★*]/, "");
+          txnId = "BILL-" + billPrefix + rawBill;
         } else {
-          // Auto-generate next bill number based on series
-          const autoNum = getNextBillNo(form.starSeries, form.takenDate ? new Date(form.takenDate).getFullYear().toString() : undefined);
-          txnId = "BILL-" + autoNum;
+          txnId = "BILL-" + billPrefix + Date.now();
         }
       }
       
