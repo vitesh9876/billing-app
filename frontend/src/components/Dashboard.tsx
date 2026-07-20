@@ -4481,13 +4481,18 @@ export default function Dashboard() {
                       ★ Star (Above ₹10K)
                     </label>
                   </div>
-                  <input 
-                    type="text" 
-                    placeholder="Enter Bill No..."
-                    className={`w-full border rounded-lg p-2 text-sm outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'border-amber-300 text-amber-700' : 'border-slate-200 text-slate-800'}`}
-                    value={offlineLoanForm.billNo}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
-                  />
+                  <div className={`flex items-center border rounded-lg overflow-hidden ${offlineLoanForm.starSeries ? 'border-amber-400' : 'border-slate-200'}`}>
+                    {offlineLoanForm.starSeries && (
+                      <span className="px-2.5 py-2 bg-amber-400 text-white font-black text-sm select-none">★</span>
+                    )}
+                    <input 
+                      type="text" 
+                      placeholder="Enter Bill No..."
+                      className={`flex-1 p-2 text-sm outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'text-amber-700' : 'text-slate-800 border-0'}`}
+                      value={offlineLoanForm.billNo}
+                      onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
+                    />
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Taken Date *</label>
