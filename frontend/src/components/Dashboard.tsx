@@ -202,6 +202,7 @@ export default function Dashboard() {
     newTopUpAmount: string;
     newTopUpDate: string;
     newTopUpRemarks: string;
+    starSeries: boolean;
   }
 
   const [offlineLoanForm, setOfflineLoanForm] = useState<OfflineLoanFormState>({
@@ -231,7 +232,8 @@ export default function Dashboard() {
     topups: [],
     newTopUpAmount: "",
     newTopUpDate: new Date().toISOString().split('T')[0],
-    newTopUpRemarks: ""
+    newTopUpRemarks: "",
+    starSeries: false
   });
 
   // Autocomplete UI states
@@ -380,7 +382,38 @@ export default function Dashboard() {
 
   const formatBillNoForDisplay = (id: string) => {
     if (!id) return "";
-    return id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+    const cleaned = id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+    // If it starts with ★ or *, show it nicely
+    if (cleaned.startsWith("★") || cleaned.startsWith("*")) {
+      return "★" + cleaned.replace(/^[★*]/, "");
+    }
+    return cleaned;
+  };
+
+  // Auto-generate next bill number for star or normal series for the given year
+  const getNextBillNo = (isStar: boolean, yearStr?: string): string => {
+    const year = yearStr || new Date().getFullYear().toString();
+    // Collect all existing bill numbers from the same series and year
+    const offlineLoans = transactions.filter(t => t.type === "loan" && t.id);
+    let maxNum = 0;
+
+    offlineLoans.forEach(t => {
+      const raw = t.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+      const isStarBill = raw.startsWith("★") || raw.startsWith("*");
+      
+      // Check if this bill belongs to the target year
+      const txnDate = t.loanDetails?.takenDate || t.date || "";
+      const txnYear = txnDate ? new Date(txnDate).getFullYear().toString() : "";
+
+      if (isStarBill === isStar && txnYear === year) {
+        const numPart = parseInt(raw.replace(/^[★*]/, ""), 10);
+        if (!isNaN(numPart) && numPart > maxNum) {
+          maxNum = numPart;
+        }
+      }
+    });
+
+    return (isStar ? "★" : "") + (maxNum + 1);
   };
 
   const formatDateToDDMMYYYY = (dateStr: string) => {
@@ -1617,7 +1650,16 @@ export default function Dashboard() {
       if (!custRes.ok) throw new Error("Failed to save customer details");
 
       // Use existing transaction ID if editing, otherwise generate
-      const txnId = editingTxnId || (form.billNo.trim() ? "BILL-" + form.billNo.trim() : "TXN-OFFLINE-" + Date.now());
+      let txnId = editingTxnId;
+      if (!txnId) {
+        if (form.billNo.trim()) {
+          txnId = "BILL-" + form.billNo.trim();
+        } else {
+          // Auto-generate next bill number based on series
+          const autoNum = getNextBillNo(form.starSeries, form.takenDate ? new Date(form.takenDate).getFullYear().toString() : undefined);
+          txnId = "BILL-" + autoNum;
+        }
+      }
       
       // Calculate interest payments if already cleared interest upto a date
       let interestPayments: any[] = [];
@@ -1760,7 +1802,8 @@ export default function Dashboard() {
         topups: [],
         newTopUpAmount: "",
         newTopUpDate: new Date().toISOString().split('T')[0],
-        newTopUpRemarks: ""
+        newTopUpRemarks: "",
+        starSeries: false
       });
       refreshData();
     } catch (err: any) {
@@ -3253,7 +3296,8 @@ export default function Dashboard() {
                         topups: [],
                         newTopUpAmount: "",
                         newTopUpDate: new Date().toISOString().split('T')[0],
-                        newTopUpRemarks: ""
+                        newTopUpRemarks: "",
+                        starSeries: false
                       });
                       setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
                       setShowOfflineLoanModal(true);
@@ -4369,7 +4413,11 @@ export default function Dashboard() {
                       topups: selectedLoanTxn.loanDetails?.topups || [],
                       newTopUpAmount: "",
                       newTopUpDate: new Date().toISOString().split('T')[0],
-                      newTopUpRemarks: ""
+                      newTopUpRemarks: "",
+                      starSeries: (() => {
+                        const raw = selectedLoanTxn.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+                        return raw.startsWith("★") || raw.startsWith("*");
+                      })()
                     });
                     setOfflineLoanMetalType(selectedLoanTxn.category || "Gold");
                     if (selectedLoanTxn.loanDetails?.items?.length) {
@@ -4417,14 +4465,43 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Row 1: Custom Bill No & Taken Date */}
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Custom Bill No / ID (Optional)</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. 1234 (Leave blank to auto-generate)"
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                    value={offlineLoanForm.billNo}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
-                  />
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Bill No. Series & Number</label>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <label className={`flex items-center gap-1 text-xs font-bold cursor-pointer px-2.5 py-1 rounded-lg border transition-all ${!offlineLoanForm.starSeries ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                      <input type="radio" name="billSeries" className="hidden" checked={!offlineLoanForm.starSeries} onChange={() => {
+                        const nextBill = getNextBillNo(false, offlineLoanForm.takenDate ? new Date(offlineLoanForm.takenDate).getFullYear().toString() : undefined);
+                        setOfflineLoanForm(prev => ({ ...prev, starSeries: false, billNo: nextBill }));
+                      }} />
+                      Normal
+                    </label>
+                    <label className={`flex items-center gap-1 text-xs font-bold cursor-pointer px-2.5 py-1 rounded-lg border transition-all ${offlineLoanForm.starSeries ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                      <input type="radio" name="billSeries" className="hidden" checked={offlineLoanForm.starSeries} onChange={() => {
+                        const nextBill = getNextBillNo(true, offlineLoanForm.takenDate ? new Date(offlineLoanForm.takenDate).getFullYear().toString() : undefined);
+                        setOfflineLoanForm(prev => ({ ...prev, starSeries: true, billNo: nextBill }));
+                      }} />
+                      ★ Star (Above ₹10K)
+                    </label>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input 
+                      type="text" 
+                      placeholder="Bill No (auto or manual)"
+                      className={`flex-1 border rounded-lg p-2 text-sm outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'border-amber-300 text-amber-700' : 'border-slate-200 text-slate-800'}`}
+                      value={offlineLoanForm.billNo}
+                      onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextBill = getNextBillNo(offlineLoanForm.starSeries, offlineLoanForm.takenDate ? new Date(offlineLoanForm.takenDate).getFullYear().toString() : undefined);
+                        setOfflineLoanForm(prev => ({ ...prev, billNo: nextBill }));
+                      }}
+                      className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 transition-all whitespace-nowrap"
+                      title="Auto-generate next bill number"
+                    >
+                      Auto #
+                    </button>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Taken Date *</label>
