@@ -1502,6 +1502,7 @@ export default function Dashboard() {
           setShowItemSuggestions(false);
         }
         setActiveSuggestIndex(-1);
+        return; // Select suggestion on first enter, don't move to next field yet
       }
 
       // Default Enter navigation behavior (if no suggestion is active)
@@ -1515,9 +1516,17 @@ export default function Dashboard() {
           let nextIndex = index + 1;
           while (nextIndex < elements.length) {
             const nextEl = elements[nextIndex];
-            const isFocusable = nextEl.tagName !== "FIELDSET" && 
+            const tagName = nextEl.tagName;
+            const type = nextEl.getAttribute("type");
+            const isInputField = tagName === "INPUT" && 
+                                  type !== "submit" && 
+                                  type !== "button" && 
+                                  type !== "checkbox" && 
+                                  type !== "radio" && 
+                                  type !== "hidden";
+            const isSelectOrTextarea = tagName === "SELECT" || tagName === "TEXTAREA";
+            const isFocusable = (isInputField || isSelectOrTextarea) && 
                                 !nextEl.hasAttribute("disabled") && 
-                                nextEl.getAttribute("type") !== "hidden" && 
                                 nextEl.tabIndex !== -1;
             
             if (isFocusable) {
