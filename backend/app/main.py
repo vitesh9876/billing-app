@@ -337,6 +337,14 @@ async def delete_customer(customer_id: str, db: Session = Depends(get_db)):
     return {"status": "success"}
 
 
+@app.delete("/api/v1/transactions/{txn_id}")
+async def delete_transaction(txn_id: str, db: Session = Depends(get_db)):
+    success = TransactionRepository.delete(db, txn_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    await browser_ws.broadcast({"type": "update", "topic": "transactions"})
+    return {"status": "success"}
+
 @app.get("/api/v1/transactions")
 def get_transactions(db: Session = Depends(get_db)):
     return TransactionRepository.get_all(db)

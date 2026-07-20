@@ -382,7 +382,9 @@ export default function Dashboard() {
 
   const formatBillNoForDisplay = (id: string) => {
     if (!id) return "";
-    const cleaned = id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+    let cleaned = id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+    // Remove the -YYYY suffix at the end (e.g. -2026)
+    cleaned = cleaned.replace(/-\d{4}$/, "");
     // If it starts with ★ or *, show it nicely
     if (cleaned.startsWith("★") || cleaned.startsWith("*")) {
       return "★" + cleaned.replace(/^[★*]/, "");
@@ -1662,12 +1664,13 @@ export default function Dashboard() {
       let txnId = editingTxnId;
       if (!txnId) {
         const billPrefix = form.starSeries ? "★" : "";
+        const year = form.takenDate ? new Date(form.takenDate).getFullYear().toString() : new Date().getFullYear().toString();
         if (form.billNo.trim()) {
           // If user already typed ★ manually, don't double-add it
           const rawBill = form.billNo.trim().replace(/^[★*]/, "");
-          txnId = "BILL-" + billPrefix + rawBill;
+          txnId = "BILL-" + billPrefix + rawBill + "-" + year;
         } else {
-          txnId = "BILL-" + billPrefix + Date.now();
+          txnId = "BILL-" + billPrefix + Date.now() + "-" + year;
         }
       }
       
@@ -2001,6 +2004,30 @@ export default function Dashboard() {
         alert("Loan marked as Cleared.");
         setSelectedLoanTxn(null);
         refreshData();
+      });
+    } else {
+      alert("Incorrect passcode! Authorization Denied.");
+    }
+  };
+
+  const handleDeleteLoan = (txnId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this loan? This action cannot be undone.")) {
+      return;
+    }
+    const passcode = prompt("Enter 4-digit passcode to delete this loan:");
+    if (passcode === null) return;
+    if (passcode.trim() === "1004") {
+      fetch(`/api/v1/transactions/${txnId}`, {
+        method: "DELETE"
+      }).then((res) => {
+        if (res.ok) {
+          setTransactions(transactions.filter(t => t.id !== txnId));
+          alert("Loan deleted successfully.");
+          setSelectedLoanTxn(null);
+          refreshData();
+        } else {
+          alert("Failed to delete loan.");
+        }
       });
     } else {
       alert("Incorrect passcode! Authorization Denied.");
@@ -4446,6 +4473,12 @@ export default function Dashboard() {
                   className="px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 bg-white flex items-center gap-1.5"
                 >
                   Edit Loan
+                </button>
+                <button 
+                  onClick={() => handleDeleteLoan(selectedLoanTxn.id)}
+                  className="px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 bg-white flex items-center gap-1.5"
+                >
+                  Delete Loan
                 </button>
               </div>
               {selectedLoanTxn.status !== "Cleared" && (

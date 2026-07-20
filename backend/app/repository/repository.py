@@ -114,6 +114,15 @@ class TransactionRepository:
         db.refresh(t)
         return t
 
+    @staticmethod
+    def delete(db: Session, txn_id: str):
+        t = db.query(Transaction).filter(Transaction.id == txn_id).first()
+        if t:
+            db.delete(t)
+            db.commit()
+            return True
+        return False
+
 class SMSQueueRepository:
     @staticmethod
     def get_all(db: Session):
