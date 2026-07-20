@@ -3369,15 +3369,15 @@ export default function Dashboard() {
                 <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-400 font-bold">
-                      <th className="pb-3">Bill No</th>
-                      <th className="pb-3">Customer Name</th>
-                      <th className="pb-3">Pledged Items</th>
-                      <th className="pb-3">Qty</th>
-                      <th className="pb-3">Gross Wt (g)</th>
-                      <th className="pb-3">Amount</th>
-                      <th className="pb-3">Loan Taken Date</th>
-                      <th className="pb-3">Interest Generated</th>
-                      <th className="pb-3">Status</th>
+                      <th className="pb-3 pr-4">Bill No</th>
+                      <th className="pb-3 pr-4">Customer Name</th>
+                      <th className="pb-3 pr-4">Pledged Items</th>
+                      <th className="pb-3 pr-4">Qty</th>
+                      <th className="pb-3 pr-4">Gross Wt (g)</th>
+                      <th className="pb-3 pr-4">Amount</th>
+                      <th className="pb-3 pr-4">Loan Taken Date</th>
+                      <th className="pb-3 pr-4">Interest Generated</th>
+                      <th className="pb-3 pr-4">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 font-semibold">
@@ -3424,15 +3424,15 @@ export default function Dashboard() {
                         const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
                         return (
                           <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
-                            <td className="py-3 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
-                            <td className="py-3">{cust?.name || "Unknown"}</td>
-                            <td className="py-3">{t.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
-                            <td className="py-3 text-slate-500">{totalQty}</td>
-                            <td className="py-3 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
-                            <td className="py-3 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
-                            <td className="py-3">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
-                            <td className="py-3 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                            <td className="py-3">
+                            <td className="py-3 pr-4 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
+                            <td className="py-3 pr-4">{cust?.name || "Unknown"}</td>
+                            <td className="py-3 pr-4">{t.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
+                            <td className="py-3 pr-4 text-slate-500">{totalQty}</td>
+                            <td className="py-3 pr-4 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
+                            <td className="py-3 pr-4 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
+                            <td className="py-3 pr-4">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
+                            <td className="py-3 pr-4 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                            <td className="py-3 pr-4">
                               <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{t.status || "Pending"}</span>
                             </td>
                           </tr>
