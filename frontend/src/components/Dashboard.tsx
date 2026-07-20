@@ -4469,39 +4469,24 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3 mb-1.5">
                     <label className={`flex items-center gap-1 text-xs font-bold cursor-pointer px-2.5 py-1 rounded-lg border transition-all ${!offlineLoanForm.starSeries ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                       <input type="radio" name="billSeries" className="hidden" checked={!offlineLoanForm.starSeries} onChange={() => {
-                        const nextBill = getNextBillNo(false, offlineLoanForm.takenDate ? new Date(offlineLoanForm.takenDate).getFullYear().toString() : undefined);
-                        setOfflineLoanForm(prev => ({ ...prev, starSeries: false, billNo: nextBill }));
+                        setOfflineLoanForm(prev => ({ ...prev, starSeries: false }));
                       }} />
                       Normal
                     </label>
                     <label className={`flex items-center gap-1 text-xs font-bold cursor-pointer px-2.5 py-1 rounded-lg border transition-all ${offlineLoanForm.starSeries ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                       <input type="radio" name="billSeries" className="hidden" checked={offlineLoanForm.starSeries} onChange={() => {
-                        const nextBill = getNextBillNo(true, offlineLoanForm.takenDate ? new Date(offlineLoanForm.takenDate).getFullYear().toString() : undefined);
-                        setOfflineLoanForm(prev => ({ ...prev, starSeries: true, billNo: nextBill }));
+                        setOfflineLoanForm(prev => ({ ...prev, starSeries: true }));
                       }} />
                       ★ Star (Above ₹10K)
                     </label>
                   </div>
-                  <div className="flex gap-1.5">
-                    <input 
-                      type="text" 
-                      placeholder="Bill No (auto or manual)"
-                      className={`flex-1 border rounded-lg p-2 text-sm outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'border-amber-300 text-amber-700' : 'border-slate-200 text-slate-800'}`}
-                      value={offlineLoanForm.billNo}
-                      onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nextBill = getNextBillNo(offlineLoanForm.starSeries, offlineLoanForm.takenDate ? new Date(offlineLoanForm.takenDate).getFullYear().toString() : undefined);
-                        setOfflineLoanForm(prev => ({ ...prev, billNo: nextBill }));
-                      }}
-                      className="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 transition-all whitespace-nowrap"
-                      title="Auto-generate next bill number"
-                    >
-                      Auto #
-                    </button>
-                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Enter Bill No..."
+                    className={`w-full border rounded-lg p-2 text-sm outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'border-amber-300 text-amber-700' : 'border-slate-200 text-slate-800'}`}
+                    value={offlineLoanForm.billNo}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
+                  />
                 </div>
                 <div className="form-group">
                   <label className="text-xs font-bold text-slate-400 block mb-1">Taken Date *</label>
