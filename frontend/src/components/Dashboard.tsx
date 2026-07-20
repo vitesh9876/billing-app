@@ -4169,17 +4169,36 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 font-semibold">
-                  {selectedLoanTxn.loanDetails?.items?.map((item: any, idx: number) => (
-                    <tr key={idx}>
-                      <td className="p-2">{item.qty}</td>
-                      <td className="p-2">{item.name}</td>
-                      <td className="p-2">{item.yield || "-"}</td>
-                      <td className="p-2">{item.grossWeight ? item.grossWeight + "g" : "-"}</td>
-                      <td className="p-2">{item.netWeight ? item.netWeight + "g" : "-"}</td>
-                      <td className="p-2">{item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-"}</td>
-                      <td className="p-2 text-slate-500 font-medium">{item.remarks || "-"}</td>
-                    </tr>
-                  ))}
+                  {selectedLoanTxn.loanDetails?.items?.map((item: any, idx: number) => {
+                    const isMulti = (selectedLoanTxn.loanDetails?.items?.length || 0) > 1;
+                    return (
+                      <tr key={idx}>
+                        <td className="p-2">{item.qty}</td>
+                        <td className="p-2">{item.name}</td>
+                        <td className="p-2">{isMulti ? "-" : (item.yield || "-")}</td>
+                        <td className="p-2">{isMulti ? "-" : (item.grossWeight ? item.grossWeight + "g" : "-")}</td>
+                        <td className="p-2">{isMulti ? "-" : (item.netWeight ? item.netWeight + "g" : "-")}</td>
+                        <td className="p-2">{isMulti ? "-" : (item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-")}</td>
+                        <td className="p-2 text-slate-500 font-medium">{item.remarks || "-"}</td>
+                      </tr>
+                    );
+                  })}
+                  {/* Total summary row if multiple items */}
+                  {((selectedLoanTxn.loanDetails?.items?.length || 0) > 1) && (() => {
+                    const firstItem = selectedLoanTxn.loanDetails?.items?.[0];
+                    const totalQty = selectedLoanTxn.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 0;
+                    return (
+                      <tr className="bg-slate-50/80 font-bold border-t border-slate-200 text-slate-800">
+                        <td className="p-2">{totalQty}</td>
+                        <td className="p-2 text-slate-500">Total (Combined)</td>
+                        <td className="p-2">{firstItem?.yield || "-"}</td>
+                        <td className="p-2 text-slate-900">{firstItem?.grossWeight ? firstItem.grossWeight + "g" : "-"}</td>
+                        <td className="p-2 text-slate-900">{firstItem?.netWeight ? firstItem.netWeight + "g" : "-"}</td>
+                        <td className="p-2 text-slate-900">{firstItem?.value ? "₹" + Number(firstItem.value).toLocaleString('en-IN') : "-"}</td>
+                        <td className="p-2">-</td>
+                      </tr>
+                    );
+                  })()}
                 </tbody>
               </table>
 
