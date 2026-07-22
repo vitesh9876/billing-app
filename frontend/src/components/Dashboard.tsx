@@ -202,6 +202,9 @@ export default function Dashboard() {
     newTopUpAmount: string;
     newTopUpDate: string;
     newTopUpRemarks: string;
+    newRepaymentAmount: string;
+    newRepaymentDate: string;
+    newRepaymentRemarks: string;
     starSeries: boolean;
   }
 
@@ -233,6 +236,9 @@ export default function Dashboard() {
     newTopUpAmount: "",
     newTopUpDate: new Date().toISOString().split('T')[0],
     newTopUpRemarks: "",
+    newRepaymentAmount: "",
+    newRepaymentDate: new Date().toISOString().split('T')[0],
+    newRepaymentRemarks: "",
     starSeries: false
   });
 
@@ -256,6 +262,10 @@ export default function Dashboard() {
   const [topUpAmount, setTopUpAmount] = useState("");
   const [topUpDate, setTopUpDate] = useState(new Date().toISOString().split('T')[0]);
   const [topUpRemarks, setTopUpRemarks] = useState("");
+  const [showRepaymentForm, setShowRepaymentForm] = useState(false);
+  const [repaymentAmount, setRepaymentAmount] = useState("");
+  const [repaymentDate, setRepaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [repaymentRemarks, setRepaymentRemarks] = useState("");
   const [bulkReminderMessage, setBulkReminderMessage] = useState(
     "ప్రియమైన {CustomerName}, మీ తాకట్టు గడువు పూర్తి అయ్యింది (లోన్ నెం: {LoanId}). దయచేసి విడుదల చేసుకోండి లేదా వడ్డీ కట్టుకోగలరు. ధన్యవాదములు."
   );
@@ -694,6 +704,102 @@ export default function Dashboard() {
         setShowTopUpForm(false);
         setTopUpAmount("");
         setTopUpRemarks("");
+        setTransactions(transactions.map(t => t.id === savedTxn.id ? savedTxn : t));
+        setSelectedLoanTxn(savedTxn);
+        refreshData();
+      });
+  };
+
+  const handleSaveRepayment = () => {
+    const repay = Number(repaymentAmount);
+    if (!repay || repay <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
+
+    const passcode = prompt("Enter 4-digit passcode to authorize principal repayment:");
+    if (passcode === null) return;
+    if (passcode.trim() !== "1004") {
+      alert("Incorrect passcode! Authorization Denied.");
+      return;
+    }
+
+    const txn = transactions.find(t => t.id === selectedLoanTxn.id);
+    if (!txn) return;
+
+    const originalAmt = txn.amount;
+    if (repay > originalAmt) {
+      alert("Repayment amount cannot be greater than the current principal amount!");
+      return;
+    }
+
+    const originalDateStr = txn.loanDetails?.interestPaidUpto || txn.loanDetails?.takenDate || txn.date;
+    
+    // Calculate difference in months between originalDate and repaymentDate
+    const d0 = new Date(originalDateStr);
+    const d1 = new Date(repaymentDate);
+    const diffTime = Math.max(0, d1.getTime() - d0.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffMonths = diffDays / 30.416;
+
+    let newAccumulatedInterest = txn.loanDetails?.accumulatedInterest || 0;
+    let newTakenDate = txn.loanDetails?.takenDate || txn.date;
+    let newInterestPaidUpto = txn.loanDetails?.interestPaidUpto || txn.date;
+    let interestAccrued = 0;
+
+    let logMessage = "";
+    if (diffMonths < 1.0) {
+      // Scenario A: Within 1 month
+      // Interest on total amount starts calculating from the old date. No date change.
+      logMessage = `Repayment of ₹${repay.toLocaleString('en-IN')} received within 1 month. Total remaining principal is now ₹${(originalAmt - repay).toLocaleString('en-IN')}, and interest will be calculated from the original date.`;
+    } else {
+      // Scenario B: After 1 month
+      // Interest on old amount is generated for the completed months, new cycle starts from repayment date.
+      const completedMonths = Math.max(1, Math.floor(diffMonths));
+      const rate = (parseFloat(txn.loanDetails?.interestRate) || 0) / 100;
+      interestAccrued = Math.round(originalAmt * rate * completedMonths);
+
+      newAccumulatedInterest += interestAccrued;
+      newTakenDate = repaymentDate;
+      newInterestPaidUpto = repaymentDate;
+      logMessage = `Repayment of ₹${repay.toLocaleString('en-IN')} received. Interest of ₹${interestAccrued.toLocaleString('en-IN')} (${completedMonths} completed month(s)) accrued and locked up to ${repaymentDate}.`;
+    }
+
+    const previousTopups = txn.loanDetails?.topups || [];
+    const newTopupRecord = {
+      date: repaymentDate,
+      extraAmount: -repay,
+      oldPrincipal: originalAmt,
+      newPrincipal: originalAmt - repay,
+      interestAccrued: interestAccrued,
+      remarks: repaymentRemarks || "Principal Repayment",
+      type: "repayment"
+    };
+
+    const updatedLoanDetails = {
+      ...txn.loanDetails,
+      takenDate: newTakenDate,
+      interestPaidUpto: newInterestPaidUpto,
+      accumulatedInterest: newAccumulatedInterest,
+      topups: [...previousTopups, newTopupRecord]
+    };
+
+    const updatedTxn = {
+      ...txn,
+      amount: originalAmt - repay,
+      loanDetails: updatedLoanDetails
+    };
+
+    fetch("/api/v1/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedTxn)
+    }).then(res => res.json())
+      .then((savedTxn) => {
+        alert(logMessage);
+        setShowRepaymentForm(false);
+        setRepaymentAmount("");
+        setRepaymentRemarks("");
         setTransactions(transactions.map(t => t.id === savedTxn.id ? savedTxn : t));
         setSelectedLoanTxn(savedTxn);
         refreshData();
@@ -1739,6 +1845,49 @@ export default function Dashboard() {
         }
       }
 
+      if (editingTxnId && form.newRepaymentAmount) {
+        const repay = Number(form.newRepaymentAmount);
+        if (repay > 0 && repay <= originalAmt) {
+          const repDate = form.newRepaymentDate || new Date().toISOString().split('T')[0];
+          const repRemarks = form.newRepaymentRemarks || "Principal Repayment";
+          const originalDateStr = form.interestPaidUpto || form.takenDate;
+
+          const d0 = new Date(originalDateStr);
+          const d1 = new Date(repDate);
+          const diffTime = Math.max(0, d1.getTime() - d0.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const diffMonths = diffDays / 30.416;
+
+          let interestAccrued = 0;
+          if (diffMonths < 1.0) {
+            // Scenario A: Within 1 month
+            updatedTakenDate = form.takenDate;
+            updatedInterestPaidUpto = form.interestPaidUpto || form.takenDate;
+          } else {
+            // Scenario B: After 1 month
+            const completedMonths = Math.max(1, Math.floor(diffMonths));
+            const rate = (parseFloat(form.interestRate) || 0) / 100;
+            interestAccrued = Math.round(originalAmt * rate * completedMonths);
+
+            updatedAccumulatedInterest += interestAccrued;
+            updatedTakenDate = repDate;
+            updatedInterestPaidUpto = repDate;
+          }
+
+          updatedTopups.push({
+            date: repDate,
+            extraAmount: -repay,
+            oldPrincipal: originalAmt,
+            newPrincipal: originalAmt - repay,
+            interestAccrued: interestAccrued,
+            remarks: repRemarks,
+            type: "repayment"
+          });
+
+          originalAmt -= repay;
+        }
+      }
+
       const txnPayload = {
         id: txnId,
         customerId: custId,
@@ -1816,6 +1965,9 @@ export default function Dashboard() {
         newTopUpAmount: "",
         newTopUpDate: new Date().toISOString().split('T')[0],
         newTopUpRemarks: "",
+        newRepaymentAmount: "",
+        newRepaymentDate: new Date().toISOString().split('T')[0],
+        newRepaymentRemarks: "",
         starSeries: false
       });
       refreshData();
@@ -3334,6 +3486,9 @@ export default function Dashboard() {
                         newTopUpAmount: "",
                         newTopUpDate: new Date().toISOString().split('T')[0],
                         newTopUpRemarks: "",
+                        newRepaymentAmount: "",
+                        newRepaymentDate: new Date().toISOString().split('T')[0],
+                        newRepaymentRemarks: "",
                         starSeries: false
                       });
                       setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
@@ -4249,26 +4404,31 @@ export default function Dashboard() {
               {/* Top-up History Ledger */}
               {selectedLoanTxn.loanDetails?.topups?.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Extra Money / Top-up History</h4>
+                  <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Principal Adjustments (Top-up / Repayment) History</h4>
                   <div className="max-h-24 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
                     <table className="w-full text-left text-[10px] divide-y divide-slate-100">
                       <thead>
                         <tr className="bg-slate-50 text-slate-400 font-bold">
                           <th className="p-2">Date</th>
-                          <th className="p-2">Extra Amount</th>
+                          <th className="p-2">Adjustment Amount</th>
                           <th className="p-2">Principal Shift</th>
                           <th className="p-2">Remarks</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
-                        {selectedLoanTxn.loanDetails.topups.map((top: any, tIdx: number) => (
-                          <tr key={tIdx} className="hover:bg-slate-50/50">
-                            <td className="p-2 font-technical">{formatDateToDDMMYYYY(top.date)}</td>
-                            <td className="p-2 font-technical text-blue-600">+₹{top.extraAmount.toLocaleString('en-IN')}</td>
-                            <td className="p-2 text-slate-500 font-technical">₹{top.oldPrincipal.toLocaleString('en-IN')} → ₹{top.newPrincipal.toLocaleString('en-IN')}</td>
-                            <td className="p-2 text-slate-400">{top.remarks}</td>
-                          </tr>
-                        ))}
+                        {selectedLoanTxn.loanDetails.topups.map((top: any, tIdx: number) => {
+                          const isRepay = top.extraAmount < 0 || top.type === "repayment";
+                          const displayAmt = isRepay ? `-₹${Math.abs(top.extraAmount).toLocaleString('en-IN')}` : `+₹${top.extraAmount.toLocaleString('en-IN')}`;
+                          const colorClass = isRepay ? "text-emerald-600 font-bold" : "text-blue-600";
+                          return (
+                            <tr key={tIdx} className="hover:bg-slate-50/50">
+                              <td className="p-2 font-technical">{formatDateToDDMMYYYY(top.date)}</td>
+                              <td className={`p-2 font-technical ${colorClass}`}>{displayAmt}</td>
+                              <td className="p-2 text-slate-500 font-technical">₹{top.oldPrincipal.toLocaleString('en-IN')} → ₹{top.newPrincipal.toLocaleString('en-IN')}</td>
+                              <td className="p-2 text-slate-400">{top.remarks}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -4340,6 +4500,78 @@ export default function Dashboard() {
                           className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold"
                         >
                           Save Top-up
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Principal Repayment Panel */}
+              {selectedLoanTxn.status !== "Cleared" && (
+                <div className="mb-4 bg-emerald-50/30 border border-emerald-100 rounded-lg p-3">
+                  {!showRepaymentForm ? (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setShowRepaymentForm(true);
+                        setRepaymentDate(new Date().toISOString().split('T')[0]);
+                      }}
+                      className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+                    >
+                      <PlusCircle size={14} className="text-emerald-600" /> Pay/Reduce Principal Amount (Part Payment)
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-700">Pay Principal Amount</span>
+                        <button type="button" onClick={() => setShowRepaymentForm(false)} className="text-slate-400 hover:text-slate-600 text-xs">Cancel</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="form-group">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Amount (₹)</label>
+                          <input 
+                            type="number" 
+                            placeholder="e.g. 2000"
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={repaymentAmount}
+                            onChange={(e) => setRepaymentAmount(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Date</label>
+                          <input 
+                            type="date" 
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={repaymentDate}
+                            onChange={(e) => setRepaymentDate(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group col-span-2">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks / Reason</label>
+                          <input 
+                            type="text" 
+                            placeholder="Remarks..."
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={repaymentRemarks}
+                            onChange={(e) => setRepaymentRemarks(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          type="button" 
+                          onClick={() => setShowRepaymentForm(false)}
+                          className="px-2.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={handleSaveRepayment}
+                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold"
+                        >
+                          Save Repayment
                         </button>
                       </div>
                     </div>
@@ -4470,6 +4702,9 @@ export default function Dashboard() {
                       newTopUpAmount: "",
                       newTopUpDate: new Date().toISOString().split('T')[0],
                       newTopUpRemarks: "",
+                      newRepaymentAmount: "",
+                      newRepaymentDate: new Date().toISOString().split('T')[0],
+                      newRepaymentRemarks: "",
                       starSeries: (() => {
                         const raw = selectedLoanTxn.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
                         return raw.startsWith("★") || raw.startsWith("*");
@@ -4911,28 +5146,39 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Top-up Form inside Offline Loan Modal (only when editing) */}
+                {/* Adjustments Form inside Offline Loan Modal (only when editing) */}
                 {editingTxnId && (
                   <div className="col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3">
                     <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                      <PlusCircle size={14} className="text-blue-600" /> Top-up / Extra Money Records
+                      <PlusCircle size={14} className="text-blue-600" /> Principal Adjustments (Top-up / Repayment)
                     </h4>
-                    {/* List existing topups */}
+                    {/* List existing adjustments */}
                     {offlineLoanForm.topups && offlineLoanForm.topups.length > 0 && (
                       <div className="space-y-1.5 text-xs max-h-28 overflow-y-auto pr-1">
-                        {offlineLoanForm.topups.map((top: any, tIdx: number) => (
-                          <div key={tIdx} className="flex justify-between bg-white border border-slate-200 p-2 rounded-lg font-semibold text-slate-700 shadow-sm">
-                            <span>{formatDateToDDMMYYYY(top.date)}: <strong className="text-blue-600">+₹{top.extraAmount.toLocaleString('en-IN')}</strong></span>
-                            {top.interestAccrued > 0 && <span className="text-rose-600 font-bold ml-2">(Accrued Interest: ₹{top.interestAccrued.toLocaleString('en-IN')})</span>}
-                            <span className="text-slate-400 font-normal ml-auto">{top.remarks}</span>
-                          </div>
-                        ))}
+                        {offlineLoanForm.topups.map((top: any, tIdx: number) => {
+                          const isRepay = top.extraAmount < 0 || top.type === "repayment";
+                          return (
+                            <div key={tIdx} className="flex justify-between bg-white border border-slate-200 p-2 rounded-lg font-semibold text-slate-700 shadow-sm">
+                              <span>
+                                {formatDateToDDMMYYYY(top.date)}:{" "}
+                                {isRepay ? (
+                                  <strong className="text-emerald-600">Repayment -₹{Math.abs(top.extraAmount).toLocaleString('en-IN')}</strong>
+                                ) : (
+                                  <strong className="text-blue-600">Top-up +₹{top.extraAmount.toLocaleString('en-IN')}</strong>
+                                )}
+                              </span>
+                              {top.interestAccrued > 0 && <span className="text-rose-600 font-bold ml-2">(Accrued Interest: ₹{top.interestAccrued.toLocaleString('en-IN')})</span>}
+                              <span className="text-slate-400 font-normal ml-auto">{top.remarks}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
-                    {/* Add Top-up inputs inside the form */}
+                    {/* Add Top-up inputs */}
                     <div className="border-t border-slate-200/60 pt-2 grid grid-cols-3 gap-2">
+                      <div className="col-span-3 text-[10px] font-bold text-blue-600 mb-0.5 uppercase tracking-wider">Option 1: Add Extra Amount (Top-up)</div>
                       <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Add Extra Amount (₹)</label>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Amount (₹)</label>
                         <input 
                           type="number" 
                           placeholder="e.g. 1000"
@@ -4958,6 +5204,39 @@ export default function Dashboard() {
                           className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-blue-500"
                           value={offlineLoanForm.newTopUpRemarks || ""}
                           onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newTopUpRemarks: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    {/* Add Repayment inputs */}
+                    <div className="border-t border-slate-200/60 pt-2 grid grid-cols-3 gap-2">
+                      <div className="col-span-3 text-[10px] font-bold text-emerald-600 mb-0.5 uppercase tracking-wider">Option 2: Pay/Clear Principal (Repayment)</div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Amount (₹)</label>
+                        <input 
+                          type="number" 
+                          placeholder="e.g. 2000"
+                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-emerald-500"
+                          value={offlineLoanForm.newRepaymentAmount || ""}
+                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newRepaymentAmount: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Date</label>
+                        <input 
+                          type="date" 
+                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-emerald-500"
+                          value={offlineLoanForm.newRepaymentDate || new Date().toISOString().split('T')[0]}
+                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newRepaymentDate: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks</label>
+                        <input 
+                          type="text" 
+                          placeholder="Remarks..."
+                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-emerald-500"
+                          value={offlineLoanForm.newRepaymentRemarks || ""}
+                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newRepaymentRemarks: e.target.value }))}
                         />
                       </div>
                     </div>
