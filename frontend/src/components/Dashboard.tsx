@@ -2343,7 +2343,7 @@ export default function Dashboard() {
   const activeConnectedDevice = smsDevices.find(d => d.connection === "Connected");
 
   return (
-    <div className={`flex h-screen overflow-hidden bg-slate-50 font-sans print:bg-white text-slate-900 w-full ${theme}`}>
+    <div className={`flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-slate-50 font-sans print:bg-white text-slate-900 w-full ${theme}`}>
       
       {/* Sidebar Navigation */}
       <aside className="hidden md:flex w-64 sidebar-premium text-slate-100 flex-col justify-between print:hidden shrink-0">

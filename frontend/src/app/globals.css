@@ -27,10 +27,11 @@ button, select, input, textarea {
   @page {
     margin: 8mm !important;
   }
-  html, body {
+  html, body, div, main, section {
     margin: 0 !important;
     padding: 0 !important;
     height: auto !important;
+    max-height: none !important;
     overflow: visible !important;
     background-color: white !important;
     -webkit-print-color-adjust: exact !important;
