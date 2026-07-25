@@ -285,6 +285,7 @@ export default function Dashboard() {
 
   // Printing state
   const [activePrintTicket, setActivePrintTicket] = useState<any>(null);
+  const [activePrintLoanReport, setActivePrintLoanReport] = useState<any>(null);
 
   // Establish persistent WebSocket to server for real-time state sync
   useEffect(() => {
@@ -1338,7 +1339,69 @@ export default function Dashboard() {
 
   // Print format styles injector helper
   const handlePrintTicket = (txn: any, customer: any, variant: string) => {
+    setActivePrintLoanReport(null);
     setActivePrintTicket({ txn, customer, variant });
+    setTimeout(() => {
+      window.print();
+    }, 300);
+  };
+
+  const handlePrintLoanHistoryReport = () => {
+    const filtered = transactions
+      .filter(t => t.type === "loan")
+      .filter(t => {
+        const cust = customers.find(c => c.id === t.customerId);
+        const custName = cust ? cust.name.toLowerCase() : "";
+        const rawBill = t.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+        const billNo = formatBillNoForDisplay(t.id).toLowerCase();
+        
+        const isStar = rawBill.startsWith("★") || rawBill.startsWith("*");
+        const matchesSeries = loanSeriesFilter === "all"
+          || (loanSeriesFilter === "star" && isStar)
+          || (loanSeriesFilter === "normal" && !isStar);
+        
+        const matchesSearch = custName.includes(loanHistorySearch.toLowerCase()) || billNo.includes(loanHistorySearch.toLowerCase());
+        
+        const status = t.status || "Pending";
+        const matchesFilter = loanHistoryFilter === "all"
+          || (loanHistoryFilter === "pending" && status === "Pending")
+          || (loanHistoryFilter === "cleared" && status === "Cleared");
+        
+        return matchesSearch && matchesFilter && matchesSeries;
+      })
+      .sort((a, b) => {
+        let valA: any = "";
+        let valB: any = "";
+        
+        if (loanSortField === "date") {
+          valA = a.loanDetails?.takenDate || a.date || "";
+          valB = b.loanDetails?.takenDate || b.date || "";
+        } else if (loanSortField === "name") {
+          const custA = customers.find(c => c.id === a.customerId);
+          const custB = customers.find(c => c.id === b.customerId);
+          valA = custA ? custA.name.toLowerCase() : "";
+          valB = custB ? custB.name.toLowerCase() : "";
+        } else if (loanSortField === "amount") {
+          valA = Number(a.amount) || 0;
+          valB = Number(b.amount) || 0;
+        }
+        
+        if (valA < valB) return loanSortOrder === "asc" ? -1 : 1;
+        if (valA > valB) return loanSortOrder === "asc" ? 1 : -1;
+        return 0;
+      });
+
+    setActivePrintTicket(null);
+    setActivePrintLoanReport({
+      loans: filtered,
+      seriesFilter: loanSeriesFilter,
+      statusFilter: loanHistoryFilter,
+      searchQuery: loanHistorySearch,
+      sortField: loanSortField,
+      sortOrder: loanSortOrder,
+      printedDate: new Date().toISOString().split('T')[0]
+    });
+
     setTimeout(() => {
       window.print();
     }, 300);
@@ -3526,9 +3589,15 @@ export default function Dashboard() {
                   </button>
                   <button 
                     onClick={() => setActiveTab("loan-reminders")}
-                    className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold py-2 px-4 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                    className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
                   >
-                    <Bell size={14} /> View Loan Reminders
+                    <Bell size={14} /> View Reminders
+                  </button>
+                  <button 
+                    onClick={handlePrintLoanHistoryReport}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Printer size={14} /> Print Report
                   </button>
                   <input 
                     type="text" 
@@ -6041,6 +6110,80 @@ export default function Dashboard() {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* LOAN HISTORY REPORT PRINT CONTAINER */}
+      {activePrintLoanReport && (
+        <div className="hidden print:block fixed top-0 left-0 bg-white text-black p-6 m-0 z-[9999] w-full min-h-screen font-sans box-border">
+          {/* Header */}
+          <div className="border-b-2 border-slate-800 pb-3 mb-4 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <img src="/logo.jpg" alt="Shop Logo" className="w-12 h-12 rounded object-cover border border-slate-300" />
+              <div>
+                <h1 className="font-black text-base text-slate-900 tracking-wide">SRI SAI BALAJI JEWELRY & FURNITURE</h1>
+                <p className="text-xs font-bold text-slate-600">LOAN HISTORY REPORT</p>
+              </div>
+            </div>
+            <div className="text-right text-xs font-semibold text-slate-700 space-y-0.5">
+              <div>Printed On: <strong className="font-bold">{formatDateToDDMMYYYY(activePrintLoanReport.printedDate)}</strong></div>
+              <div>Total Loans: <strong className="font-bold">{activePrintLoanReport.loans.length}</strong></div>
+            </div>
+          </div>
+
+          {/* Active Filter Metadata Banner */}
+          <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-800 bg-slate-100 border border-slate-300 p-2 rounded mb-4">
+            <div>Series: <span className="font-bold">{activePrintLoanReport.seriesFilter === "all" ? "All Series" : (activePrintLoanReport.seriesFilter === "star" ? "★ Star Series Only" : "Normal Series Only")}</span></div>
+            <div>Status: <span className="font-bold">{activePrintLoanReport.statusFilter === "all" ? "All Status" : (activePrintLoanReport.statusFilter === "pending" ? "Pending Only" : "Cleared Only")}</span></div>
+            {activePrintLoanReport.searchQuery && <div>Search Query: <span className="font-bold">"{activePrintLoanReport.searchQuery}"</span></div>}
+            <div>Sorted By: <span className="font-bold">{activePrintLoanReport.sortField} ({activePrintLoanReport.sortOrder})</span></div>
+          </div>
+
+          {/* Report Table */}
+          <table className="w-full text-left text-xs border-collapse divide-y divide-slate-300">
+            <thead>
+              <tr className="border-b-2 border-slate-800 text-slate-900 font-bold bg-slate-100">
+                <th className="py-2 px-2">S.No</th>
+                <th className="py-2 px-2">Bill No</th>
+                <th className="py-2 px-2">Customer Name</th>
+                <th className="py-2 px-2">Pledged Items</th>
+                <th className="py-2 px-2 text-center">Qty</th>
+                <th className="py-2 px-2 text-right">Amount</th>
+                <th className="py-2 px-2">Taken Date</th>
+                <th className="py-2 px-2 text-right">Interest Gen.</th>
+                <th className="py-2 px-2 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 font-semibold text-slate-900">
+              {activePrintLoanReport.loans.map((t: any, idx: number) => {
+                const cust = customers.find(c => c.id === t.customerId);
+                const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
+                return (
+                  <tr key={idx} className="border-b border-slate-200">
+                    <td className="py-2 px-2 text-slate-600">{idx + 1}</td>
+                    <td className="py-2 px-2 font-bold text-slate-900">#{formatBillNoForDisplay(t.id)}</td>
+                    <td className="py-2 px-2">{cust?.name || "Unknown"}</td>
+                    <td className="py-2 px-2">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
+                    <td className="py-2 px-2 text-center">{totalQty}</td>
+                    <td className="py-2 px-2 text-right font-bold">₹{t.amount.toLocaleString('en-IN')}</td>
+                    <td className="py-2 px-2">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
+                    <td className="py-2 px-2 text-right text-rose-700 font-bold">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                    <td className="py-2 px-2 text-center font-bold uppercase text-[10px]">{t.status || "Pending"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot className="border-t-2 border-slate-800 font-extrabold text-slate-900 bg-slate-100">
+              <tr>
+                <td className="py-2.5 px-2" colSpan={4}>TOTAL ({activePrintLoanReport.loans.length} LOANS)</td>
+                <td className="py-2.5 px-2 text-center">{activePrintLoanReport.loans.reduce((s: number, t: any) => s + (t.loanDetails?.items?.reduce((s2: number, i: any) => s2 + (Number(i.qty) || 1), 0) || 1), 0)}</td>
+                <td className="py-2.5 px-2 text-right text-slate-950 font-bold text-xs">₹{activePrintLoanReport.loans.reduce((s: number, t: any) => s + (Number(t.amount) || 0), 0).toLocaleString('en-IN')}</td>
+                <td className="py-2.5 px-2">-</td>
+                <td className="py-2.5 px-2 text-right text-rose-700 font-bold text-xs">₹{activePrintLoanReport.loans.reduce((s: number, t: any) => s + getLoanInterest(t), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                <td className="py-2.5 px-2">-</td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       )}
 
