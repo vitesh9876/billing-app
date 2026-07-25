@@ -165,6 +165,7 @@ export default function Dashboard() {
   // Loan history Search & Filters
   const [loanHistorySearch, setLoanHistorySearch] = useState("");
   const [loanHistoryFilter, setLoanHistoryFilter] = useState("all");
+  const [loanSeriesFilter, setLoanSeriesFilter] = useState("all");
   const [loanSortField, setLoanSortField] = useState<"date" | "name" | "amount">("date");
   const [loanSortOrder, setLoanSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -3518,11 +3519,20 @@ export default function Dashboard() {
                     onChange={(e) => setLoanHistorySearch(e.target.value)}
                   />
                   <select 
-                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer"
+                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer font-semibold text-slate-700 bg-white"
+                    value={loanSeriesFilter}
+                    onChange={(e) => setLoanSeriesFilter(e.target.value)}
+                  >
+                    <option value="all">All Series</option>
+                    <option value="star">★ Star Series (Above ₹10K)</option>
+                    <option value="normal">Normal Series (Without Star)</option>
+                  </select>
+                  <select 
+                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer font-semibold text-slate-700 bg-white"
                     value={loanHistoryFilter}
                     onChange={(e) => setLoanHistoryFilter(e.target.value)}
                   >
-                    <option value="all">All Loans</option>
+                    <option value="all">All Status</option>
                     <option value="pending">Pending</option>
                     <option value="cleared">Cleared</option>
                   </select>
@@ -3568,7 +3578,13 @@ export default function Dashboard() {
                       .filter(t => {
                         const cust = customers.find(c => c.id === t.customerId);
                         const custName = cust ? cust.name.toLowerCase() : "";
+                        const rawBill = t.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
                         const billNo = formatBillNoForDisplay(t.id).toLowerCase();
+                        
+                        const isStar = rawBill.startsWith("★") || rawBill.startsWith("*");
+                        const matchesSeries = loanSeriesFilter === "all"
+                          || (loanSeriesFilter === "star" && isStar)
+                          || (loanSeriesFilter === "normal" && !isStar);
                         
                         const matchesSearch = custName.includes(loanHistorySearch.toLowerCase()) || billNo.includes(loanHistorySearch.toLowerCase());
                         
@@ -3577,7 +3593,7 @@ export default function Dashboard() {
                           || (loanHistoryFilter === "pending" && status === "Pending")
                           || (loanHistoryFilter === "cleared" && status === "Cleared");
                         
-                        return matchesSearch && matchesFilter;
+                        return matchesSearch && matchesFilter && matchesSeries;
                       })
                       .sort((a, b) => {
                         let valA: any = "";
