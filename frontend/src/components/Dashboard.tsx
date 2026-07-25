@@ -169,6 +169,13 @@ export default function Dashboard() {
   const [loanSortField, setLoanSortField] = useState<"date" | "name" | "amount">("date");
   const [loanSortOrder, setLoanSortOrder] = useState<"asc" | "desc">("desc");
 
+  // Mark Loan as Cleared Modal States
+  const [showClearLoanModal, setShowClearLoanModal] = useState(false);
+  const [clearingTxnId, setClearingTxnId] = useState<string | null>(null);
+  const [clearPasscode, setClearPasscode] = useState("");
+  const [clearIsToday, setClearIsToday] = useState(true);
+  const [clearDate, setClearDate] = useState(new Date().toISOString().split('T')[0]);
+
   // Custom Offline Loan States
   const [showOfflineLoanModal, setShowOfflineLoanModal] = useState(false);
   const [offlineLoanMetalType, setOfflineLoanMetalType] = useState("Gold");
@@ -2128,39 +2135,51 @@ export default function Dashboard() {
     refreshData();
   };
 
-  // Mark loan as cleared passcode logic
+  // Mark loan as cleared modal trigger
   const handleMarkAsCleared = (txnId: string) => {
-    const passcode = prompt("Enter 4-digit passcode to clear this loan:");
-    if (passcode === null) return;
-    if (passcode.trim() === "1004") {
-      const defaultDate = new Date().toISOString().split('T')[0];
-      const clearedDateInput = prompt("Enter cleared date (YYYY-MM-DD):", defaultDate);
-      if (clearedDateInput === null) return;
-      
-      fetch("/api/v1/transactions/clear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ txnId: txnId, clearedDate: clearedDateInput })
-      }).then(() => {
-        // Find transaction and set to cleared locally
-        setTransactions(transactions.map(t => {
-          if (t.id === txnId) {
-            return { 
-              ...t, 
-              status: "Cleared", 
-              clearedDate: clearedDateInput,
-              loanDetails: t.loanDetails ? { ...t.loanDetails, clearedDate: clearedDateInput } : undefined
-            };
-          }
-          return t;
-        }));
-        alert("Loan marked as Cleared.");
-        setSelectedLoanTxn(null);
-        refreshData();
-      });
-    } else {
+    setClearingTxnId(txnId);
+    setClearPasscode("");
+    setClearIsToday(true);
+    setClearDate(new Date().toISOString().split('T')[0]);
+    setShowClearLoanModal(true);
+  };
+
+  const handleConfirmClearLoan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clearingTxnId) return;
+
+    if (clearPasscode.trim() !== "1004") {
       alert("Incorrect passcode! Authorization Denied.");
+      return;
     }
+
+    const finalClearedDate = clearIsToday ? new Date().toISOString().split('T')[0] : clearDate;
+    if (!finalClearedDate) {
+      alert("Please select or enter a valid cleared date.");
+      return;
+    }
+
+    fetch("/api/v1/transactions/clear", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ txnId: clearingTxnId, clearedDate: finalClearedDate })
+    }).then(() => {
+      setTransactions(transactions.map(t => {
+        if (t.id === clearingTxnId) {
+          return { 
+            ...t, 
+            status: "Cleared", 
+            clearedDate: finalClearedDate,
+            loanDetails: t.loanDetails ? { ...t.loanDetails, clearedDate: finalClearedDate } : undefined
+          };
+        }
+        return t;
+      }));
+      alert("Loan marked as Cleared successfully.");
+      setShowClearLoanModal(false);
+      setSelectedLoanTxn(null);
+      refreshData();
+    });
   };
 
   const handleDeleteLoan = (txnId: string) => {
@@ -5430,6 +5449,87 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MARK LOAN AS CLEARED MODAL */}
+      {showClearLoanModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <h3 className="font-bold text-base text-slate-800 flex items-center gap-2">
+                <CheckCircle size={18} className="text-emerald-600" />
+                Mark Loan as Cleared
+              </h3>
+              <button type="button" onClick={() => setShowClearLoanModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmClearLoan} className="space-y-4">
+              <div className="form-group">
+                <label className="text-xs font-bold text-slate-400 block mb-1">4-Digit Passcode *</label>
+                <input 
+                  type="password" 
+                  maxLength={4}
+                  required
+                  placeholder="Enter passcode (1004)"
+                  className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none font-semibold text-slate-800 bg-white"
+                  value={clearPasscode}
+                  onChange={(e) => setClearPasscode(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-2">
+                <label className="text-xs font-bold text-slate-500 block mb-1">Cleared Date Selection</label>
+                
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    checked={clearIsToday}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setClearIsToday(checked);
+                      if (checked) {
+                        setClearDate(new Date().toISOString().split('T')[0]);
+                      }
+                    }}
+                  />
+                  Today ({formatDateToDDMMYYYY(new Date().toISOString().split('T')[0])})
+                </label>
+
+                {!clearIsToday && (
+                  <div className="pt-1">
+                    <label className="text-[10px] font-bold text-slate-400 block mb-1">Select Custom Cleared Date</label>
+                    <input 
+                      type="date" 
+                      required
+                      className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none font-semibold bg-white text-slate-800"
+                      value={clearDate}
+                      onChange={(e) => setClearDate(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => setShowClearLoanModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-slate-50 text-xs"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5"
+                >
+                  <CheckCircle size={14} /> Confirm & Mark Cleared
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
