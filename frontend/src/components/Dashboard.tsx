@@ -16,6 +16,7 @@ import {
   MapPin,
   Printer,
   ChevronRight,
+  ChevronLeft,
   Grid,
   Table,
   List,
@@ -304,6 +305,88 @@ export default function Dashboard() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
+
+  // Active loans list respecting current filters for Next / Prev navigation inside Loan Summary Details modal
+  const activeLoanList = transactions
+    .filter(t => t.type === "loan")
+    .filter(t => {
+      if (activeTab !== "loan-history") return true;
+      const cust = customers.find(c => c.id === t.customerId);
+      const custName = cust ? cust.name.toLowerCase() : "";
+      const rawBill = t.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+      const billNo = formatBillNoForDisplay(t.id).toLowerCase();
+      
+      const isStar = rawBill.startsWith("★") || rawBill.startsWith("*");
+      const matchesSeries = loanSeriesFilter === "all"
+        || (loanSeriesFilter === "star" && isStar)
+        || (loanSeriesFilter === "normal" && !isStar);
+      
+      const matchesSearch = custName.includes(loanHistorySearch.toLowerCase()) || billNo.includes(loanHistorySearch.toLowerCase());
+      
+      const status = t.status || "Pending";
+      const matchesFilter = loanHistoryFilter === "all"
+        || (loanHistoryFilter === "pending" && status === "Pending")
+        || (loanHistoryFilter === "cleared" && status === "Cleared");
+      
+      return matchesSearch && matchesFilter && matchesSeries;
+    })
+    .sort((a, b) => {
+      let valA: any = "";
+      let valB: any = "";
+      
+      if (loanSortField === "date") {
+        valA = a.loanDetails?.takenDate || a.date || "";
+        valB = b.loanDetails?.takenDate || b.date || "";
+      } else if (loanSortField === "name") {
+        const custA = customers.find(c => c.id === a.customerId);
+        const custB = customers.find(c => c.id === b.customerId);
+        valA = custA ? custA.name.toLowerCase() : "";
+        valB = custB ? custB.name.toLowerCase() : "";
+      } else if (loanSortField === "amount") {
+        valA = Number(a.amount) || 0;
+        valB = Number(b.amount) || 0;
+      }
+      
+      if (valA < valB) return loanSortOrder === "asc" ? -1 : 1;
+      if (valA > valB) return loanSortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  const currentModalLoanIndex = selectedLoanTxn ? activeLoanList.findIndex(t => t.id === selectedLoanTxn.id) : -1;
+  const hasPrevModalLoan = currentModalLoanIndex > 0;
+  const hasNextModalLoan = currentModalLoanIndex >= 0 && currentModalLoanIndex < activeLoanList.length - 1;
+
+  const handlePrevModalLoan = () => {
+    if (hasPrevModalLoan) {
+      setSelectedLoanTxn(activeLoanList[currentModalLoanIndex - 1]);
+    }
+  };
+
+  const handleNextModalLoan = () => {
+    if (hasNextModalLoan) {
+      setSelectedLoanTxn(activeLoanList[currentModalLoanIndex + 1]);
+    }
+  };
+
+  // Keyboard Navigation for Loan Details Modal (Left / Right Arrows)
+  useEffect(() => {
+    if (!selectedLoanTxn) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT")) {
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        handlePrevModalLoan();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        handleNextModalLoan();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedLoanTxn, activeLoanList, currentModalLoanIndex]);
 
   // Establish persistent WebSocket to server for real-time state sync
   useEffect(() => {
@@ -4662,8 +4745,35 @@ export default function Dashboard() {
           <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-xl p-6 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
             <div>
               <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-                <h3 className="font-bold text-lg text-slate-800">Loan Summary Details</h3>
-                <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                <div className="flex items-center gap-2.5">
+                  <h3 className="font-bold text-lg text-slate-800">Loan Summary Details</h3>
+                  {currentModalLoanIndex >= 0 && (
+                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                      {currentModalLoanIndex + 1} of {activeLoanList.length}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button 
+                    type="button"
+                    disabled={!hasPrevModalLoan}
+                    onClick={handlePrevModalLoan}
+                    title="Previous Loan (Left Arrow Key)"
+                    className="px-2.5 py-1 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent font-bold flex items-center gap-1 text-xs cursor-pointer"
+                  >
+                    <ChevronLeft size={14} /> Prev
+                  </button>
+                  <button 
+                    type="button"
+                    disabled={!hasNextModalLoan}
+                    onClick={handleNextModalLoan}
+                    title="Next Loan (Right Arrow Key)"
+                    className="px-2.5 py-1 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent font-bold flex items-center gap-1 text-xs cursor-pointer"
+                  >
+                    Next <ChevronRight size={14} />
+                  </button>
+                  <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-600 ml-1 p-1"><X size={20} /></button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50">
                 <div><strong>Bill No:</strong> {formatBillNoForDisplay(selectedLoanTxn.id)}</div>
