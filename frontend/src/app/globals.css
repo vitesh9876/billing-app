@@ -25,18 +25,35 @@ button, select, input, textarea {
 
 @media print {
   @page {
-    margin: 0mm !important;
+    margin: 8mm !important;
   }
   html, body {
     margin: 0 !important;
     padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
     background-color: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  /* Hide next.js default wrappers/elements when printing */
+  /* Hide default navigation/sidebar elements when printing */
   header, footer, nav, aside {
     display: none !important;
+  }
+
+  .print-report-container {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    box-sizing: border-box !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
   }
 }
 

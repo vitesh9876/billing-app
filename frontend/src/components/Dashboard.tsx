@@ -3653,9 +3653,10 @@ export default function Dashboard() {
                       <th className="pb-3 pr-4">Customer Name</th>
                       <th className="pb-3 pr-4">Pledged Items</th>
                       <th className="pb-3 pr-4">Qty</th>
-                      <th className="pb-3 pr-4">Gross Wt (g)</th>
-                      <th className="pb-3 pr-4">Amount</th>
                       <th className="pb-3 pr-4">Loan Taken Date</th>
+                      <th className="pb-3 pr-4">Amount</th>
+                      <th className="pb-3 pr-4">Gross Wt (g)</th>
+                      <th className="pb-3 pr-4">Address</th>
                       <th className="pb-3 pr-4">Interest Generated</th>
                       <th className="pb-3 pr-4">Status</th>
                     </tr>
@@ -3708,15 +3709,17 @@ export default function Dashboard() {
                         const cust = customers.find(c => c.id === t.customerId);
                         const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
                         const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
+                        const address = cust?.address || t.loanDetails?.address || "-";
                         return (
                           <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
                             <td className="py-3 pr-4 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
                             <td className="py-3 pr-4">{cust?.name || "Unknown"}</td>
-                            <td className="py-3 pr-4">{t.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
+                            <td className="py-3 pr-4">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
                             <td className="py-3 pr-4 text-slate-500">{totalQty}</td>
-                            <td className="py-3 pr-4 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
-                            <td className="py-3 pr-4 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
                             <td className="py-3 pr-4">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
+                            <td className="py-3 pr-4 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
+                            <td className="py-3 pr-4 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
+                            <td className="py-3 pr-4 text-slate-600">{address}</td>
                             <td className="py-3 pr-4 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                             <td className="py-3 pr-4">
                               <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{t.status || "Pending"}</span>
@@ -6115,7 +6118,7 @@ export default function Dashboard() {
 
       {/* LOAN HISTORY REPORT PRINT CONTAINER */}
       {activePrintLoanReport && (
-        <div className="hidden print:block fixed top-0 left-0 bg-white text-black p-6 m-0 z-[9999] w-full min-h-screen font-sans box-border">
+        <div className="hidden print:block print-report-container bg-white text-black p-4 m-0 z-[9999] w-full font-sans box-border">
           {/* Header */}
           <div className="border-b-2 border-slate-800 pb-3 mb-4 flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -6143,44 +6146,52 @@ export default function Dashboard() {
           <table className="w-full text-left text-xs border-collapse divide-y divide-slate-300">
             <thead>
               <tr className="border-b-2 border-slate-800 text-slate-900 font-bold bg-slate-100">
-                <th className="py-2 px-2">S.No</th>
-                <th className="py-2 px-2">Bill No</th>
-                <th className="py-2 px-2">Customer Name</th>
-                <th className="py-2 px-2">Pledged Items</th>
-                <th className="py-2 px-2 text-center">Qty</th>
-                <th className="py-2 px-2 text-right">Amount</th>
-                <th className="py-2 px-2">Taken Date</th>
-                <th className="py-2 px-2 text-right">Interest Gen.</th>
-                <th className="py-2 px-2 text-center">Status</th>
+                <th className="py-2 px-1.5">S.No</th>
+                <th className="py-2 px-1.5">Bill No</th>
+                <th className="py-2 px-1.5">Customer Name</th>
+                <th className="py-2 px-1.5">Pledged Items</th>
+                <th className="py-2 px-1.5 text-center">Qty</th>
+                <th className="py-2 px-1.5">Taken Date</th>
+                <th className="py-2 px-1.5 text-right">Amount</th>
+                <th className="py-2 px-1.5 text-center">Gross Wt</th>
+                <th className="py-2 px-1.5">Address</th>
+                <th className="py-2 px-1.5 text-right">Interest Gen.</th>
+                <th className="py-2 px-1.5 text-center">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-semibold text-slate-900">
               {activePrintLoanReport.loans.map((t: any, idx: number) => {
                 const cust = customers.find(c => c.id === t.customerId);
                 const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
+                const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
+                const address = cust?.address || t.loanDetails?.address || "-";
                 return (
                   <tr key={idx} className="border-b border-slate-200">
-                    <td className="py-2 px-2 text-slate-600">{idx + 1}</td>
-                    <td className="py-2 px-2 font-bold text-slate-900">#{formatBillNoForDisplay(t.id)}</td>
-                    <td className="py-2 px-2">{cust?.name || "Unknown"}</td>
-                    <td className="py-2 px-2">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
-                    <td className="py-2 px-2 text-center">{totalQty}</td>
-                    <td className="py-2 px-2 text-right font-bold">₹{t.amount.toLocaleString('en-IN')}</td>
-                    <td className="py-2 px-2">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
-                    <td className="py-2 px-2 text-right text-rose-700 font-bold">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                    <td className="py-2 px-2 text-center font-bold uppercase text-[10px]">{t.status || "Pending"}</td>
+                    <td className="py-2 px-1.5 text-slate-600">{idx + 1}</td>
+                    <td className="py-2 px-1.5 font-bold text-slate-900">#{formatBillNoForDisplay(t.id)}</td>
+                    <td className="py-2 px-1.5">{cust?.name || "Unknown"}</td>
+                    <td className="py-2 px-1.5">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
+                    <td className="py-2 px-1.5 text-center">{totalQty}</td>
+                    <td className="py-2 px-1.5">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
+                    <td className="py-2 px-1.5 text-right font-bold">₹{t.amount.toLocaleString('en-IN')}</td>
+                    <td className="py-2 px-1.5 text-center">{grossWeight ? grossWeight + " g" : "-"}</td>
+                    <td className="py-2 px-1.5 text-slate-700">{address}</td>
+                    <td className="py-2 px-1.5 text-right text-rose-700 font-bold">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                    <td className="py-2 px-1.5 text-center font-bold uppercase text-[10px]">{t.status || "Pending"}</td>
                   </tr>
                 );
               })}
             </tbody>
             <tfoot className="border-t-2 border-slate-800 font-extrabold text-slate-900 bg-slate-100">
               <tr>
-                <td className="py-2.5 px-2" colSpan={4}>TOTAL ({activePrintLoanReport.loans.length} LOANS)</td>
-                <td className="py-2.5 px-2 text-center">{activePrintLoanReport.loans.reduce((s: number, t: any) => s + (t.loanDetails?.items?.reduce((s2: number, i: any) => s2 + (Number(i.qty) || 1), 0) || 1), 0)}</td>
-                <td className="py-2.5 px-2 text-right text-slate-950 font-bold text-xs">₹{activePrintLoanReport.loans.reduce((s: number, t: any) => s + (Number(t.amount) || 0), 0).toLocaleString('en-IN')}</td>
-                <td className="py-2.5 px-2">-</td>
-                <td className="py-2.5 px-2 text-right text-rose-700 font-bold text-xs">₹{activePrintLoanReport.loans.reduce((s: number, t: any) => s + getLoanInterest(t), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                <td className="py-2.5 px-2">-</td>
+                <td className="py-2.5 px-1.5" colSpan={4}>TOTAL ({activePrintLoanReport.loans.length} LOANS)</td>
+                <td className="py-2.5 px-1.5 text-center">{activePrintLoanReport.loans.reduce((s: number, t: any) => s + (t.loanDetails?.items?.reduce((s2: number, i: any) => s2 + (Number(i.qty) || 1), 0) || 1), 0)}</td>
+                <td className="py-2.5 px-1.5">-</td>
+                <td className="py-2.5 px-1.5 text-right text-slate-950 font-bold text-xs">₹{activePrintLoanReport.loans.reduce((s: number, t: any) => s + (Number(t.amount) || 0), 0).toLocaleString('en-IN')}</td>
+                <td className="py-2.5 px-1.5">-</td>
+                <td className="py-2.5 px-1.5">-</td>
+                <td className="py-2.5 px-1.5 text-right text-rose-700 font-bold text-xs">₹{activePrintLoanReport.loans.reduce((s: number, t: any) => s + getLoanInterest(t), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                <td className="py-2.5 px-1.5">-</td>
               </tr>
             </tfoot>
           </table>
