@@ -27,6 +27,16 @@ import {
   BookOpen
 } from "lucide-react";
 
+function formatBillNoForDisplay(id: string) {
+  if (!id) return "";
+  let cleaned = id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+  cleaned = cleaned.replace(/-\d{4}$/, "");
+  if (cleaned.startsWith("★") || cleaned.startsWith("*")) {
+    return "★" + cleaned.replace(/^[★*]/, "");
+  }
+  return cleaned;
+}
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [customers, setCustomers] = useState<any[]>([]);
@@ -500,17 +510,7 @@ export default function Dashboard() {
     });
   }, [transactions, customers]);
 
-  const formatBillNoForDisplay = (id: string) => {
-    if (!id) return "";
-    let cleaned = id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
-    // Remove the -YYYY suffix at the end (e.g. -2026)
-    cleaned = cleaned.replace(/-\d{4}$/, "");
-    // If it starts with ★ or *, show it nicely
-    if (cleaned.startsWith("★") || cleaned.startsWith("*")) {
-      return "★" + cleaned.replace(/^[★*]/, "");
-    }
-    return cleaned;
-  };
+
 
   // Auto-generate next bill number for star or normal series for the given year
   const getNextBillNo = (isStar: boolean, yearStr?: string): string => {
