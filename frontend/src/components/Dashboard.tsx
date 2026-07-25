@@ -2287,7 +2287,7 @@ export default function Dashboard() {
         <div>
           <div className="p-6 border-b border-slate-800 flex items-center gap-3">
             <img 
-              src="/saibaba.png" 
+              src="/logo.jpg" 
               alt="Sai Baba Logo" 
               className="w-10 h-10 rounded-lg object-cover bg-white border border-slate-700 shadow-sm" 
             />
@@ -5694,7 +5694,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3 mt-2 mb-1">
                   {/* Sai Baba Portrait */}
                   <div className="w-16 h-16 rounded-full border border-slate-350 overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-50">
-                    <img src="/saibaba.png" alt="Shirdi Sai Baba" className="w-full h-full object-cover" />
+                    <img src="/logo.jpg" alt="Shirdi Sai Baba" className="w-full h-full object-cover" />
                   </div>
 
                   {/* Title details */}

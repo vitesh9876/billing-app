@@ -13,11 +13,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SmartShop",
+  title: "Sri Sai Balaji Jewelry & Furniture",
   description: "Sri Sai Balaji Jewelry & Furniture Billing & Loan System",
+  manifest: "/manifest.json",
   icons: {
-    icon: "/saibaba.png",
-  }
+    icon: "/logo.jpg",
+    shortcut: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
+  appleWebApp: {
+    title: "Sri Sai Balaji",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({

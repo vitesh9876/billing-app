@@ -1,0 +1,23 @@
+{
+  "name": "Sri Sai Balaji Jewelry & Furniture",
+  "short_name": "Sri Sai Balaji",
+  "description": "Sri Sai Balaji Jewelry & Furniture Billing & Loan System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
