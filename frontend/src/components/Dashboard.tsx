@@ -287,6 +287,24 @@ export default function Dashboard() {
   const [activePrintTicket, setActivePrintTicket] = useState<any>(null);
   const [activePrintLoanReport, setActivePrintLoanReport] = useState<any>(null);
 
+  // Smart Assistant Chatbot States
+  const [showChatbot, setShowChatbot] = useState(false);
+  const [chatInputText, setChatInputText] = useState("");
+  const [chatMessages, setChatMessages] = useState<Array<{
+    id: string;
+    sender: "user" | "bot";
+    text: string;
+    timestamp: string;
+    actions?: Array<{ label: string; onClick: () => void }>;
+  }>>([
+    {
+      id: "welcome",
+      sender: "bot",
+      text: "నమస్కారం! 🙏 Welcome to Sri Sai Balaji Assistant. How can I help you today?",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+
   // Establish persistent WebSocket to server for real-time state sync
   useEffect(() => {
     let socket: WebSocket;
@@ -1405,6 +1423,247 @@ export default function Dashboard() {
     setTimeout(() => {
       window.print();
     }, 300);
+  };
+
+  const handleOpenAddLoanModal = () => {
+    setEditingTxnId(null);
+    setOfflineLoanForm({
+      billNo: "",
+      custName: "",
+      phone: "",
+      father: "",
+      idProof: "",
+      address: "",
+      mandal: "",
+      amount: "",
+      interestRate: "3.0%",
+      takenDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+      status: "Pending",
+      interestPaidUpto: "",
+      clearedDate: "",
+      pledgedItemsStr: "",
+      qty: "1",
+      yield: "60%",
+      grossWeight: "",
+      netWeight: "",
+      worth: "",
+      remarks: "",
+      interestAmountPaid: "",
+      note: "",
+      topups: [],
+      newTopUpAmount: "",
+      newTopUpDate: new Date().toISOString().split('T')[0],
+      newTopUpRemarks: "",
+      newRepaymentAmount: "",
+      newRepaymentDate: new Date().toISOString().split('T')[0],
+      newRepaymentRemarks: "",
+      starSeries: false
+    });
+    setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
+    setShowOfflineLoanModal(true);
+  };
+
+  const handleSendChatMessage = (textToSend?: string) => {
+    const text = (textToSend || chatInputText).trim();
+    if (!text) return;
+
+    const userMsgId = Date.now().toString();
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const userMessage = {
+      id: userMsgId,
+      sender: "user" as const,
+      text: text,
+      timestamp: timeStr
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    if (!textToSend) setChatInputText("");
+
+    setTimeout(() => {
+      const lower = text.toLowerCase();
+      let botText = "";
+      let botActions: Array<{ label: string; onClick: () => void }> | undefined = undefined;
+
+      // 1. Navigation Intents
+      if (lower.includes("loan history") || lower.includes("all loans") || lower.includes("history")) {
+        setActiveTab("loan-history");
+        botText = "Navigated to 📜 **Loan History** page.";
+        botActions = [
+          { label: "★ Filter Star Loans", onClick: () => setLoanSeriesFilter("star") },
+          { label: "📋 Filter Pending", onClick: () => setLoanHistoryFilter("pending") },
+          { label: "🖨️ Print Report", onClick: () => handlePrintLoanHistoryReport() }
+        ];
+      } else if (lower.includes("reminder") || lower.includes("reminders") || lower.includes("due")) {
+        setActiveTab("loan-reminders");
+        botText = "Navigated to 🔔 **Loan Reminders** page.";
+      } else if (lower.includes("customer") || lower.includes("parties") || lower.includes("party")) {
+        setActiveTab("customers");
+        botText = "Navigated to 👥 **Customers** list.";
+        botActions = [
+          { label: "➕ Add Customer", onClick: () => setShowCustomerModal(true) }
+        ];
+      } else if (lower.includes("dashboard") || lower.includes("home")) {
+        setActiveTab("dashboard");
+        botText = "Navigated to 📊 **Dashboard** overview.";
+      } else if (lower.includes("setting") || lower.includes("settings")) {
+        setActiveTab("settings");
+        botText = "Navigated to ⚙️ **Settings**.";
+      } else if (lower.includes("billing") || lower.includes("new sale") || lower.includes("pos")) {
+        setActiveTab("billing");
+        botText = "Navigated to 🛒 **New Sale / Billing**.";
+
+      // 2. Action & Modal Intents
+      } else if (lower.includes("add offline loan") || lower.includes("new loan") || lower.includes("add loan") || lower.includes("create loan")) {
+        handleOpenAddLoanModal();
+        botText = "Opened ➕ **Add Offline Loan Form**.";
+      } else if (lower.includes("add customer") || lower.includes("new customer") || lower.includes("create customer")) {
+        setShowCustomerModal(true);
+        botText = "Opened 👤 **Add Customer Form**.";
+      } else if (lower.includes("bulk import") || lower.includes("csv import") || lower.includes("import loan")) {
+        setShowBulkImportModal(true);
+        botText = "Opened 📤 **Bulk CSV Import Modal**.";
+
+      // 3. Search or Edit/Clear specific Loan Number (e.g. #220, 220, bill 220, star 219)
+      } else if (/\b(#?★?\*?\d+)\b/.test(lower)) {
+        const match = lower.match(/\b(#?★?\*?\d+)\b/);
+        const searchNum = match ? match[1].replace("#", "").toLowerCase() : "";
+        
+        const foundTxn = transactions.find(t => {
+          const formatted = formatBillNoForDisplay(t.id).toLowerCase();
+          const raw = t.id.toLowerCase();
+          return formatted === searchNum || formatted === `★${searchNum}` || raw.includes(searchNum);
+        });
+
+        if (foundTxn) {
+          const cust = customers.find(c => c.id === foundTxn.customerId);
+          const displayBill = formatBillNoForDisplay(foundTxn.id);
+          const itemsStr = foundTxn.loanDetails?.items?.map((i: any) => i.name).join(', ') || "N/A";
+          const interestAmt = getLoanInterest(foundTxn);
+
+          if (lower.includes("edit") || lower.includes("change") || lower.includes("update")) {
+            setSelectedLoanTxn(foundTxn);
+            setOfflineLoanForm({
+              billNo: displayBill,
+              custName: cust?.name || "",
+              phone: cust?.phone || "",
+              father: cust?.father || "",
+              idProof: cust?.idproof || "",
+              address: cust?.address || "",
+              mandal: cust?.mandal || "",
+              amount: String(foundTxn.amount),
+              interestRate: foundTxn.loanDetails?.interestRate || "3.0%",
+              takenDate: foundTxn.loanDetails?.takenDate || foundTxn.date || new Date().toISOString().split('T')[0],
+              endDate: foundTxn.loanDetails?.endDate || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
+              status: foundTxn.status || "Pending",
+              interestPaidUpto: foundTxn.loanDetails?.interestPaidUpto || "",
+              clearedDate: foundTxn.clearedDate || "",
+              pledgedItemsStr: itemsStr,
+              qty: "1",
+              yield: "60%",
+              grossWeight: "",
+              netWeight: "",
+              worth: "",
+              remarks: "",
+              interestAmountPaid: "",
+              note: foundTxn.loanDetails?.note || "",
+              topups: foundTxn.loanDetails?.topups || [],
+              newTopUpAmount: "",
+              newTopUpDate: new Date().toISOString().split('T')[0],
+              newTopUpRemarks: "",
+              newRepaymentAmount: "",
+              newRepaymentDate: new Date().toISOString().split('T')[0],
+              newRepaymentRemarks: "",
+              starSeries: displayBill.startsWith("★") || displayBill.startsWith("*")
+            });
+            setEditingTxnId(foundTxn.id);
+            setShowOfflineLoanModal(true);
+            botText = `Opened Edit Form for Bill **#${displayBill}** (${cust?.name || "Customer"}).`;
+          } else if (lower.includes("clear") || lower.includes("pay") || lower.includes("close")) {
+            handleMarkAsCleared(foundTxn.id);
+            botText = `Opened Passcode Clear Form for Bill **#${displayBill}**.`;
+          } else {
+            botText = `Found Loan **#${displayBill}**:\n` +
+                      `• Customer: **${cust?.name || "Unknown"}** (${cust?.phone || "No Phone"})\n` +
+                      `• Amount: **₹${foundTxn.amount.toLocaleString('en-IN')}**\n` +
+                      `• Items: ${itemsStr}\n` +
+                      `• Taken Date: ${formatDateToDDMMYYYY(foundTxn.loanDetails?.takenDate || foundTxn.date)}\n` +
+                      `• Current Interest: **₹${interestAmt.toLocaleString('en-IN')}**\n` +
+                      `• Status: **${foundTxn.status || "Pending"}**`;
+            
+            botActions = [
+              { label: "👁️ View Details Modal", onClick: () => setSelectedLoanTxn(foundTxn) },
+              { label: "✅ Clear Loan", onClick: () => handleMarkAsCleared(foundTxn.id) }
+            ];
+          }
+        } else {
+          botText = `Could not find any loan matching **"${searchNum}"**. Please check the bill number.`;
+        }
+
+      // 4. Financial Summaries / Stats
+      } else if (lower.includes("summary") || lower.includes("stat") || lower.includes("total") || lower.includes("report")) {
+        const loanTxns = transactions.filter(t => t.type === "loan");
+        const pendingLoans = loanTxns.filter(t => (t.status || "Pending") === "Pending");
+        const totalActivePrincipal = pendingLoans.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+        const totalInterestAccrued = pendingLoans.reduce((sum, t) => sum + getLoanInterest(t), 0);
+
+        botText = `📊 **Shop Loan Financial Summary**:\n` +
+                  `• Total Loans Recorded: **${loanTxns.length}**\n` +
+                  `• Active Pending Loans: **${pendingLoans.length}**\n` +
+                  `• Active Principal Amount: **₹${totalActivePrincipal.toLocaleString('en-IN')}**\n` +
+                  `• Total Accumulated Interest: **₹${Math.round(totalInterestAccrued).toLocaleString('en-IN')}**`;
+        
+        botActions = [
+          { label: "📜 View Loan History", onClick: () => setActiveTab("loan-history") },
+          { label: "🖨️ Print Full Report", onClick: () => handlePrintLoanHistoryReport() }
+        ];
+
+      // 5. Interest Calculations
+      } else if (lower.includes("calculate") || lower.includes("interest")) {
+        const numbers = text.match(/\d+(\.\d+)?/g);
+        if (numbers && numbers.length >= 2) {
+          const principal = parseFloat(numbers[0]);
+          const rate = parseFloat(numbers[1]);
+          const months = numbers[2] ? parseFloat(numbers[2]) : 1;
+
+          const monthlyInterest = Math.round(principal * (rate / 100));
+          const totalInterest = Math.round(monthlyInterest * months);
+          const totalDue = principal + totalInterest;
+
+          botText = `🧮 **Interest Calculation**:\n` +
+                    `• Principal: **₹${principal.toLocaleString('en-IN')}**\n` +
+                    `• Rate: **${rate}% / month**\n` +
+                    `• Period: **${months} month(s)**\n` +
+                    `• Monthly Interest: **₹${monthlyInterest.toLocaleString('en-IN')}**\n` +
+                    `• Total Accrued Interest: **₹${totalInterest.toLocaleString('en-IN')}**\n` +
+                    `• Total Due Amount: **₹${totalDue.toLocaleString('en-IN')}**`;
+        } else {
+          botText = "To calculate interest, enter principal, rate, and months e.g. *calculate 20000 3% 5 months*.";
+        }
+
+      // 6. Default Fallback & Help
+      } else {
+        botText = "I didn't quite catch that. Here are some things you can ask me:";
+        botActions = [
+          { label: "📜 Go to Loan History", onClick: () => setActiveTab("loan-history") },
+          { label: "📊 Today's Loan Summary", onClick: () => handleSendChatMessage("summary") },
+          { label: "➕ Add Offline Loan", onClick: () => handleOpenAddLoanModal() },
+          { label: "👥 View Customer List", onClick: () => setActiveTab("customers") }
+        ];
+      }
+
+      setChatMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          sender: "bot",
+          text: botText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          actions: botActions
+        }
+      ]);
+    }, 250);
   };
 
   // Auto-calculated interest and release date inside loan finance inputs
@@ -6243,6 +6502,127 @@ export default function Dashboard() {
           <span className="mt-0.5">Settings</span>
         </button>
       </nav>
+
+      {/* FLOATING CHATBOT TRIGGER BUTTON */}
+      <div className="fixed bottom-6 right-6 z-40 print:hidden flex flex-col items-end gap-2">
+        {!showChatbot && (
+          <button
+            type="button"
+            onClick={() => setShowChatbot(true)}
+            className="bg-slate-900 hover:bg-slate-800 text-white p-3.5 rounded-full shadow-2xl flex items-center gap-2.5 transition-all hover:scale-105 border border-slate-700 cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-full overflow-hidden bg-amber-500/20 border border-amber-400/40 flex items-center justify-center">
+              <img src="/logo.jpg" alt="SBJ Logo" className="w-full h-full object-cover" />
+            </div>
+            <span className="font-bold text-xs pr-1">SBJ Assistant</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          </button>
+        )}
+      </div>
+
+      {/* CHATBOT DRAWER PANEL */}
+      {showChatbot && (
+        <div className="fixed bottom-6 right-6 z-50 w-80 md:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[520px] print:hidden transition-all animate-in fade-in slide-in-from-bottom-4 duration-200">
+          {/* Header */}
+          <div className="bg-slate-900 text-white p-3.5 flex justify-between items-center border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg overflow-hidden bg-amber-500/20 border border-amber-400/30 flex items-center justify-center">
+                <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-xs leading-tight text-white">Sri Sai Balaji Assistant</h4>
+                <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Online & Ready
+                </p>
+              </div>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setShowChatbot(false)} 
+              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Quick Actions Chips Header */}
+          <div className="bg-slate-50 border-b border-slate-100 p-2 flex gap-1.5 overflow-x-auto text-[10px] shrink-0 no-scrollbar">
+            <button type="button" onClick={() => handleSendChatMessage("loan history")} className="bg-white border border-slate-200 hover:bg-slate-100 px-2 py-1 rounded-full font-bold text-slate-700 whitespace-nowrap shadow-2xs">
+              📜 History
+            </button>
+            <button type="button" onClick={() => handleSendChatMessage("add loan")} className="bg-white border border-slate-200 hover:bg-slate-100 px-2 py-1 rounded-full font-bold text-slate-700 whitespace-nowrap shadow-2xs">
+              ➕ Add Loan
+            </button>
+            <button type="button" onClick={() => handleSendChatMessage("summary")} className="bg-white border border-slate-200 hover:bg-slate-100 px-2 py-1 rounded-full font-bold text-slate-700 whitespace-nowrap shadow-2xs">
+              📊 Summary
+            </button>
+            <button type="button" onClick={() => handleSendChatMessage("reminders")} className="bg-white border border-slate-200 hover:bg-slate-100 px-2 py-1 rounded-full font-bold text-slate-700 whitespace-nowrap shadow-2xs">
+              🔔 Reminders
+            </button>
+          </div>
+
+          {/* Message History Body */}
+          <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-50/50 min-h-[280px]">
+            {chatMessages.map(msg => (
+              <div 
+                key={msg.id} 
+                className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
+              >
+                <div 
+                  className={`max-w-[85%] p-2.5 rounded-2xl text-xs leading-relaxed ${
+                    msg.sender === "user" 
+                      ? "bg-blue-600 text-white rounded-br-none shadow-xs" 
+                      : "bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-xs"
+                  }`}
+                >
+                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                </div>
+
+                {/* Response Action Buttons */}
+                {msg.actions && msg.actions.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2 pl-1 max-w-[90%]">
+                    {msg.actions.map((act, aIdx) => (
+                      <button
+                        key={aIdx}
+                        type="button"
+                        onClick={act.onClick}
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold text-[10px] transition-all shadow-2xs cursor-pointer"
+                      >
+                        {act.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <span className="text-[9px] text-slate-400 mt-0.5 px-1 font-semibold">
+                  {msg.timestamp}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Input Footer */}
+          <form 
+            onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }}
+            className="p-2 bg-white border-t border-slate-200 flex items-center gap-1.5 shrink-0"
+          >
+            <input 
+              type="text" 
+              placeholder="Ask anything... e.g. 'find loan 220'"
+              className="flex-1 border border-slate-200 rounded-xl p-2 text-xs outline-none focus:border-blue-500 bg-slate-50 focus:bg-white font-medium"
+              value={chatInputText}
+              onChange={(e) => setChatInputText(e.target.value)}
+            />
+            <button 
+              type="submit"
+              disabled={!chatInputText.trim()}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white p-2 rounded-xl text-xs transition-all shadow-xs cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </form>
+        </div>
+      )}
 
     </div>
   );
