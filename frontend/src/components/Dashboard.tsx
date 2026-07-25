@@ -23,11 +23,7 @@ import {
   Plus,
   Upload,
   Trash2,
-  BookOpen,
-  Calendar,
-  User,
-  FileText,
-  Navigation
+  BookOpen
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -4331,492 +4327,342 @@ export default function Dashboard() {
 
       {/* LOAN SUMMARY DETAILS MODAL */}
       {selectedLoanTxn && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-2xl p-6 md:p-8 flex flex-col justify-between max-h-[90vh] overflow-y-auto my-auto space-y-6">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-xl p-6 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
             <div>
-              {/* 1. Header (Highest Priority) */}
-              <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-6">
-                <div>
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 block mb-0.5">Loan Summary</span>
-                  <h3 className="font-black text-2xl text-slate-900 leading-tight">
-                    Bill #{formatBillNoForDisplay(selectedLoanTxn.id)}
-                  </h3>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5 flex items-center gap-1">
-                    <Calendar size={13} className="text-slate-400" />
-                    Taken on {formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  {selectedLoanTxn.status === "Cleared" ? (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
-                      <CheckCircle size={14} className="text-emerald-700" /> CLEARED
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300 shadow-xs">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> ACTIVE
-                    </span>
-                  )}
-                  <button onClick={() => setSelectedLoanTxn(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all">
-                    <X size={20} />
-                  </button>
-                </div>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+                <h3 className="font-bold text-lg text-slate-800">Loan Summary Details</h3>
+                <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50">
+                <div><strong>Bill No:</strong> {formatBillNoForDisplay(selectedLoanTxn.id)}</div>
+                <div className="pt-0"><strong>Date:</strong> {formatDateToDDMMYYYY(selectedLoanTxn.date)}</div>
+                <div className="pt-2"><strong>Pledger Name:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</div>
+                <div className="pt-2"><strong>Father's Name:</strong> {selectedLoanTxn.loanDetails?.father || "-"}</div>
+                <div className="pt-2"><strong>ID Proof:</strong> {selectedLoanTxn.loanDetails?.idProof || "-"}</div>
+                <div className="pt-2"><strong>Phone No:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</div>
+                <div className="pt-2"><strong>Address:</strong> {selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}</div>
+                <div className="pt-2"><strong>Mandal:</strong> {selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</div>
               </div>
 
-              {/* 10. Sticky / Top Summary Cards */}
-              {selectedLoanTxn.status === "Cleared" ? (
-                <div className="bg-emerald-950 text-white rounded-xl p-4 mb-6 shadow-sm border border-emerald-900 grid grid-cols-3 gap-3 text-center">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block mb-0.5">Loan Closed On</span>
-                    <span className="text-sm font-extrabold text-emerald-200">
-                      {formatDateToDDMMYYYY(selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || selectedLoanTxn.date)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block mb-0.5">Principal Paid</span>
-                    <span className="text-base font-extrabold text-white">₹{selectedLoanTxn.amount.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block mb-0.5">Interest Paid</span>
-                    <span className="text-base font-extrabold text-emerald-300">
-                      ₹{(selectedLoanTxn.loanDetails?.interestPayments?.reduce((s: number, p: any) => s + (Number(p.amountPaid) || 0), 0) || 0).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-slate-900 text-white rounded-xl p-4 mb-6 shadow-sm border border-slate-800 grid grid-cols-3 gap-3 text-center">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Outstanding Total</span>
-                    <span className="text-lg font-black text-amber-400">
-                      ₹{(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Accrued Interest</span>
-                    <span className="text-base font-extrabold text-rose-400">
-                      ₹{getLoanInterest(selectedLoanTxn).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">Due Release Date</span>
-                    <span className="text-xs font-bold text-slate-200">
-                      {selectedLoanTxn.loanDetails?.endDate ? formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.endDate) : "-"}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* 2. Customer Details */}
-              <div className="mb-6">
-                <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Customer Details</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 shadow-2xs">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 mb-1">
-                      <User size={13} className="text-blue-600" /> Pledger
-                    </span>
-                    <div className="font-extrabold text-slate-900 text-sm truncate">
-                      {customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 shadow-2xs">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 mb-1">
-                      <Users size={13} className="text-purple-600" /> Father's Name
-                    </span>
-                    <div className="font-bold text-slate-800 text-xs truncate">
-                      {selectedLoanTxn.loanDetails?.father || "-"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 shadow-2xs">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 mb-1">
-                      <Phone size={13} className="text-emerald-600" /> Phone
-                    </span>
-                    <div className="font-bold text-slate-800 text-xs font-technical truncate">
-                      {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 shadow-2xs">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 mb-1">
-                      <FileText size={13} className="text-amber-600" /> ID Proof
-                    </span>
-                    <div className="font-bold text-slate-800 text-xs truncate">
-                      {selectedLoanTxn.loanDetails?.idProof || "-"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 shadow-2xs">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 mb-1">
-                      <MapPin size={13} className="text-rose-600" /> Address
-                    </span>
-                    <div className="font-bold text-slate-800 text-xs truncate">
-                      {selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 shadow-2xs">
-                    <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 mb-1">
-                      <Navigation size={13} className="text-teal-600" /> Mandal
-                    </span>
-                    <div className="font-bold text-slate-800 text-xs truncate">
-                      {selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Pledged Item Table / Card */}
-              <div className="mb-6">
-                <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Pledged Items</h4>
-                {(selectedLoanTxn.loanDetails?.items?.length || 0) === 1 ? (
-                  /* Single Item Card View */
-                  (() => {
-                    const item = selectedLoanTxn.loanDetails?.items?.[0];
+              <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Pledged Items</h4>
+              <table className="w-full text-left text-xs divide-y divide-slate-100 mb-4 border border-slate-100 rounded-lg">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-400 font-bold">
+                    <th className="p-2">Qty</th>
+                    <th className="p-2">Item Name</th>
+                    <th className="p-2">Yield</th>
+                    <th className="p-2">Gross</th>
+                    <th className="p-2">Net</th>
+                    <th className="p-2">Worth</th>
+                    <th className="p-2">Remarks</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 font-semibold">
+                  {selectedLoanTxn.loanDetails?.items?.map((item: any, idx: number) => {
+                    const isMulti = (selectedLoanTxn.loanDetails?.items?.length || 0) > 1;
                     return (
-                      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
-                        <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                          <span className="text-xs font-extrabold uppercase text-slate-400 tracking-wider">Item 1</span>
-                          <span className="font-black text-base text-slate-900">{item?.name || "Pledged Item"}</span>
-                        </div>
-                        <div className="grid grid-cols-4 gap-2 text-center text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Qty</span>
-                            <span className="font-black text-slate-800">{item?.qty || 1}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Gross Wt</span>
-                            <span className="font-black text-slate-800">{item?.grossWeight ? item.grossWeight + "g" : "-"}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Yield</span>
-                            <span className="font-black text-slate-800">{item?.yield || "-"}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Net Weight</span>
-                            <span className="font-black text-blue-700">{item?.netWeight ? item.netWeight + "g" : "-"}</span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-center pt-1">
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Estimated Worth</span>
-                            <span className="text-lg font-black text-emerald-600">
-                              {item?.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-"}
-                            </span>
-                          </div>
-                          {item?.remarks && (
-                            <div className="text-right">
-                              <span className="text-[10px] font-extrabold uppercase text-slate-400 block">Remarks</span>
-                              <span className="text-xs font-semibold text-slate-600">{item.remarks}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <tr key={idx}>
+                        <td className="p-2">{item.qty}</td>
+                        <td className="p-2">{item.name}</td>
+                        <td className="p-2">{isMulti ? "-" : (item.yield || "-")}</td>
+                        <td className="p-2">{isMulti ? "-" : (item.grossWeight ? item.grossWeight + "g" : "-")}</td>
+                        <td className="p-2">{isMulti ? "-" : (item.netWeight ? item.netWeight + "g" : "-")}</td>
+                        <td className="p-2">{isMulti ? "-" : (item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-")}</td>
+                        <td className="p-2 text-slate-500 font-medium">{item.remarks || "-"}</td>
+                      </tr>
                     );
-                  })()
-                ) : (
-                  /* Multiple Items Table View */
-                  <div className="overflow-hidden border border-slate-200 rounded-xl shadow-2xs">
-                    <table className="w-full text-left text-xs divide-y divide-slate-100">
+                  })}
+                  {/* Total summary row if multiple items */}
+                  {((selectedLoanTxn.loanDetails?.items?.length || 0) > 1) && (() => {
+                    const firstItem = selectedLoanTxn.loanDetails?.items?.[0];
+                    const totalQty = selectedLoanTxn.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 0;
+                    return (
+                      <tr className="bg-slate-50/80 font-bold border-t border-slate-200 text-slate-800">
+                        <td className="p-2">{totalQty}</td>
+                        <td className="p-2 text-slate-500">Total (Combined)</td>
+                        <td className="p-2">{firstItem?.yield || "-"}</td>
+                        <td className="p-2 text-slate-900">{firstItem?.grossWeight ? firstItem.grossWeight + "g" : "-"}</td>
+                        <td className="p-2 text-slate-900">{firstItem?.netWeight ? firstItem.netWeight + "g" : "-"}</td>
+                        <td className="p-2 text-slate-900">{firstItem?.value ? "₹" + Number(firstItem.value).toLocaleString('en-IN') : "-"}</td>
+                        <td className="p-2">-</td>
+                      </tr>
+                    );
+                  })()}
+                </tbody>
+              </table>
+
+              <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mb-4">
+                <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3">Financial Details</h4>
+                <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600 mb-4">
+                  <div>Interest Rate: <strong className="text-slate-800">{selectedLoanTxn.loanDetails?.interestRate} per month</strong></div>
+                  <div>Interest Generated: <strong className="text-rose-600">₹{getLoanInterest(selectedLoanTxn).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
+                  <div>Taken Date: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}</strong></div>
+                  <div>Period End: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.endDate)}</strong></div>
+                  
+                  {selectedLoanTxn.status === "Cleared" && (
+                    <div className="col-span-2 text-slate-600 bg-emerald-50 border border-emerald-100 p-1.5 rounded font-bold">
+                      Cleared On: <span className="font-technical text-emerald-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || selectedLoanTxn.date)}</span>
+                    </div>
+                  )}
+
+                  {selectedLoanTxn.loanDetails?.interestPaidUpto && 
+                   selectedLoanTxn.loanDetails.interestPaidUpto !== (selectedLoanTxn.loanDetails.takenDate || selectedLoanTxn.date) && (
+                    <div className="col-span-2 text-slate-600 bg-slate-100 p-1.5 rounded font-bold">
+                      Last Cleared Upto: <span className="font-technical text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
+                    </div>
+                  )}
+
+                  {selectedLoanTxn.loanDetails?.note && (
+                    <div className="col-span-2 text-slate-600 bg-amber-50 border border-amber-100 p-2 rounded text-[11px]">
+                      <strong>Note:</strong> <span className="italic font-medium">{selectedLoanTxn.loanDetails.note}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-200/60 pt-3 flex justify-between items-center">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Principal Amount</span>
+                    <span className="text-lg font-extrabold text-slate-800">₹{selectedLoanTxn.amount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-blue-400 uppercase tracking-wider block font-bold">Total Due</span>
+                    <span className="text-lg font-extrabold text-blue-600">
+                      {selectedLoanTxn.status === "Cleared" 
+                        ? "₹0 (Cleared)" 
+                        : `₹${(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top-up History Ledger */}
+              {selectedLoanTxn.loanDetails?.topups?.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Principal Adjustments (Top-up / Repayment) History</h4>
+                  <div className="max-h-24 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
+                    <table className="w-full text-left text-[10px] divide-y divide-slate-100">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                          <th className="p-2.5">Qty</th>
-                          <th className="p-2.5">Item Name</th>
-                          <th className="p-2.5">Yield</th>
-                          <th className="p-2.5">Gross</th>
-                          <th className="p-2.5">Net</th>
-                          <th className="p-2.5">Worth</th>
-                          <th className="p-2.5">Remarks</th>
+                        <tr className="bg-slate-50 text-slate-400 font-bold">
+                          <th className="p-2">Date</th>
+                          <th className="p-2">Adjustment Amount</th>
+                          <th className="p-2">Principal Shift</th>
+                          <th className="p-2">Remarks</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50 font-semibold bg-white">
-                        {selectedLoanTxn.loanDetails?.items?.map((item: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-slate-50/50">
-                            <td className="p-2.5">{item.qty}</td>
-                            <td className="p-2.5 font-bold text-slate-900">{item.name}</td>
-                            <td className="p-2.5">{item.yield || "-"}</td>
-                            <td className="p-2.5">{item.grossWeight ? item.grossWeight + "g" : "-"}</td>
-                            <td className="p-2.5 text-blue-700">{item.netWeight ? item.netWeight + "g" : "-"}</td>
-                            <td className="p-2.5 text-emerald-600">{item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-"}</td>
-                            <td className="p-2.5 text-slate-400 font-normal">{item.remarks || "-"}</td>
-                          </tr>
-                        ))}
-                        {/* Total Summary Row */}
-                        {(() => {
-                          const firstItem = selectedLoanTxn.loanDetails?.items?.[0];
-                          const totalQty = selectedLoanTxn.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 0;
+                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
+                        {selectedLoanTxn.loanDetails.topups.map((top: any, tIdx: number) => {
+                          const isRepay = top.extraAmount < 0 || top.type === "repayment";
+                          const displayAmt = isRepay ? `-₹${Math.abs(top.extraAmount).toLocaleString('en-IN')}` : `+₹${top.extraAmount.toLocaleString('en-IN')}`;
+                          const colorClass = isRepay ? "text-emerald-600 font-bold" : "text-blue-600";
                           return (
-                            <tr className="bg-slate-100/70 font-bold border-t border-slate-200 text-slate-900">
-                              <td className="p-2.5">{totalQty}</td>
-                              <td className="p-2.5 text-slate-500 uppercase tracking-wider text-[10px]">Total (Combined)</td>
-                              <td className="p-2.5">{firstItem?.yield || "-"}</td>
-                              <td className="p-2.5">{firstItem?.grossWeight ? firstItem.grossWeight + "g" : "-"}</td>
-                              <td className="p-2.5 text-blue-700">{firstItem?.netWeight ? firstItem.netWeight + "g" : "-"}</td>
-                              <td className="p-2.5 text-emerald-700">{firstItem?.value ? "₹" + Number(firstItem.value).toLocaleString('en-IN') : "-"}</td>
-                              <td className="p-2.5">-</td>
+                            <tr key={tIdx} className="hover:bg-slate-50/50">
+                              <td className="p-2 font-technical">{formatDateToDDMMYYYY(top.date)}</td>
+                              <td className={`p-2 font-technical ${colorClass}`}>{displayAmt}</td>
+                              <td className="p-2 text-slate-500 font-technical">₹{top.oldPrincipal.toLocaleString('en-IN')} → ₹{top.newPrincipal.toLocaleString('en-IN')}</td>
+                              <td className="p-2 text-slate-400">{top.remarks}</td>
                             </tr>
                           );
-                        })()}
+                        })}
                       </tbody>
                     </table>
                   </div>
-                )}
-              </div>
-
-              {/* 4. Financial Details */}
-              <div className="mb-6">
-                <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Financial Details</h4>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Interest Rate</span>
-                    <span className="text-base font-extrabold text-slate-900 block">{selectedLoanTxn.loanDetails?.interestRate}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">per month</span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Interest Accrued</span>
-                    <span className="text-base font-black text-rose-600 block">₹{getLoanInterest(selectedLoanTxn).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Taken Date</span>
-                    <span className="text-base font-bold text-slate-800 block">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}</span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Due Date</span>
-                    <span className="text-base font-bold text-slate-800 block">
-                      {selectedLoanTxn.loanDetails?.endDate ? formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.endDate) : "-"}
-                    </span>
-                  </div>
-                </div>
-
-                {selectedLoanTxn.loanDetails?.interestPaidUpto && 
-                 selectedLoanTxn.loanDetails.interestPaidUpto !== (selectedLoanTxn.loanDetails.takenDate || selectedLoanTxn.date) && (
-                  <div className="mt-2 text-xs font-bold text-slate-700 bg-slate-100 p-2.5 rounded-lg flex items-center justify-between border border-slate-200">
-                    <span>Last Interest Cleared Upto:</span>
-                    <span className="font-technical text-slate-900">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
-                  </div>
-                )}
-
-                {selectedLoanTxn.loanDetails?.note && (
-                  <div className="mt-2 text-xs text-slate-700 bg-amber-50/80 border border-amber-200 p-2.5 rounded-lg">
-                    <strong className="font-bold text-amber-900">Note:</strong> <span className="italic font-medium text-slate-800">{selectedLoanTxn.loanDetails.note}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* 5. Big Summary Cards (Principal vs Total Due) */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 text-center shadow-xs">
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Principal Amount</span>
-                  <span className="text-2xl md:text-3xl font-black text-slate-900">₹{selectedLoanTxn.amount.toLocaleString('en-IN')}</span>
-                </div>
-
-                {selectedLoanTxn.status === "Cleared" ? (
-                  <div className="bg-emerald-50/60 border-2 border-emerald-200 rounded-2xl p-4 text-center shadow-xs">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-600 block mb-1">Loan Status</span>
-                    <span className="text-2xl md:text-3xl font-black text-emerald-600 block">₹0</span>
-                    <span className="inline-block mt-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">✔ Cleared</span>
-                  </div>
-                ) : (
-                  <div className="bg-blue-50/60 border-2 border-blue-200 rounded-2xl p-4 text-center shadow-xs">
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-blue-500 block mb-1">Total Due</span>
-                    <span className="text-2xl md:text-3xl font-black text-blue-700 block">
-                      ₹{(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="inline-block mt-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">Outstanding</span>
-                  </div>
-                )}
-              </div>
-
-              {/* 6. Cleared Banner (if Cleared) */}
-              {selectedLoanTxn.status === "Cleared" && (
-                <div className="mb-6 bg-emerald-600 text-white rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm text-center">
-                  <CheckCircle size={24} className="text-emerald-200" />
-                  <div>
-                    <div className="font-black text-sm tracking-wider uppercase">✔ LOAN CLEARED</div>
-                    <div className="text-xs text-emerald-100 font-medium">This loan was closed on {formatDateToDDMMYYYY(selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || selectedLoanTxn.date)}</div>
-                  </div>
                 </div>
               )}
 
-              {/* 7. Pending Loan Actions (Action Cards for Top-up & Part Payment) */}
+              {/* Extra Principal Additions (Top-up) Panel */}
               {selectedLoanTxn.status !== "Cleared" && (
-                <div className="mb-6 space-y-3">
-                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Loan Actions</h4>
-
-                  {/* Top-up History Ledger (if exists) */}
-                  {selectedLoanTxn.loanDetails?.topups?.length > 0 && (
-                    <div className="mb-3">
-                      <h5 className="font-bold text-[11px] text-slate-500 uppercase tracking-wider mb-1.5">Principal Adjustments Ledger</h5>
-                      <div className="max-h-24 overflow-y-auto border border-slate-200 rounded-xl shadow-2xs">
-                        <table className="w-full text-left text-[10px] divide-y divide-slate-100">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-400 font-bold">
-                              <th className="p-2">Date</th>
-                              <th className="p-2">Adjustment</th>
-                              <th className="p-2">Principal Shift</th>
-                              <th className="p-2">Remarks</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
-                            {selectedLoanTxn.loanDetails.topups.map((top: any, tIdx: number) => {
-                              const isRepay = top.extraAmount < 0 || top.type === "repayment";
-                              const displayAmt = isRepay ? `-₹${Math.abs(top.extraAmount).toLocaleString('en-IN')}` : `+₹${top.extraAmount.toLocaleString('en-IN')}`;
-                              const colorClass = isRepay ? "text-emerald-600 font-bold" : "text-blue-600";
-                              return (
-                                <tr key={tIdx} className="hover:bg-slate-50/50">
-                                  <td className="p-2 font-technical">{formatDateToDDMMYYYY(top.date)}</td>
-                                  <td className={`p-2 font-technical ${colorClass}`}>{displayAmt}</td>
-                                  <td className="p-2 text-slate-500 font-technical">₹{top.oldPrincipal.toLocaleString('en-IN')} → ₹{top.newPrincipal.toLocaleString('en-IN')}</td>
-                                  <td className="p-2 text-slate-400">{top.remarks}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                <div className="mb-4 bg-blue-50/30 border border-blue-100 rounded-lg p-3">
+                  {!showTopUpForm ? (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setShowTopUpForm(true);
+                        setTopUpDate(new Date().toISOString().split('T')[0]);
+                      }}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    >
+                      <PlusCircle size={14} /> Take Extra Money (Principal Top-up)
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-700">Add Extra Money</span>
+                        <button type="button" onClick={() => setShowTopUpForm(false)} className="text-slate-400 hover:text-slate-600 text-xs">Cancel</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="form-group">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Extra Amount (₹)</label>
+                          <input 
+                            type="number" 
+                            placeholder="e.g. 1000"
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={topUpAmount}
+                            onChange={(e) => setTopUpAmount(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Taken Date</label>
+                          <input 
+                            type="date" 
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={topUpDate}
+                            onChange={(e) => setTopUpDate(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group col-span-2">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks / Reason</label>
+                          <input 
+                            type="text" 
+                            placeholder="Remarks..."
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={topUpRemarks}
+                            onChange={(e) => setTopUpRemarks(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          type="button" 
+                          onClick={() => setShowTopUpForm(false)}
+                          className="px-2.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={handleSaveTopUp}
+                          className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold"
+                        >
+                          Save Top-up
+                        </button>
                       </div>
                     </div>
                   )}
+                </div>
+              )}
 
-                  {/* Action Card 1: Principal Top-up */}
-                  <div className="bg-blue-50/40 border border-blue-200/80 rounded-xl p-3.5 transition-all">
-                    {!showTopUpForm ? (
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          setShowTopUpForm(true);
-                          setTopUpDate(new Date().toISOString().split('T')[0]);
-                        }}
-                        className="w-full text-left flex items-center justify-between group"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-black">➕</div>
-                          <div>
-                            <div className="font-extrabold text-xs text-blue-900 group-hover:text-blue-700">Principal Top-up</div>
-                            <div className="text-[10px] text-slate-500 font-medium">Increase principal amount (Take Extra Money)</div>
-                          </div>
+              {/* Principal Repayment Panel */}
+              {selectedLoanTxn.status !== "Cleared" && (
+                <div className="mb-4 bg-emerald-50/30 border border-emerald-100 rounded-lg p-3">
+                  {!showRepaymentForm ? (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setShowRepaymentForm(true);
+                        setRepaymentDate(new Date().toISOString().split('T')[0]);
+                      }}
+                      className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+                    >
+                      <PlusCircle size={14} className="text-emerald-600" /> Pay/Reduce Principal Amount (Part Payment)
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-700">Pay Principal Amount</span>
+                        <button type="button" onClick={() => setShowRepaymentForm(false)} className="text-slate-400 hover:text-slate-600 text-xs">Cancel</button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="form-group">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Amount (₹)</label>
+                          <input 
+                            type="number" 
+                            placeholder="e.g. 2000"
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={repaymentAmount}
+                            onChange={(e) => setRepaymentAmount(e.target.value)}
+                          />
                         </div>
-                        <span className="text-xs font-bold text-blue-600 bg-white border border-blue-200 px-3 py-1 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-all shadow-2xs">Add Top-up</span>
-                      </button>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center pb-1 border-b border-blue-100">
-                          <span className="text-xs font-extrabold text-blue-900">➕ Principal Top-up (Add Extra Money)</span>
-                          <button type="button" onClick={() => setShowTopUpForm(false)} className="text-slate-400 hover:text-slate-600 text-xs font-bold">Cancel</button>
+                        <div className="form-group">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Date</label>
+                          <input 
+                            type="date" 
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={repaymentDate}
+                            onChange={(e) => setRepaymentDate(e.target.value)}
+                          />
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Extra Amount (₹)</label>
-                            <input 
-                              type="number" 
-                              placeholder="e.g. 1000"
-                              className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white outline-none focus:border-blue-500"
-                              value={topUpAmount}
-                              onChange={(e) => setTopUpAmount(e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Taken Date</label>
-                            <input 
-                              type="date" 
-                              className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white outline-none focus:border-blue-500"
-                              value={topUpDate}
-                              onChange={(e) => setTopUpDate(e.target.value)}
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks / Reason</label>
-                            <input 
-                              type="text" 
-                              placeholder="Remarks..."
-                              className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white outline-none focus:border-blue-500"
-                              value={topUpRemarks}
-                              onChange={(e) => setTopUpRemarks(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex justify-end gap-2 pt-1">
-                          <button type="button" onClick={() => setShowTopUpForm(false)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 bg-white">Cancel</button>
-                          <button type="button" onClick={handleSaveTopUp} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-2xs">Save Top-up</button>
+                        <div className="form-group col-span-2">
+                          <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks / Reason</label>
+                          <input 
+                            type="text" 
+                            placeholder="Remarks..."
+                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            value={repaymentRemarks}
+                            onChange={(e) => setRepaymentRemarks(e.target.value)}
+                          />
                         </div>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Action Card 2: Part Payment */}
-                  <div className="bg-emerald-50/40 border border-emerald-200/80 rounded-xl p-3.5 transition-all">
-                    {!showRepaymentForm ? (
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          setShowRepaymentForm(true);
-                          setRepaymentDate(new Date().toISOString().split('T')[0]);
-                        }}
-                        className="w-full text-left flex items-center justify-between group"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-black">💰</div>
-                          <div>
-                            <div className="font-extrabold text-xs text-emerald-900 group-hover:text-emerald-700">Part Payment</div>
-                            <div className="text-[10px] text-slate-500 font-medium">Reduce outstanding principal amount</div>
-                          </div>
-                        </div>
-                        <span className="text-xs font-bold text-emerald-600 bg-white border border-emerald-200 px-3 py-1 rounded-lg group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-2xs">Pay Principal</span>
-                      </button>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center pb-1 border-b border-emerald-100">
-                          <span className="text-xs font-extrabold text-emerald-900">💰 Part Payment (Reduce Principal)</span>
-                          <button type="button" onClick={() => setShowRepaymentForm(false)} className="text-slate-400 hover:text-slate-600 text-xs font-bold">Cancel</button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Amount (₹)</label>
-                            <input 
-                              type="number" 
-                              placeholder="e.g. 2000"
-                              className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white outline-none focus:border-emerald-500"
-                              value={repaymentAmount}
-                              onChange={(e) => setRepaymentAmount(e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Date</label>
-                            <input 
-                              type="date" 
-                              className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white outline-none focus:border-emerald-500"
-                              value={repaymentDate}
-                              onChange={(e) => setRepaymentDate(e.target.value)}
-                            />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks / Reason</label>
-                            <input 
-                              type="text" 
-                              placeholder="Remarks..."
-                              className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white outline-none focus:border-emerald-500"
-                              value={repaymentRemarks}
-                              onChange={(e) => setRepaymentRemarks(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex justify-end gap-2 pt-1">
-                          <button type="button" onClick={() => setShowRepaymentForm(false)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 bg-white">Cancel</button>
-                          <button type="button" onClick={handleSaveRepayment} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-2xs">Save Repayment</button>
-                        </div>
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          type="button" 
+                          onClick={() => setShowRepaymentForm(false)}
+                          className="px-2.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={handleSaveRepayment}
+                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold"
+                        >
+                          Save Repayment
+                        </button>
                       </div>
-                    )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Interest Payment History Ledger */}
+              {selectedLoanTxn.loanDetails?.interestPayments?.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Interest Payment History</h4>
+                  <div className="max-h-28 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
+                    <table className="w-full text-left text-[10px] divide-y divide-slate-100">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold">
+                          <th className="p-2">Paid Date</th>
+                          <th className="p-2">Upto Date</th>
+                          <th className="p-2">Amount Paid</th>
+                          <th className="p-2">Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
+                        {selectedLoanTxn.loanDetails.interestPayments.map((pay: any, pIdx: number) => (
+                          <tr key={pIdx} className="hover:bg-slate-50/50">
+                            <td className="p-2 font-technical">{formatDateToDDMMYYYY(pay.date)}</td>
+                            <td className="p-2 font-technical">{formatDateToDDMMYYYY(pay.paidUpto)}</td>
+                            <td className="p-2 font-technical text-emerald-600">₹{pay.amountPaid.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                            <td className="p-2 text-slate-500">{pay.remarks}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
 
-              {/* 8. Interest Payment Section */}
+              {/* Record Interest Payment Section */}
               {selectedLoanTxn.status !== "Cleared" && (
-                <div className="mb-6 bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-extrabold text-xs text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
-                      🧾 Interest Settlement
-                    </h5>
-                    <span className="text-[10px] font-bold text-slate-400">Clear Interest Till Date</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center mb-3 bg-white p-3.5 rounded-xl border border-slate-100">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Interest to Collect</span>
-                      <span className="text-2xl font-black text-rose-600 block">
+                <div className="border border-blue-100 rounded-lg p-3 bg-blue-50/30 mb-4">
+                  <h5 className="font-bold text-xs text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Clear Interest Till Date
+                  </h5>
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <label className="text-[9px] font-bold text-slate-500 block mb-1">Paid Upto Date</label>
+                      <input 
+                        type="date" 
+                        className="w-full border border-slate-200 rounded-lg p-1.5 text-xs outline-none bg-white font-semibold"
+                        value={interestPaidUptoDate}
+                        onChange={(e) => setInterestPaidUptoDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-[9px] font-bold text-slate-500 block mb-1">Calculated Interest</label>
+                      <div className="p-1.5 text-xs font-bold font-technical text-rose-600 bg-white border border-slate-200 rounded-lg">
                         ₹{calculateInterestForRange(
                           selectedLoanTxn.amount,
                           parseFloat(selectedLoanTxn.loanDetails?.interestRate) || 0,
@@ -4824,25 +4670,14 @@ export default function Dashboard() {
                           interestPaidUptoDate,
                           selectedLoanTxn.category
                         ).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Paid Till Date</label>
-                      <input 
-                        type="date" 
-                        className="w-full border border-slate-200 rounded-lg p-2 text-xs font-bold text-slate-800 outline-none bg-slate-50 focus:bg-white"
-                        value={interestPaidUptoDate}
-                        onChange={(e) => setInterestPaidUptoDate(e.target.value)}
-                      />
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex gap-2">
+                  <div className="mt-2 flex gap-2">
                     <input 
                       type="text" 
                       placeholder="Remarks (e.g. Paid cash)..."
-                      className="flex-1 border border-slate-200 rounded-lg p-2 text-xs outline-none bg-white font-medium"
+                      className="flex-1 border border-slate-200 rounded-lg p-1.5 text-xs outline-none bg-white font-semibold"
                       value={interestRemarks}
                       onChange={(e) => setInterestRemarks(e.target.value)}
                     />
@@ -4858,53 +4693,18 @@ export default function Dashboard() {
                         );
                         handlePayInterest(selectedLoanTxn.id, interestPaidUptoDate, amt, interestRemarks);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2 rounded-lg text-xs shadow-xs shrink-0"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs"
                     >
                       Clear Interest
                     </button>
                   </div>
-
-                  {/* Interest Payment History Ledger */}
-                  {selectedLoanTxn.loanDetails?.interestPayments?.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-slate-200/60">
-                      <h6 className="font-bold text-[10px] text-slate-400 uppercase tracking-wider mb-2">Past Interest Payments</h6>
-                      <div className="max-h-24 overflow-y-auto border border-slate-200 rounded-lg">
-                        <table className="w-full text-left text-[10px] divide-y divide-slate-100">
-                          <thead>
-                            <tr className="bg-slate-100 text-slate-500 font-bold">
-                              <th className="p-2">Paid Date</th>
-                              <th className="p-2">Upto Date</th>
-                              <th className="p-2">Amount Paid</th>
-                              <th className="p-2">Remarks</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
-                            {selectedLoanTxn.loanDetails.interestPayments.map((pay: any, pIdx: number) => (
-                              <tr key={pIdx} className="hover:bg-slate-50/50">
-                                <td className="p-2 font-technical">{formatDateToDDMMYYYY(pay.date)}</td>
-                                <td className="p-2 font-technical">{formatDateToDDMMYYYY(pay.paidUpto)}</td>
-                                <td className="p-2 font-technical text-emerald-600">₹{pay.amountPaid.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                                <td className="p-2 text-slate-500">{pay.remarks}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
 
-            {/* 9. Bottom Buttons */}
-            <div className="flex justify-between items-center pt-4 border-t border-slate-100 mt-6">
+            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
               <div className="flex gap-2">
-                <button 
-                  onClick={() => setSelectedLoanTxn(null)} 
-                  className="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 bg-white shadow-2xs"
-                >
-                  Close
-                </button>
+                <button onClick={() => setSelectedLoanTxn(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">Close</button>
                 <button 
                   onClick={() => {
                     const cust = customers.find(c => c.id === selectedLoanTxn.customerId);
@@ -4959,28 +4759,25 @@ export default function Dashboard() {
                     setSelectedLoanTxn(null);
                     setShowOfflineLoanModal(true);
                   }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-2xs"
+                  className="px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 bg-white flex items-center gap-1.5"
                 >
                   Edit Loan
                 </button>
-              </div>
-
-              <div className="flex gap-2">
                 <button 
                   onClick={() => handleDeleteLoan(selectedLoanTxn.id)}
-                  className="px-4 py-2 border border-rose-200 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-50 bg-white"
+                  className="px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 bg-white flex items-center gap-1.5"
                 >
                   Delete Loan
                 </button>
-                {selectedLoanTxn.status !== "Cleared" && (
-                  <button 
-                    onClick={() => handleMarkAsCleared(selectedLoanTxn.id)} 
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
-                  >
-                    <CheckCircle size={14} /> Mark as Cleared
-                  </button>
-                )}
               </div>
+              {selectedLoanTxn.status !== "Cleared" && (
+                <button 
+                  onClick={() => handleMarkAsCleared(selectedLoanTxn.id)} 
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1"
+                >
+                  <CheckCircle size={14} /> Mark as Cleared
+                </button>
+              )}
             </div>
           </div>
         </div>
