@@ -3919,46 +3919,50 @@ export default function Dashboard() {
                       setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
                       setShowOfflineLoanModal(true);
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <Plus size={14} /> Add Offline Loan
                   </button>
                   <button 
                     onClick={() => setShowBulkImportModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <Upload size={14} /> Bulk Import (CSV)
                   </button>
                   <button 
                     onClick={() => setActiveTab("loan-reminders")}
-                    className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                    className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
-                    <Bell size={14} /> View Reminders
+                    <Bell size={14} /> Reminders
                   </button>
                   <button 
                     onClick={handlePrintLoanHistoryReport}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                   >
                     <Printer size={14} /> Print Report
                   </button>
+                </div>
+
+                {/* Filter and Search Bar Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 w-full mt-2">
                   <input 
                     type="text" 
-                    className="border border-slate-200 rounded-lg p-2 px-3 text-sm outline-none" 
-                    placeholder="Search name or bill no..."
+                    className="border border-slate-200 rounded-lg p-2 px-3 text-xs outline-none focus:border-blue-500 bg-white font-medium col-span-1 sm:col-span-2 lg:col-span-1" 
+                    placeholder="Search name, bill no..."
                     value={loanHistorySearch}
                     onChange={(e) => setLoanHistorySearch(e.target.value)}
                   />
                   <select 
-                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer font-semibold text-slate-700 bg-white"
+                    className="border border-slate-200 rounded-lg p-2 text-xs outline-none cursor-pointer font-semibold text-slate-700 bg-white"
                     value={loanSeriesFilter}
                     onChange={(e) => setLoanSeriesFilter(e.target.value)}
                   >
                     <option value="all">All Series</option>
-                    <option value="star">★ Star Series (Above ₹10K)</option>
-                    <option value="normal">Normal Series (Without Star)</option>
+                    <option value="star">★ Star Series (&gt;₹10K)</option>
+                    <option value="normal">Normal Series</option>
                   </select>
                   <select 
-                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer font-semibold text-slate-700 bg-white"
+                    className="border border-slate-200 rounded-lg p-2 text-xs outline-none cursor-pointer font-semibold text-slate-700 bg-white"
                     value={loanHistoryFilter}
                     onChange={(e) => setLoanHistoryFilter(e.target.value)}
                   >
@@ -3967,16 +3971,16 @@ export default function Dashboard() {
                     <option value="cleared">Cleared</option>
                   </select>
                   <select 
-                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer font-semibold text-slate-700 bg-white"
+                    className="border border-slate-200 rounded-lg p-2 text-xs outline-none cursor-pointer font-semibold text-slate-700 bg-white"
                     value={loanSortField}
                     onChange={(e) => setLoanSortField(e.target.value as any)}
                   >
-                    <option value="date">Sort by: Date</option>
-                    <option value="name">Sort by: Name</option>
-                    <option value="amount">Sort by: Amount</option>
+                    <option value="date">Sort: Date</option>
+                    <option value="name">Sort: Name</option>
+                    <option value="amount">Sort: Amount</option>
                   </select>
                   <select 
-                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer font-semibold text-slate-700 bg-white"
+                    className="border border-slate-200 rounded-lg p-2 text-xs outline-none cursor-pointer font-semibold text-slate-700 bg-white"
                     value={loanSortOrder}
                     onChange={(e) => setLoanSortOrder(e.target.value as any)}
                   >
@@ -3987,7 +3991,76 @@ export default function Dashboard() {
               </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* MOBILE CARDS VIEW (For portrait mobile phone screens) */}
+              <div className="block md:hidden space-y-3">
+                {activeLoanList.map((t, idx) => {
+                  const cust = customers.find(c => c.id === t.customerId);
+                  const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
+                  const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
+                  const address = cust?.address || t.loanDetails?.address || "-";
+                  const displayBill = formatBillNoForDisplay(t.id);
+                  const interestAmt = getLoanInterest(t);
+
+                  return (
+                    <div 
+                      key={idx}
+                      onClick={() => setSelectedLoanTxn(t)}
+                      className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs hover:border-blue-300 transition-all cursor-pointer active:bg-slate-50"
+                    >
+                      <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                            #{displayBill}
+                          </span>
+                          <h4 className="font-bold text-xs text-slate-800 line-clamp-1">{cust?.name || "Unknown"}</h4>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
+                          {t.status || "Pending"}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Pledged Items</span>
+                          <span className="font-semibold text-slate-700 line-clamp-1">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"} ({totalQty})</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Principal Amount</span>
+                          <span className="font-extrabold text-slate-900 text-xs">₹{t.amount.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Taken Date</span>
+                          <span className="font-semibold text-slate-600 text-[11px]">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Interest Generated</span>
+                          <span className="font-bold text-rose-600 text-[11px]">₹{interestAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        </div>
+                        {grossWeight && (
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Gross Wt</span>
+                            <span className="font-semibold text-slate-700 text-[11px]">{grossWeight} g</span>
+                          </div>
+                        )}
+                        {address && address !== "-" && (
+                          <div className={grossWeight ? "" : "col-span-2"}>
+                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Address</span>
+                            <span className="font-semibold text-slate-600 text-[11px] line-clamp-1">{address}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-100 text-[10px] font-bold text-blue-600">
+                        <span>Tap for Details</span>
+                        <span>View Summary &rarr;</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* DESKTOP / TABLET FULL TABLE VIEW */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-400 font-bold">
@@ -4004,71 +4077,28 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 font-semibold">
-                    {transactions
-                      .filter(t => t.type === "loan")
-                      .filter(t => {
-                        const cust = customers.find(c => c.id === t.customerId);
-                        const custName = cust ? cust.name.toLowerCase() : "";
-                        const rawBill = t.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
-                        const billNo = formatBillNoForDisplay(t.id).toLowerCase();
-                        
-                        const isStar = rawBill.startsWith("★") || rawBill.startsWith("*");
-                        const matchesSeries = loanSeriesFilter === "all"
-                          || (loanSeriesFilter === "star" && isStar)
-                          || (loanSeriesFilter === "normal" && !isStar);
-                        
-                        const matchesSearch = custName.includes(loanHistorySearch.toLowerCase()) || billNo.includes(loanHistorySearch.toLowerCase());
-                        
-                        const status = t.status || "Pending";
-                        const matchesFilter = loanHistoryFilter === "all"
-                          || (loanHistoryFilter === "pending" && status === "Pending")
-                          || (loanHistoryFilter === "cleared" && status === "Cleared");
-                        
-                        return matchesSearch && matchesFilter && matchesSeries;
-                      })
-                      .sort((a, b) => {
-                        let valA: any = "";
-                        let valB: any = "";
-                        
-                        if (loanSortField === "date") {
-                          valA = a.loanDetails?.takenDate || a.date || "";
-                          valB = b.loanDetails?.takenDate || b.date || "";
-                        } else if (loanSortField === "name") {
-                          const custA = customers.find(c => c.id === a.customerId);
-                          const custB = customers.find(c => c.id === b.customerId);
-                          valA = custA ? custA.name.toLowerCase() : "";
-                          valB = custB ? custB.name.toLowerCase() : "";
-                        } else if (loanSortField === "amount") {
-                          valA = Number(a.amount) || 0;
-                          valB = Number(b.amount) || 0;
-                        }
-                        
-                        if (valA < valB) return loanSortOrder === "asc" ? -1 : 1;
-                        if (valA > valB) return loanSortOrder === "asc" ? 1 : -1;
-                        return 0;
-                      })
-                      .map((t, idx) => {
-                        const cust = customers.find(c => c.id === t.customerId);
-                        const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
-                        const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
-                        const address = cust?.address || t.loanDetails?.address || "-";
-                        return (
-                          <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
-                            <td className="py-3 pr-4 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
-                            <td className="py-3 pr-4">{cust?.name || "Unknown"}</td>
-                            <td className="py-3 pr-4">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
-                            <td className="py-3 pr-4 text-slate-500">{totalQty}</td>
-                            <td className="py-3 pr-4">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
-                            <td className="py-3 pr-4 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
-                            <td className="py-3 pr-4 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
-                            <td className="py-3 pr-4 text-slate-600">{address}</td>
-                            <td className="py-3 pr-4 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                            <td className="py-3 pr-4">
-                              <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{t.status || "Pending"}</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                    {activeLoanList.map((t, idx) => {
+                      const cust = customers.find(c => c.id === t.customerId);
+                      const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
+                      const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
+                      const address = cust?.address || t.loanDetails?.address || "-";
+                      return (
+                        <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
+                          <td className="py-3 pr-4 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
+                          <td className="py-3 pr-4">{cust?.name || "Unknown"}</td>
+                          <td className="py-3 pr-4">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
+                          <td className="py-3 pr-4 text-slate-500">{totalQty}</td>
+                          <td className="py-3 pr-4">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
+                          <td className="py-3 pr-4 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
+                          <td className="py-3 pr-4 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
+                          <td className="py-3 pr-4 text-slate-600">{address}</td>
+                          <td className="py-3 pr-4 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                          <td className="py-3 pr-4">
+                            <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{t.status || "Pending"}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -4741,25 +4771,25 @@ export default function Dashboard() {
 
       {/* LOAN SUMMARY DETAILS MODAL */}
       {selectedLoanTxn && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-xl p-6 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-xl p-4 sm:p-6 flex flex-col justify-between max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
             <div>
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-                <div className="flex items-center gap-2.5">
-                  <h3 className="font-bold text-lg text-slate-800">Loan Summary Details</h3>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-3 sm:mb-4">
+                <div className="flex items-center gap-1.5 sm:gap-2.5">
+                  <h3 className="font-bold text-base sm:text-lg text-slate-800">Loan Summary</h3>
                   {currentModalLoanIndex >= 0 && (
-                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-                      {currentModalLoanIndex + 1} of {activeLoanList.length}
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                      {currentModalLoanIndex + 1}/{activeLoanList.length}
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <button 
                     type="button"
                     disabled={!hasPrevModalLoan}
                     onClick={handlePrevModalLoan}
                     title="Previous Loan (Left Arrow Key)"
-                    className="px-2.5 py-1 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent font-bold flex items-center gap-1 text-xs cursor-pointer"
+                    className="px-2 py-1 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 font-bold flex items-center gap-1 text-[11px] sm:text-xs cursor-pointer"
                   >
                     <ChevronLeft size={14} /> Prev
                   </button>
@@ -4768,22 +4798,22 @@ export default function Dashboard() {
                     disabled={!hasNextModalLoan}
                     onClick={handleNextModalLoan}
                     title="Next Loan (Right Arrow Key)"
-                    className="px-2.5 py-1 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 disabled:hover:bg-transparent font-bold flex items-center gap-1 text-xs cursor-pointer"
+                    className="px-2 py-1 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 font-bold flex items-center gap-1 text-[11px] sm:text-xs cursor-pointer"
                   >
                     Next <ChevronRight size={14} />
                   </button>
-                  <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-600 ml-1 p-1"><X size={20} /></button>
+                  <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-600 ml-0.5 p-1"><X size={18} /></button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50">
-                <div><strong>Bill No:</strong> {formatBillNoForDisplay(selectedLoanTxn.id)}</div>
-                <div className="pt-0"><strong>Date:</strong> {formatDateToDDMMYYYY(selectedLoanTxn.date)}</div>
-                <div className="pt-2"><strong>Pledger Name:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</div>
-                <div className="pt-2"><strong>Father's Name:</strong> {selectedLoanTxn.loanDetails?.father || "-"}</div>
-                <div className="pt-2"><strong>ID Proof:</strong> {selectedLoanTxn.loanDetails?.idProof || "-"}</div>
-                <div className="pt-2"><strong>Phone No:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</div>
-                <div className="pt-2"><strong>Address:</strong> {selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}</div>
-                <div className="pt-2"><strong>Mandal:</strong> {selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs font-semibold text-slate-600 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-slate-100 divide-y divide-slate-50 sm:divide-y-0">
+                <div><strong>Bill No:</strong> <span className="text-blue-600 font-bold ml-1">#{formatBillNoForDisplay(selectedLoanTxn.id)}</span></div>
+                <div className="pt-1 sm:pt-0"><strong>Date:</strong> {formatDateToDDMMYYYY(selectedLoanTxn.date)}</div>
+                <div className="pt-1 sm:pt-2"><strong>Pledger Name:</strong> <span className="text-slate-900 font-bold">{customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</span></div>
+                <div className="pt-1 sm:pt-2"><strong>Father's Name:</strong> {selectedLoanTxn.loanDetails?.father || "-"}</div>
+                <div className="pt-1 sm:pt-2"><strong>ID Proof:</strong> {selectedLoanTxn.loanDetails?.idProof || "-"}</div>
+                <div className="pt-1 sm:pt-2"><strong>Phone No:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</div>
+                <div className="pt-1 sm:pt-2"><strong>Address:</strong> {selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}</div>
+                <div className="pt-1 sm:pt-2"><strong>Mandal:</strong> {selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</div>
               </div>
 
               <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Pledged Items</h4>
@@ -5143,9 +5173,9 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-              <div className="flex gap-2">
-                <button onClick={() => setSelectedLoanTxn(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">Close</button>
+            <div className="flex flex-col-reverse sm:flex-row gap-2 justify-between items-stretch sm:items-center pt-3 sm:pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-3 sm:flex gap-1.5 sm:gap-2">
+                <button onClick={() => setSelectedLoanTxn(null)} className="px-2.5 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white text-center">Close</button>
                 <button 
                   onClick={() => {
                     const cust = customers.find(c => c.id === selectedLoanTxn.customerId);
@@ -5200,21 +5230,21 @@ export default function Dashboard() {
                     setSelectedLoanTxn(null);
                     setShowOfflineLoanModal(true);
                   }}
-                  className="px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 bg-white flex items-center gap-1.5"
+                  className="px-2.5 sm:px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 bg-white flex items-center justify-center gap-1 cursor-pointer"
                 >
                   Edit Loan
                 </button>
                 <button 
                   onClick={() => handleDeleteLoan(selectedLoanTxn.id)}
-                  className="px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 bg-white flex items-center gap-1.5"
+                  className="px-2.5 sm:px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 bg-white flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  Delete Loan
+                  Delete
                 </button>
               </div>
               {selectedLoanTxn.status !== "Cleared" && (
                 <button 
                   onClick={() => handleMarkAsCleared(selectedLoanTxn.id)} 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center justify-center gap-1 cursor-pointer w-full sm:w-auto"
                 >
                   <CheckCircle size={14} /> Mark as Cleared
                 </button>
