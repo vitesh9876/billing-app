@@ -37,6 +37,11 @@ function formatBillNoForDisplay(id: string) {
   return cleaned;
 }
 
+function getLoanTakenDate(t: any): string {
+  if (!t) return "";
+  return t.loanDetails?.originalTakenDate || t.date || t.loanDetails?.takenDate || "";
+}
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [customers, setCustomers] = useState<any[]>([]);
@@ -345,8 +350,8 @@ export default function Dashboard() {
       let valB: any = "";
       
       if (loanSortField === "date") {
-        valA = a.loanDetails?.takenDate || a.date || "";
-        valB = b.loanDetails?.takenDate || b.date || "";
+        valA = getLoanTakenDate(a);
+        valB = getLoanTakenDate(b);
       } else if (loanSortField === "name") {
         const custA = customers.find(c => c.id === a.customerId);
         const custB = customers.find(c => c.id === b.customerId);
@@ -359,6 +364,16 @@ export default function Dashboard() {
       
       if (valA < valB) return loanSortOrder === "asc" ? -1 : 1;
       if (valA > valB) return loanSortOrder === "asc" ? 1 : -1;
+
+      // Tie-break by Bill Number numerically when primary values are equal
+      const rawBillA = (a.id || "").replace("BILL-", "").replace("TXN-OFFLINE-", "");
+      const rawBillB = (b.id || "").replace("BILL-", "").replace("TXN-OFFLINE-", "");
+      const numA = parseInt(rawBillA.replace(/\D/g, ""), 10) || 0;
+      const numB = parseInt(rawBillB.replace(/\D/g, ""), 10) || 0;
+
+      if (numA !== numB) {
+        return loanSortOrder === "asc" ? numA - numB : numB - numA;
+      }
       return 0;
     });
 
@@ -790,8 +805,11 @@ export default function Dashboard() {
       remarks: topUpRemarks || "Extra money taken"
     };
 
+    const firstOldDate = txn.loanDetails?.originalTakenDate || txn.date || txn.loanDetails?.takenDate;
+
     const updatedLoanDetails = {
       ...txn.loanDetails,
+      originalTakenDate: firstOldDate,
       takenDate: newTakenDate,
       interestPaidUpto: newInterestPaidUpto,
       accumulatedInterest: newAccumulatedInterest,
@@ -886,8 +904,11 @@ export default function Dashboard() {
       type: "repayment"
     };
 
+    const firstOldDate = txn.loanDetails?.originalTakenDate || txn.date || txn.loanDetails?.takenDate;
+
     const updatedLoanDetails = {
       ...txn.loanDetails,
+      originalTakenDate: firstOldDate,
       takenDate: newTakenDate,
       interestPaidUpto: newInterestPaidUpto,
       accumulatedInterest: newAccumulatedInterest,
@@ -1475,8 +1496,8 @@ export default function Dashboard() {
         let valB: any = "";
         
         if (loanSortField === "date") {
-          valA = a.loanDetails?.takenDate || a.date || "";
-          valB = b.loanDetails?.takenDate || b.date || "";
+          valA = getLoanTakenDate(a);
+          valB = getLoanTakenDate(b);
         } else if (loanSortField === "name") {
           const custA = customers.find(c => c.id === a.customerId);
           const custB = customers.find(c => c.id === b.customerId);
@@ -1489,6 +1510,16 @@ export default function Dashboard() {
         
         if (valA < valB) return loanSortOrder === "asc" ? -1 : 1;
         if (valA > valB) return loanSortOrder === "asc" ? 1 : -1;
+
+        // Tie-break by Bill Number numerically when primary values are equal
+        const rawBillA = (a.id || "").replace("BILL-", "").replace("TXN-OFFLINE-", "");
+        const rawBillB = (b.id || "").replace("BILL-", "").replace("TXN-OFFLINE-", "");
+        const numA = parseInt(rawBillA.replace(/\D/g, ""), 10) || 0;
+        const numB = parseInt(rawBillB.replace(/\D/g, ""), 10) || 0;
+
+        if (numA !== numB) {
+          return loanSortOrder === "asc" ? numA - numB : numB - numA;
+        }
         return 0;
       });
 
@@ -4030,7 +4061,7 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <span className="text-[10px] font-bold text-slate-400 block uppercase">Taken Date</span>
-                          <span className="font-semibold text-slate-600 text-[11px]">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</span>
+                          <span className="font-semibold text-slate-600 text-[11px]">{formatDateToDDMMYYYY(getLoanTakenDate(t))}</span>
                         </div>
                         <div>
                           <span className="text-[10px] font-bold text-slate-400 block uppercase">Interest Generated</span>
@@ -4088,7 +4119,7 @@ export default function Dashboard() {
                           <td className="py-3 pr-4">{cust?.name || "Unknown"}</td>
                           <td className="py-3 pr-4">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
                           <td className="py-3 pr-4 text-slate-500">{totalQty}</td>
-                          <td className="py-3 pr-4">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
+                          <td className="py-3 pr-4">{formatDateToDDMMYYYY(getLoanTakenDate(t))}</td>
                           <td className="py-3 pr-4 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
                           <td className="py-3 pr-4 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
                           <td className="py-3 pr-4 text-slate-600">{address}</td>
@@ -4885,8 +4916,13 @@ export default function Dashboard() {
                   )}
 
                   {selectedLoanTxn.loanDetails?.note && (
-                    <div className="col-span-2 text-slate-600 bg-amber-50 border border-amber-100 p-2 rounded text-[11px]">
-                      <strong>Note:</strong> <span className="italic font-medium">{selectedLoanTxn.loanDetails.note}</span>
+                    <div className="col-span-2 bg-rose-50 border-2 border-rose-400 text-rose-900 p-3 rounded-lg text-xs font-bold shadow-xs">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] uppercase font-extrabold tracking-wider">
+                          ⚠️ SPECIAL NOTE
+                        </span>
+                      </div>
+                      <p className="font-semibold text-rose-900">{selectedLoanTxn.loanDetails.note}</p>
                     </div>
                   )}
                 </div>
@@ -5938,6 +5974,22 @@ export default function Dashboard() {
               </button>
             </div>
 
+            {(() => {
+              const clearingTxn = transactions.find(t => t.id === clearingTxnId);
+              const noteText = clearingTxn?.loanDetails?.note;
+              if (!noteText) return null;
+              return (
+                <div className="mb-4 bg-rose-50 border-2 border-rose-400 text-rose-900 p-3 rounded-lg text-xs font-bold shadow-xs">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] uppercase font-extrabold tracking-wider">
+                      ⚠️ LOAN NOTE
+                    </span>
+                  </div>
+                  <p className="font-semibold text-rose-900">{noteText}</p>
+                </div>
+              );
+            })()}
+
             <form onSubmit={handleConfirmClearLoan} className="space-y-4">
               <div className="form-group">
                 <label className="text-xs font-bold text-slate-400 block mb-1">4-Digit Passcode *</label>
@@ -6571,7 +6623,7 @@ export default function Dashboard() {
                     <td className="py-2 px-1.5">{cust?.name || "Unknown"}</td>
                     <td className="py-2 px-1.5">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
                     <td className="py-2 px-1.5 text-center">{totalQty}</td>
-                    <td className="py-2 px-1.5">{formatDateToDDMMYYYY(t.loanDetails?.takenDate || t.date)}</td>
+                    <td className="py-2 px-1.5">{formatDateToDDMMYYYY(getLoanTakenDate(t))}</td>
                     <td className="py-2 px-1.5 text-right font-bold">₹{t.amount.toLocaleString('en-IN')}</td>
                     <td className="py-2 px-1.5 text-center">{grossWeight ? grossWeight + " g" : "-"}</td>
                     <td className="py-2 px-1.5 text-slate-700">{address}</td>
