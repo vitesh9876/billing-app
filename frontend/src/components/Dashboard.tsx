@@ -24,7 +24,9 @@ import {
   Plus,
   Upload,
   Trash2,
-  BookOpen
+  BookOpen,
+  Menu,
+  MoreHorizontal
 } from "lucide-react";
 
 function formatBillNoForDisplay(id: string) {
@@ -44,6 +46,7 @@ function getLoanTakenDate(t: any): string {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [itemsCatalog, setItemsCatalog] = useState<any[]>([]);
@@ -2718,163 +2721,186 @@ export default function Dashboard() {
   return (
     <div className={`flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-[#F6F7F9] font-sans print:bg-white text-slate-900 w-full ${theme}`}>
       
-      {/* Sidebar Navigation */}
-      <aside className="hidden md:flex w-64 sbj-sidebar text-slate-100 flex-col justify-between print:hidden shrink-0 h-screen sticky top-0 z-20 no-scrollbar">
-        <div className="flex flex-col">
-          {/* Logo & Brand Header */}
-          <div className="px-6 py-6 border-b border-[#162238] flex flex-col items-center text-center">
-            {/* Crown SVG */}
-            <div className="text-[#C5A880] mb-1">
-              <svg width="32" height="22" viewBox="0 0 24 16" fill="currentColor">
-                <path d="M2 13.5L4 4.5L9 8.5L12 1.5L15 8.5L20 4.5L22 13.5H2Z" />
-                <circle cx="4" cy="3.5" r="1.5" />
-                <circle cx="12" cy="1" r="1.5" />
-                <circle cx="20" cy="3.5" r="1.5" />
-                <rect x="2" y="14.5" width="20" height="2" rx="0.5" />
-              </svg>
-            </div>
-            <h1 className="font-serif text-2xl font-bold tracking-wider text-[#E5C378]">SBJ</h1>
-            <p className="font-cinzel text-[10px] font-bold tracking-[0.24em] text-[#E5C378] mt-1">SRI SAI BALAJI</p>
-            <p className="text-[8.5px] font-medium tracking-[0.2em] text-[#A68A56] mt-0.5">JEWELRY & FURNITURE</p>
-          </div>
-
-          {/* Categorized Nav Links */}
-          <nav className="p-3 space-y-4 overflow-y-auto no-scrollbar max-h-[calc(100vh-230px)]">
-            {/* OVERVIEW */}
+      {/* Mobile Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div 
+            className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs transition-opacity" 
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-[#0B1320] text-slate-100 border-r border-[#162238] shadow-2xl z-50 justify-between">
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Overview</span>
-              <button 
-                onClick={() => setActiveTab("dashboard")} 
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                  activeTab === "dashboard" 
-                    ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
-                    : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
-                }`}
-              >
-                <LayoutDashboard size={17} className={activeTab === "dashboard" ? "text-[#E5C378]" : "text-slate-400"} /> Dashboard
-              </button>
-            </div>
-
-            {/* OPERATIONS */}
-            <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Operations</span>
-              <div className="space-y-1">
+              {/* Drawer Header */}
+              <div className="p-5 border-b border-[#162238] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="text-[#C5A880]">
+                    <svg width="22" height="16" viewBox="0 0 24 16" fill="currentColor">
+                      <path d="M2 13.5L4 4.5L9 8.5L12 1.5L15 8.5L20 4.5L22 13.5H2Z" />
+                      <circle cx="4" cy="3.5" r="1.5" />
+                      <circle cx="12" cy="1" r="1.5" />
+                      <circle cx="20" cy="3.5" r="1.5" />
+                      <rect x="2" y="14.5" width="20" height="2" rx="0.5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-lg font-bold text-[#E5C378]">SBJ</h2>
+                    <p className="font-cinzel text-[9px] font-bold text-[#A68A56] tracking-widest">SRI SAI BALAJI</p>
+                  </div>
+                </div>
                 <button 
-                  onClick={() => setActiveTab("billing")} 
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === "billing" 
-                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
-                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
-                  }`}
+                  type="button" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#152238] cursor-pointer"
                 >
-                  <PlusCircle size={17} className={activeTab === "billing" ? "text-[#E5C378]" : "text-slate-400"} /> New Billing
-                </button>
-                <button 
-                  onClick={() => setActiveTab("customers")} 
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === "customers" 
-                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
-                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
-                  }`}
-                >
-                  <Users size={17} className={activeTab === "customers" ? "text-[#E5C378]" : "text-slate-400"} /> Customers Data
-                </button>
-                <button 
-                  onClick={() => setActiveTab("loan-history")} 
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === "loan-history" 
-                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
-                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
-                  }`}
-                >
-                  <History size={17} className={activeTab === "loan-history" ? "text-[#E5C378]" : "text-slate-400"} /> Loan History
+                  <X size={20} />
                 </button>
               </div>
-            </div>
 
-            {/* COMMUNICATION */}
-            <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Communication</span>
-              <div className="space-y-1">
-                <button 
-                  onClick={() => setActiveTab("sms")} 
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === "sms" 
-                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
-                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
-                  }`}
-                >
-                  <MessageSquare size={17} className={activeTab === "sms" ? "text-[#E5C378]" : "text-slate-400"} /> SMS
-                </button>
+              {/* Drawer Nav Links */}
+              <nav className="p-3 space-y-4 overflow-y-auto max-h-[calc(100vh-140px)]">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Overview</span>
+                  <button 
+                    onClick={() => { setActiveTab("dashboard"); setMobileMenuOpen(false); }} 
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      activeTab === "dashboard" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                    }`}
+                  >
+                    <LayoutDashboard size={17} /> Dashboard
+                  </button>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Operations</span>
+                  <div className="space-y-1">
+                    <button 
+                      onClick={() => { setActiveTab("billing"); setMobileMenuOpen(false); }} 
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        activeTab === "billing" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                      }`}
+                    >
+                      <PlusCircle size={17} /> New Billing
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab("customers"); setMobileMenuOpen(false); }} 
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        activeTab === "customers" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                      }`}
+                    >
+                      <Users size={17} /> Customers Data
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab("loan-history"); setMobileMenuOpen(false); }} 
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        activeTab === "loan-history" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                      }`}
+                    >
+                      <History size={17} /> Loan History
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Communication</span>
+                  <button 
+                    onClick={() => { setActiveTab("sms"); setMobileMenuOpen(false); }} 
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      activeTab === "sms" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                    }`}
+                  >
+                    <MessageSquare size={17} /> SMS
+                  </button>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">System</span>
+                  <div className="space-y-1">
+                    <button 
+                      onClick={() => { setActiveTab("settings"); setMobileMenuOpen(false); }} 
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        activeTab === "settings" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                      }`}
+                    >
+                      <Settings size={17} /> Settings
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab("readme"); setMobileMenuOpen(false); }} 
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        activeTab === "readme" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                      }`}
+                    >
+                      <BookOpen size={17} /> Readme Guide
+                    </button>
+                  </div>
+                </div>
+              </nav>
+            </div>
+            <div className="p-4 border-t border-[#162238]">
+              <div className="bg-[#101A2B] border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <p className="text-[11px] font-medium text-slate-300">System Online</p>
               </div>
-            </div>
-
-            {/* SYSTEM */}
-            <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">System</span>
-              <div className="space-y-1">
-                <button 
-                  onClick={() => setActiveTab("settings")} 
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === "settings" 
-                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
-                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
-                  }`}
-                >
-                  <Settings size={17} className={activeTab === "settings" ? "text-[#E5C378]" : "text-slate-400"} /> Settings
-                </button>
-                <button 
-                  onClick={() => setActiveTab("readme")} 
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === "readme" 
-                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
-                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
-                  }`}
-                >
-                  <BookOpen size={17} className={activeTab === "readme" ? "text-[#E5C378]" : "text-slate-400"} /> Readme Guide
-                </button>
-              </div>
-            </div>
-          </nav>
-        </div>
-
-        {/* Footer Status Widget */}
-        <div className="p-4 border-t border-[#162238]">
-          <div className="bg-[#101A2B] border border-slate-800 rounded-xl p-3 flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-            <div>
-              <p className="text-xs font-semibold text-white leading-tight">System Online</p>
-              <p className="text-[10px] text-slate-400 leading-tight mt-0.5">All services are running</p>
             </div>
           </div>
         </div>
-      </aside>
+      )}
+
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col min-w-0 print:hidden pb-16 md:pb-0 overflow-y-auto no-scrollbar">
+      <main className="flex-1 flex flex-col min-w-0 print:hidden overflow-y-auto no-scrollbar relative">
         
+        {/* Mobile Top App Bar (Only visible on mobile portrait / landscape < md) */}
+        <div className="md:hidden bg-[#0B1320] border-b border-[#162238] px-4 py-3 flex items-center justify-between sticky top-0 z-40 text-slate-100 shadow-md">
+          <div className="flex items-center gap-2.5">
+            <button 
+              type="button" 
+              onClick={() => setMobileMenuOpen(true)} 
+              className="p-1.5 rounded-lg bg-[#152238] text-[#E5C378] hover:bg-[#1f304d] transition-colors cursor-pointer"
+              title="Open Navigation Menu"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="flex items-center gap-1.5">
+              <div className="text-[#C5A880]">
+                <svg width="18" height="14" viewBox="0 0 24 16" fill="currentColor">
+                  <path d="M2 13.5L4 4.5L9 8.5L12 1.5L15 8.5L20 4.5L22 13.5H2Z" />
+                  <circle cx="4" cy="3.5" r="1.5" />
+                  <circle cx="12" cy="1" r="1.5" />
+                  <circle cx="20" cy="3.5" r="1.5" />
+                  <rect x="2" y="14.5" width="20" height="2" rx="0.5" />
+                </svg>
+              </div>
+              <span className="font-serif font-bold text-sm tracking-wider text-[#E5C378]">SBJ</span>
+              <span className="text-[10px] font-cinzel font-bold text-[#A68A56] tracking-widest truncate max-w-[130px]">SRI SAI BALAJI</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-300 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Online</span>
+            </div>
+          </div>
+        </div>
+
         {/* Dynamic Top Header */}
-        <header className="py-6 px-6 md:px-8 bg-transparent flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-10 print:hidden backdrop-blur-sm">
+        <header className="py-4 md:py-6 px-4 sm:px-6 md:px-8 bg-transparent flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 sticky md:top-0 z-10 print:hidden backdrop-blur-sm">
           <div>
             {activeTab === "dashboard" && (
-              <p className="text-xs font-medium text-slate-500 font-sans tracking-normal">
+              <p className="text-[11px] sm:text-xs font-medium text-slate-500 font-sans tracking-normal">
                 Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, Vitesh
               </p>
             )}
-            <h1 className="font-serif text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mt-0.5 capitalize">
+            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mt-0.5 capitalize">
               {activeTab === "dashboard" ? "Dashboard" : activeTab === "loan-history" ? "Loan History" : activeTab === "customers" ? "Customers Data" : activeTab === "readme" ? "Readme Guide" : activeTab.replace("-", " ")}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {activeTab === "dashboard" && (
-              <div className="flex items-center gap-2 text-xs font-medium text-slate-600 bg-white border border-slate-200/80 px-3.5 py-2 rounded-xl shadow-xs">
-                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-2 text-[11px] sm:text-xs font-medium text-slate-600 bg-white border border-slate-200/80 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl shadow-xs">
+                <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                <span className="truncate">{new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
               </div>
             )}
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-[#EDFDF2] border border-[#DCFCE7] px-3.5 py-2 rounded-xl shadow-xs">
+            <div className="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-emerald-800 bg-[#EDFDF2] border border-[#DCFCE7] px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>Active Session</span>
             </div>
@@ -2882,7 +2908,7 @@ export default function Dashboard() {
         </header>
 
         {/* Tab Contents */}
-        <div className="px-6 md:px-8 pb-8 flex-1 print:p-0 print:overflow-visible">
+        <div className="px-3.5 sm:px-6 md:px-8 pb-24 md:pb-8 flex-1 print:p-0 print:overflow-visible">
           
           {/* DASHBOARD TAB */}
           {activeTab === "dashboard" && (
@@ -6465,8 +6491,8 @@ export default function Dashboard() {
 
       {/* ADD / EDIT CUSTOMER MODAL */}
       {showCustomerModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveCustomer} className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-lg p-6 sm:p-8 flex flex-col justify-between">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <form onSubmit={handleSaveCustomer} className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-lg p-4 sm:p-8 flex flex-col justify-between max-h-[92vh] overflow-y-auto">
             <div>
               <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
                 <h3 className="font-serif font-bold text-xl text-slate-900">{customerForm.id ? "Edit Customer Profile" : "Register New Customer"}</h3>
@@ -6544,8 +6570,8 @@ export default function Dashboard() {
 
       {/* ADD/EDIT ITEM MODAL */}
       {showItemModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-sm p-6 sm:p-7">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-sm p-4 sm:p-7 max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
               <h3 className="font-serif font-bold text-lg text-slate-900">{itemForm.id ? "Edit Item Name" : "Add New Item to Catalog"}</h3>
               <button type="button" onClick={() => setShowItemModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"><X size={20} /></button>
@@ -7056,48 +7082,41 @@ export default function Dashboard() {
       )}
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className={`fixed bottom-0 left-0 right-0 border-t flex justify-around p-1 z-40 md:hidden print:hidden ${theme === "dark" ? "bg-slate-950 border-slate-800 text-slate-300" : "bg-white border-slate-200 text-slate-600"}`}>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B1320] border-t border-[#162238] flex items-center justify-around py-2 px-1 text-slate-400 shadow-2xl backdrop-blur-md md:hidden print:hidden">
         <button 
           onClick={() => setActiveTab("dashboard")} 
-          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "dashboard" ? "text-blue-500" : "text-slate-400"}`}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "dashboard" ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
         >
-          <LayoutDashboard size={18} />
-          <span className="mt-0.5">Home</span>
+          <LayoutDashboard size={19} className={activeTab === "dashboard" ? "text-[#E5C378]" : "text-slate-400"} />
+          <span className="text-[9.5px] mt-0.5">Home</span>
         </button>
         <button 
           onClick={() => setActiveTab("billing")} 
-          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "billing" ? "text-blue-500" : "text-slate-400"}`}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "billing" ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
         >
-          <PlusCircle size={18} />
-          <span className="mt-0.5">Billing</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab("customers")} 
-          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "customers" ? "text-blue-500" : "text-slate-400"}`}
-        >
-          <Users size={18} />
-          <span className="mt-0.5">Customers</span>
+          <PlusCircle size={19} className={activeTab === "billing" ? "text-[#E5C378]" : "text-slate-400"} />
+          <span className="text-[9.5px] mt-0.5">Billing</span>
         </button>
         <button 
           onClick={() => setActiveTab("loan-history")} 
-          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "loan-history" ? "text-blue-500" : "text-slate-400"}`}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "loan-history" ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
         >
-          <History size={18} />
-          <span className="mt-0.5">Loans</span>
+          <History size={19} className={activeTab === "loan-history" ? "text-[#E5C378]" : "text-slate-400"} />
+          <span className="text-[9.5px] mt-0.5">Loans</span>
         </button>
         <button 
-          onClick={() => setActiveTab("sms-queue")} 
-          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "sms-queue" ? "text-blue-500" : "text-slate-400"}`}
+          onClick={() => setActiveTab("customers")} 
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "customers" ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
         >
-          <MessageSquare size={18} />
-          <span className="mt-0.5">SMS</span>
+          <Users size={19} className={activeTab === "customers" ? "text-[#E5C378]" : "text-slate-400"} />
+          <span className="text-[9.5px] mt-0.5">Customers</span>
         </button>
         <button 
-          onClick={() => setActiveTab("settings")} 
-          className={`flex flex-col items-center p-1.5 text-[9px] font-bold ${activeTab === "settings" ? "text-blue-500" : "text-slate-400"}`}
+          onClick={() => setMobileMenuOpen(true)} 
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${mobileMenuOpen || (activeTab !== "dashboard" && activeTab !== "billing" && activeTab !== "loan-history" && activeTab !== "customers") ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
         >
-          <Settings size={18} />
-          <span className="mt-0.5">Settings</span>
+          <MoreHorizontal size={19} />
+          <span className="text-[9.5px] mt-0.5">More</span>
         </button>
       </nav>
 
