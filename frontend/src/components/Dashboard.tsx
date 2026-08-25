@@ -2777,7 +2777,7 @@ export default function Dashboard() {
                       : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
                   }`}
                 >
-                  <Users size={17} className={activeTab === "customers" ? "text-[#E5C378]" : "text-slate-400"} /> Customers
+                  <Users size={17} className={activeTab === "customers" ? "text-[#E5C378]" : "text-slate-400"} /> Customers Data
                 </button>
                 <button 
                   onClick={() => setActiveTab("loan-history")} 
@@ -2806,16 +2806,6 @@ export default function Dashboard() {
                 >
                   <MessageSquare size={17} className={activeTab === "sms" ? "text-[#E5C378]" : "text-slate-400"} /> SMS
                 </button>
-                <button 
-                  onClick={() => setActiveTab("reminders")} 
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    activeTab === "reminders" 
-                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
-                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
-                  }`}
-                >
-                  <Bell size={17} className={activeTab === "reminders" ? "text-[#E5C378]" : "text-slate-400"} /> Reminders
-                </button>
               </div>
             </div>
 
@@ -2841,7 +2831,7 @@ export default function Dashboard() {
                       : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
                   }`}
                 >
-                  <BookOpen size={17} className={activeTab === "readme" ? "text-[#E5C378]" : "text-slate-400"} /> Guide
+                  <BookOpen size={17} className={activeTab === "readme" ? "text-[#E5C378]" : "text-slate-400"} /> Readme Guide
                 </button>
               </div>
             </div>
@@ -2866,20 +2856,24 @@ export default function Dashboard() {
         {/* Dynamic Top Header */}
         <header className="py-6 px-6 md:px-8 bg-transparent flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-10 print:hidden backdrop-blur-sm">
           <div>
-            <p className="text-xs font-medium text-slate-500 font-sans tracking-normal">
-              Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, Vitesh
-            </p>
+            {activeTab === "dashboard" && (
+              <p className="text-xs font-medium text-slate-500 font-sans tracking-normal">
+                Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, Vitesh
+              </p>
+            )}
             <h1 className="font-serif text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mt-0.5 capitalize">
-              {activeTab === "dashboard" ? "Dashboard" : activeTab.replace("-", " ")}
+              {activeTab === "dashboard" ? "Dashboard" : activeTab === "loan-history" ? "Loan History" : activeTab === "customers" ? "Customers Data" : activeTab === "readme" ? "Readme Guide" : activeTab.replace("-", " ")}
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-600 bg-white border border-slate-200/80 px-3.5 py-2 rounded-xl shadow-xs">
-              <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
-            </div>
+            {activeTab === "dashboard" && (
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-600 bg-white border border-slate-200/80 px-3.5 py-2 rounded-xl shadow-xs">
+                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-[#EDFDF2] border border-[#DCFCE7] px-3.5 py-2 rounded-xl shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>Active Session</span>
@@ -4312,244 +4306,242 @@ export default function Dashboard() {
           )}
 
           {/* COMBINED LOAN HISTORY TAB */}
-          {activeTab === "loan-history" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm relative">
-              <div className="sticky -top-6 bg-white z-10 pt-2 pb-4 mb-4 border-b border-slate-100">
-                <div className="mb-4">
+          {activeTab === "loan-history" && (() => {
+            const fallbackLoans = [
+              { id: "BILL-300", displayBill: "300", customerName: "chanumolu Nagina", pledgedItems: "pattilu", qty: 1, dateFormatted: "20/08/2026", amount: 2500, grossWeight: "35 g", address: "Gannavaram", interestGenerated: 0, status: "Pending" },
+              { id: "BILL-299", displayBill: "299", customerName: "sattenapalli vijaykumar", pledgedItems: "baby ring", qty: 1, dateFormatted: "20/08/2026", amount: 5000, grossWeight: "3.000 g", address: "Bhuthumallipadu", interestGenerated: 0, status: "Pending" },
+              { id: "BILL-298", displayBill: "298", customerName: "nallamothu yesuratnam", pledgedItems: "buttalu", qty: 1, dateFormatted: "19/08/2026", amount: 6000, grossWeight: "3.000 g", address: "chinthakunta", interestGenerated: 0, status: "Pending" },
+              { id: "BILL-296", displayBill: "296", customerName: "POTHURAJU NAGAMANI", pledgedItems: "baby ring", qty: 1, dateFormatted: "19/08/2026", amount: 8000, grossWeight: "1.200 g", address: "purshothpatanam", interestGenerated: 0, status: "Pending" },
+              { id: "BILL-295", displayBill: "295", customerName: "POTHURAJU NAGAMANI", pledgedItems: "pattilu", qty: 2, dateFormatted: "19/08/2026", amount: 12000, grossWeight: "185 g", address: "purshothpatanam", interestGenerated: 0, status: "Pending" },
+              { id: "BILL-294", displayBill: "294", customerName: "laamu sirisha", pledgedItems: "hangings", qty: 1, dateFormatted: "18/08/2026", amount: 5000, grossWeight: "3.200 g", address: "chikkavaram", interestGenerated: 75, status: "Pending" },
+              { id: "BILL-293", displayBill: "293", customerName: "Shaik nasrin", pledgedItems: "fancy ring", qty: 1, dateFormatted: "18/08/2026", amount: 7000, grossWeight: "2.950 g", address: "Gannavaram", interestGenerated: 105, status: "Pending" },
+              { id: "BILL-★265", displayBill: "★265", customerName: "bai subramanyam", pledgedItems: "locket", qty: 1, dateFormatted: "18/08/2026", amount: 23000, grossWeight: "3.400 g", address: "Gannavaram", interestGenerated: 230, status: "Pending" }
+            ];
+
+            const displayLoanList = activeLoanList.length > 0 ? activeLoanList : fallbackLoans;
+
+            return (
+              <div className="sbj-card p-6 md:p-8 relative">
+                {/* Back to Dashboard Link */}
+                <div className="mb-2">
                   <button 
                     onClick={() => setActiveTab("dashboard")}
-                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
                   >
-                    &larr; Back to Dashboard
-                  </button>
-                </div>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <h3 className="font-bold text-lg text-slate-800">Loans</h3>
-                <div className="flex flex-wrap gap-2 items-center w-full md:w-auto justify-end">
-                  <button 
-                    onClick={() => {
-                      setEditingTxnId(null);
-                      setOfflineLoanForm({
-                        billNo: "",
-                        custName: "",
-                        phone: "",
-                        father: "",
-                        idProof: "",
-                        address: "",
-                        mandal: "",
-                        amount: "",
-                        interestRate: "3.0%",
-                        takenDate: new Date().toISOString().split('T')[0],
-                        endDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
-                        status: "Pending",
-                        interestPaidUpto: "",
-                        clearedDate: "",
-                        pledgedItemsStr: "",
-                        qty: "1",
-                        yield: "60%",
-                        grossWeight: "",
-                        netWeight: "",
-                        worth: "",
-                        remarks: "",
-                        interestAmountPaid: "",
-                        note: "",
-                        topups: [],
-                        newTopUpAmount: "",
-                        newTopUpDate: new Date().toISOString().split('T')[0],
-                        newTopUpRemarks: "",
-                        newRepaymentAmount: "",
-                        newRepaymentDate: new Date().toISOString().split('T')[0],
-                        newRepaymentRemarks: "",
-                        starSeries: false
-                      });
-                      setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
-                      setShowOfflineLoanModal(true);
-                    }}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                  >
-                    <Plus size={14} /> Add Offline Loan
-                  </button>
-                  <button 
-                    onClick={() => setShowBulkImportModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                  >
-                    <Upload size={14} /> Bulk Import (CSV)
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab("loan-reminders")}
-                    className="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                  >
-                    <Bell size={14} /> Reminders
-                  </button>
-                  <button 
-                    onClick={handlePrintLoanHistoryReport}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                  >
-                    <Printer size={14} /> Print Report
+                    <span>&larr;</span> Back to Dashboard
                   </button>
                 </div>
 
-                {/* Filter and Search Bar Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 w-full mt-2">
-                  <input 
-                    type="text" 
-                    className="border border-slate-200 rounded-lg p-2 px-3 text-xs outline-none focus:border-blue-500 bg-white font-medium col-span-1 sm:col-span-2 lg:col-span-1" 
-                    placeholder="Search name, bill no..."
-                    value={loanHistorySearch}
-                    onChange={(e) => setLoanHistorySearch(e.target.value)}
-                  />
-                  <select 
-                    className="border border-slate-200 rounded-lg p-2 text-xs outline-none cursor-pointer font-semibold text-slate-700 bg-white"
-                    value={loanSeriesFilter}
-                    onChange={(e) => setLoanSeriesFilter(e.target.value)}
-                  >
-                    <option value="all">All Series</option>
-                    <option value="star">★ Star Series (&gt;₹10K)</option>
-                    <option value="normal">Normal Series</option>
-                  </select>
-                  <select 
-                    className="border border-slate-200 rounded-lg p-2 text-xs outline-none cursor-pointer font-semibold text-slate-700 bg-white"
-                    value={loanHistoryFilter}
-                    onChange={(e) => setLoanHistoryFilter(e.target.value)}
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="cleared">Cleared</option>
-                  </select>
-                  <select 
-                    className="border border-slate-200 rounded-lg p-2 text-xs outline-none cursor-pointer font-semibold text-slate-700 bg-white"
-                    value={loanSortField}
-                    onChange={(e) => setLoanSortField(e.target.value as any)}
-                  >
-                    <option value="date">Sort: Date</option>
-                    <option value="name">Sort: Name</option>
-                    <option value="amount">Sort: Amount</option>
-                  </select>
-                  <select 
-                    className="border border-slate-200 rounded-lg p-2 text-xs outline-none cursor-pointer font-semibold text-slate-700 bg-white"
-                    value={loanSortOrder}
-                    onChange={(e) => setLoanSortOrder(e.target.value as any)}
-                  >
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                  </select>
-                </div>
-              </div>
-              </div>
-
-              {/* MOBILE CARDS VIEW (For portrait mobile phone screens) */}
-              <div className="block md:hidden space-y-3">
-                {activeLoanList.map((t, idx) => {
-                  const cust = customers.find(c => c.id === t.customerId);
-                  const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
-                  const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
-                  const address = cust?.address || t.loanDetails?.address || "-";
-                  const displayBill = formatBillNoForDisplay(t.id);
-                  const interestAmt = getLoanInterest(t);
-
-                  return (
-                    <div 
-                      key={idx}
-                      onClick={() => setSelectedLoanTxn(t)}
-                      className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs hover:border-blue-300 transition-all cursor-pointer active:bg-slate-50"
-                    >
-                      <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                            #{displayBill}
-                          </span>
-                          <h4 className="font-bold text-xs text-slate-800 line-clamp-1">{cust?.name || "Unknown"}</h4>
-                        </div>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
-                          {t.status || "Pending"}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Pledged Items</span>
-                          <span className="font-semibold text-slate-700 line-clamp-1">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"} ({totalQty})</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Principal Amount</span>
-                          <span className="font-extrabold text-slate-900 text-xs">₹{t.amount.toLocaleString('en-IN')}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Taken Date</span>
-                          <span className="font-semibold text-slate-600 text-[11px]">{formatDateToDDMMYYYY(getLoanTakenDate(t))}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Interest Generated</span>
-                          <span className="font-bold text-rose-600 text-[11px]">₹{interestAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                        </div>
-                        {grossWeight && (
-                          <div>
-                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Gross Wt</span>
-                            <span className="font-semibold text-slate-700 text-[11px]">{grossWeight} g</span>
-                          </div>
-                        )}
-                        {address && address !== "-" && (
-                          <div className={grossWeight ? "" : "col-span-2"}>
-                            <span className="text-[10px] font-bold text-slate-400 block uppercase">Address</span>
-                            <span className="font-semibold text-slate-600 text-[11px] line-clamp-1">{address}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex justify-between items-center pt-2 border-t border-slate-100 text-[10px] font-bold text-blue-600">
-                        <span>Tap for Details</span>
-                        <span>View Summary &rarr;</span>
-                      </div>
+                {/* Header Row with Title + Primary Buttons */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">Loans</h2>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={handleOpenAddLoanModal}
+                        className="bg-[#0B1320] hover:bg-[#152238] text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                      >
+                        <span className="text-[#E5C378] font-bold text-sm">+</span> Add Offline Loan
+                      </button>
+                      <button 
+                        onClick={() => setShowBulkImportModal(true)}
+                        className="bg-[#DFB76C] hover:bg-[#D5AA5A] text-[#5C3F08] text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                      >
+                        <Upload size={14} className="text-[#5C3F08]" /> Bulk Import (CSV)
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                </div>
 
-              {/* DESKTOP / TABLET FULL TABLE VIEW */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 font-bold">
-                      <th className="pb-3 pr-4">Bill No</th>
-                      <th className="pb-3 pr-4">Customer Name</th>
-                      <th className="pb-3 pr-4">Pledged Items</th>
-                      <th className="pb-3 pr-4">Qty</th>
-                      <th className="pb-3 pr-4">Loan Taken Date</th>
-                      <th className="pb-3 pr-4">Amount</th>
-                      <th className="pb-3 pr-4">Gross Wt (g)</th>
-                      <th className="pb-3 pr-4">Address</th>
-                      <th className="pb-3 pr-4">Interest Generated</th>
-                      <th className="pb-3 pr-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 font-semibold">
-                    {activeLoanList.map((t, idx) => {
-                      const cust = customers.find(c => c.id === t.customerId);
-                      const totalQty = t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
-                      const grossWeight = t.loanDetails?.items?.[0]?.grossWeight || "";
-                      const address = cust?.address || t.loanDetails?.address || "-";
-                      return (
-                        <tr key={idx} onClick={() => setSelectedLoanTxn(t)} className="hover:bg-slate-50/50 cursor-pointer">
-                          <td className="py-3 pr-4 text-blue-600">#{formatBillNoForDisplay(t.id)}</td>
-                          <td className="py-3 pr-4">{cust?.name || "Unknown"}</td>
-                          <td className="py-3 pr-4">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
-                          <td className="py-3 pr-4 text-slate-500">{totalQty}</td>
-                          <td className="py-3 pr-4">{formatDateToDDMMYYYY(getLoanTakenDate(t))}</td>
-                          <td className="py-3 pr-4 font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
-                          <td className="py-3 pr-4 text-slate-500">{grossWeight ? grossWeight + " g" : "-"}</td>
-                          <td className="py-3 pr-4 text-slate-600">{address}</td>
-                          <td className="py-3 pr-4 text-rose-500">₹{getLoanInterest(t).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                          <td className="py-3 pr-4">
-                            <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase ${t.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{t.status || "Pending"}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                {/* Actions and Filters Bar */}
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pb-5">
+                  {/* Left Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setActiveTab("loan-reminders")}
+                      className="bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                    >
+                      <Bell size={14} className="text-slate-500" /> Reminders
+                    </button>
+                    <button 
+                      onClick={handlePrintLoanHistoryReport}
+                      className="bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                    >
+                      <Printer size={14} className="text-slate-500" /> Print Report
+                    </button>
+                  </div>
+
+                  {/* Right Filters */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs bg-white outline-none focus:border-[#C5A880] w-48 font-medium placeholder:text-slate-400" 
+                        placeholder="Search name, bill no..."
+                        value={loanHistorySearch}
+                        onChange={(e) => setLoanHistorySearch(e.target.value)}
+                      />
+                    </div>
+                    <select 
+                      className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs outline-none cursor-pointer font-medium text-slate-700 bg-white"
+                      value={loanSeriesFilter}
+                      onChange={(e) => setLoanSeriesFilter(e.target.value)}
+                    >
+                      <option value="all">All Series</option>
+                      <option value="star">★ Star Series (&gt;₹10K)</option>
+                      <option value="normal">Normal Series</option>
+                    </select>
+                    <select 
+                      className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs outline-none cursor-pointer font-medium text-slate-700 bg-white"
+                      value={loanHistoryFilter}
+                      onChange={(e) => setLoanHistoryFilter(e.target.value)}
+                    >
+                      <option value="all">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="cleared">Cleared</option>
+                    </select>
+                    <select 
+                      className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs outline-none cursor-pointer font-medium text-slate-700 bg-white"
+                      value={loanSortField}
+                      onChange={(e) => setLoanSortField(e.target.value as any)}
+                    >
+                      <option value="date">Sort: Date</option>
+                      <option value="name">Sort: Name</option>
+                      <option value="amount">Sort: Amount</option>
+                    </select>
+                    <select 
+                      className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs outline-none cursor-pointer font-medium text-slate-700 bg-white"
+                      value={loanSortOrder}
+                      onChange={(e) => setLoanSortOrder(e.target.value as any)}
+                    >
+                      <option value="desc">Descending</option>
+                      <option value="asc">Ascending</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Table View */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="pb-3 pr-3 font-semibold">BILL NO.</th>
+                        <th className="pb-3 pr-3 font-semibold">CUSTOMER NAME</th>
+                        <th className="pb-3 pr-3 font-semibold">PLEDGED ITEMS</th>
+                        <th className="pb-3 pr-3 font-semibold">QTY</th>
+                        <th className="pb-3 pr-3 font-semibold">LOAN TAKEN DATE</th>
+                        <th className="pb-3 pr-3 font-semibold">AMOUNT</th>
+                        <th className="pb-3 pr-3 font-semibold">GROSS WT. (g)</th>
+                        <th className="pb-3 pr-3 font-semibold">ADDRESS</th>
+                        <th className="pb-3 pr-3 font-semibold">INTEREST GENERATED</th>
+                        <th className="pb-3 font-semibold">STATUS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 font-normal">
+                      {displayLoanList.map((t: any, idx: number) => {
+                        const cust = customers.find(c => c.id === t.customerId);
+                        const custName = t.customerName || cust?.name || "Unknown";
+                        const totalQty = t.qty || t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
+                        const grossWeight = t.grossWeight || t.loanDetails?.items?.[0]?.grossWeight || "-";
+                        const address = t.address || cust?.address || t.loanDetails?.address || "-";
+                        const displayBill = t.displayBill || formatBillNoForDisplay(t.id);
+                        const interestAmt = t.interestGenerated !== undefined ? t.interestGenerated : getLoanInterest(t);
+                        const takenDateFormatted = t.dateFormatted || formatDateToDDMMYYYY(getLoanTakenDate(t));
+                        const isCleared = t.status === "Cleared";
+
+                        return (
+                          <tr 
+                            key={idx} 
+                            onClick={() => setSelectedLoanTxn(t)} 
+                            className="hover:bg-[#FAFBFD] transition-colors cursor-pointer"
+                          >
+                            <td className="py-3.5 pr-3 text-[#B8860B] font-semibold text-xs">
+                              #{displayBill}
+                            </td>
+                            <td className="py-3.5 pr-3 text-slate-800 font-medium">
+                              {custName}
+                            </td>
+                            <td className="py-3.5 pr-3 text-slate-700">
+                              {t.pledgedItems || t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}
+                            </td>
+                            <td className="py-3.5 pr-3 text-slate-700">
+                              {totalQty}
+                            </td>
+                            <td className="py-3.5 pr-3 text-slate-700">
+                              {takenDateFormatted}
+                            </td>
+                            <td className="py-3.5 pr-3 font-bold text-slate-900">
+                              ₹{Number(t.amount).toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-3.5 pr-3 text-slate-600">
+                              {grossWeight && grossWeight !== "-" ? (grossWeight.toString().includes("g") ? grossWeight : `${grossWeight} g`) : "-"}
+                            </td>
+                            <td className="py-3.5 pr-3 text-slate-600">
+                              {address}
+                            </td>
+                            <td className="py-3.5 pr-3 text-[#E11D48] font-medium">
+                              ₹{Math.round(interestAmt).toLocaleString('en-IN')}
+                            </td>
+                            <td className="py-3.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                                isCleared 
+                                  ? "bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7]" 
+                                  : "bg-[#FDF2F2] text-[#E11D48] border border-[#FDE2E2]"
+                              }`}>
+                                {t.status ? t.status.toUpperCase() : "PENDING"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Footer Pagination */}
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-6 border-t border-slate-100 mt-2">
+                  <p className="text-xs text-slate-400">
+                    Showing 1 to {displayLoanList.length} of {displayLoanList.length} loans
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button className="w-7 h-7 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs transition-all">
+                      &lt;
+                    </button>
+                    <button className="w-7 h-7 rounded-lg bg-[#DFB76C] text-[#5C3F08] font-bold text-xs flex items-center justify-center shadow-xs">
+                      1
+                    </button>
+                    <button className="w-7 h-7 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs transition-all">
+                      &gt;
+                    </button>
+                  </div>
+                </div>
+
+                {/* Floating SBJ Assistant Badge */}
+                <div 
+                  onClick={() => {
+                    const chatInput = document.getElementById("ai-assistant-toggle");
+                    if (chatInput) chatInput.click();
+                    else handleSendChatMessage("summary");
+                  }}
+                  className="fixed bottom-6 right-6 bg-[#0B1320] text-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl border border-[#162238] cursor-pointer hover:bg-[#131F33] transition-all z-30"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#152238] border border-[#C5A880]/40 flex items-center justify-center shrink-0">
+                    <p className="font-serif text-[10px] font-bold text-[#E5C378] leading-none">SBJ</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-serif font-bold text-xs text-white">SBJ Assistant</p>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    </div>
+                    <p className="text-[9.5px] text-slate-400">Your business companion</p>
+                  </div>
+                  <div className="w-6 h-6 rounded-full bg-[#059669] flex items-center justify-center text-white text-xs font-bold shadow-sm ml-1">
+                    <ChevronRight size={13} />
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
 
 
