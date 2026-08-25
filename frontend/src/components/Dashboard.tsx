@@ -3345,29 +3345,33 @@ export default function Dashboard() {
 
           {/* SMS TAB */}
           {activeTab === "sms" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-4xl mx-auto">
-              <div className="flex justify-between items-center gap-4 mb-6">
+            <div className="sbj-card p-6 md:p-8 max-w-4xl mx-auto relative">
+              <div className="mb-2">
+                <button 
+                  onClick={() => setActiveTab("dashboard")}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
+                >
+                  <span>&larr;</span> Back to Dashboard
+                </button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-100 mb-6">
                 <div>
-                  <button 
-                    onClick={() => setActiveTab("dashboard")}
-                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all mb-1"
-                  >
-                    &larr; Back to Dashboard
-                  </button>
-                  <h3 className="font-bold text-lg text-slate-800">Send Custom SMS</h3>
+                  <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">Send Custom SMS</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Send immediate text updates or transaction notifications</p>
                 </div>
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setActiveTab("sms-queue")}
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold py-2 px-4 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                    className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 font-semibold py-2 px-3.5 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
-                    <MessageSquare size={14} /> View Queue Logs
+                    <MessageSquare size={14} className="text-slate-500" /> View Queue Logs
                   </button>
                   <button 
                     onClick={() => setActiveTab("sms-templates")}
-                    className="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold py-2 px-4 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                    className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 font-semibold py-2 px-3.5 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
-                    <Settings size={14} /> Manage Templates
+                    <Settings size={14} className="text-slate-500" /> Manage Templates
                   </button>
                 </div>
               </div>
@@ -3378,16 +3382,16 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   {/* Customer Name */}
                   <div className="form-group relative">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Customer Name</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Customer Name</label>
                     <input 
                       type="text" 
-                      className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white transition-all font-semibold"
+                      className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs bg-white outline-none focus:border-[#C5A880] transition-all font-medium"
                       placeholder="Enter customer name..." 
                       value={smsCustomerName}
                       onChange={(e) => handleSmsCustNameChange(e.target.value)}
                     />
                     {smsCustSuggestions.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                      <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
                         {smsCustSuggestions.map((c, idx) => (
                           <div 
                             key={idx} 
@@ -3399,7 +3403,7 @@ export default function Dashboard() {
                             }}
                             className="p-3 text-xs font-semibold cursor-pointer hover:bg-slate-50 flex justify-between"
                           >
-                            <span>{c.name}</span>
+                            <span className="text-slate-900">{c.name}</span>
                             <span className="text-slate-400">{c.phone}</span>
                           </div>
                         ))}
@@ -3409,10 +3413,10 @@ export default function Dashboard() {
 
                   {/* Phone Number */}
                   <div className="form-group relative">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Phone Number</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Phone Number</label>
                     <input 
                       type="text" 
-                      className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white transition-all font-semibold font-technical"
+                      className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs bg-white outline-none focus:border-[#C5A880] transition-all font-medium font-technical"
                       placeholder="Enter phone number..." 
                       value={smsCustomerPhone}
                       onChange={(e) => handleSmsCustPhoneChange(e.target.value)}
@@ -3420,9 +3424,9 @@ export default function Dashboard() {
                   </div>
 
                   <div className="form-group">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Select Template</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Select Template</label>
                     <select 
-                      className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none cursor-pointer"
+                      className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs bg-white outline-none cursor-pointer font-medium text-slate-700"
                       value={selectedTemplateName}
                       onChange={(e) => {
                         setSelectedTemplateName(e.target.value);
@@ -3438,8 +3442,8 @@ export default function Dashboard() {
                   </div>
 
                   <div className="form-group">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Variables Helper</label>
-                    <div className="flex flex-wrap gap-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Variables Helper</label>
+                    <div className="flex flex-wrap gap-1.5">
                       {["{CustomerName}", "{ShopName}", "{InvoiceNumber}", "{LoanAmount}", "{LoanEndDate}", "{DaysLeft}", "{ItemName}"].map((v, idx) => (
                         <button 
                           key={idx} 
@@ -3447,7 +3451,7 @@ export default function Dashboard() {
                           onClick={() => {
                             setSmsMessageText(prev => prev + v);
                           }}
-                          className="px-2.5 py-1.5 bg-slate-100 border border-slate-200 rounded text-xs font-semibold hover:bg-slate-200 text-slate-700"
+                          className="px-2.5 py-1 bg-slate-50 border border-slate-200/80 rounded-lg text-[11px] font-semibold hover:border-[#C5A880] hover:text-[#8C6404] text-slate-600 transition-all cursor-pointer"
                         >
                           {v}
                         </button>
@@ -3459,29 +3463,33 @@ export default function Dashboard() {
                 {/* Right Panel */}
                 <div className="flex flex-col justify-between">
                   <div className="form-group">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Message Content</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Message Content</label>
                     <textarea 
-                      className="w-full border border-slate-200 rounded-lg p-3 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white h-32 resize-none leading-relaxed" 
+                      className="w-full border border-slate-200/90 rounded-xl p-3 text-xs bg-white outline-none focus:border-[#C5A880] h-32 resize-none leading-relaxed font-medium" 
                       placeholder="Write your message here..."
                       value={smsMessageText}
                       onChange={(e) => setSmsMessageText(e.target.value)}
                     ></textarea>
-                    <div className="flex justify-between text-xs text-slate-400 font-semibold mt-1">
+                    <div className="flex justify-between text-[11px] text-slate-400 font-medium mt-1">
                       <span>{smsMessageText.length} characters</span>
                       <span>1 SMS = 160 characters</span>
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
-                    <h5 className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Live Preview (With Variables)</h5>
-                    <p className="text-sm text-slate-700 leading-relaxed font-semibold italic white-space-pre-wrap">{getSMSPreviewText() || "(Preview content will appear here...)"}</p>
+                  {/* Luxury Live Preview Card */}
+                  <div className="bg-[#0B1320] text-white border border-[#162238] rounded-2xl p-4 my-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-2 h-2 rounded-full bg-[#E5C378]"></span>
+                      <h5 className="font-cinzel text-[10px] font-bold text-[#E5C378] tracking-widest uppercase">Live SMS Preview</h5>
+                    </div>
+                    <p className="text-xs text-slate-200 leading-relaxed font-normal whitespace-pre-wrap">{getSMSPreviewText() || "(Preview content will appear here...)"}</p>
                   </div>
 
                   <button 
                     onClick={handleSendSMS}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-[#0B1320] hover:bg-[#152238] text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 text-xs cursor-pointer"
                   >
-                    <Send size={16} /> Send SMS (Queue Job)
+                    <Send size={14} className="text-[#E5C378]" /> Send SMS (Queue Job)
                   </button>
                 </div>
 
@@ -3491,27 +3499,31 @@ export default function Dashboard() {
 
           {/* DEDICATED SMS QUEUE TAB */}
           {activeTab === "sms-queue" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <div className="mb-4">
+            <div className="sbj-card p-6 md:p-8 relative">
+              <div className="mb-2">
                 <button 
                   onClick={() => setActiveTab("sms")}
-                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
                 >
-                  &larr; Back to Send SMS
+                  <span>&larr;</span> Back to Send SMS
                 </button>
               </div>
-              <div className="flex justify-between items-center gap-4 mb-6">
-                <h3 className="font-bold text-lg text-slate-800">SMS Queue Logs</h3>
-                <div className="flex gap-3">
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6">
+                <div>
+                  <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">SMS Queue Logs</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Live SMS dispatch history and bridge device status</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   <input 
                     type="text" 
-                    className="border border-slate-200 rounded-lg p-2 px-3 text-sm outline-none" 
+                    className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]" 
                     placeholder="Search by phone..."
                     value={smsQueueSearch}
                     onChange={(e) => setSmsQueueSearch(e.target.value)}
                   />
                   <select 
-                    className="border border-slate-200 rounded-lg p-2 text-sm outline-none cursor-pointer"
+                    className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs outline-none cursor-pointer font-medium text-slate-700 bg-white"
                     value={smsQueueFilter}
                     onChange={(e) => setSmsQueueFilter(e.target.value)}
                   >
@@ -3527,31 +3539,41 @@ export default function Dashboard() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
+                <table className="w-full text-xs text-left">
                   <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 font-bold">
-                      <th className="pb-3">SMS ID</th>
-                      <th className="pb-3">Phone</th>
-                      <th className="pb-3">Message</th>
-                      <th className="pb-3">Created Time</th>
-                      <th className="pb-3">Status</th>
-                      <th className="pb-3">Actions</th>
+                    <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                      <th className="pb-3 pr-3 font-semibold">SMS ID</th>
+                      <th className="pb-3 pr-3 font-semibold">PHONE</th>
+                      <th className="pb-3 pr-3 font-semibold">MESSAGE</th>
+                      <th className="pb-3 pr-3 font-semibold">CREATED TIME</th>
+                      <th className="pb-3 pr-3 font-semibold">STATUS</th>
+                      <th className="pb-3 font-semibold text-right">ACTIONS</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50 font-semibold">
+                  <tbody className="divide-y divide-slate-50 font-normal">
                     {smsQueue
                       .filter(s => s.phone.includes(smsQueueSearch))
                       .filter(s => smsQueueFilter === "all" || s.status === smsQueueFilter)
                       .map((s, idx) => (
-                        <tr key={idx}>
-                          <td className="py-3 text-blue-600 font-technical">#{formatBillNoForDisplay(s.id || s.uuid || "")}</td>
-                          <td className="py-3 font-technical">{s.phone}</td>
-                          <td className="py-3 max-w-xs truncate" title={s.message}>{s.message}</td>
-                          <td className="py-3 font-technical">{s.created_time}</td>
-                          <td className="py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${s.status === "Sent" || s.status === "Delivered" ? "bg-emerald-100 text-emerald-800" : s.status === "Failed" ? "bg-rose-100 text-rose-800" : s.status === "Sending" ? "bg-sky-100 text-sky-800" : "bg-slate-100 text-slate-500"}`}>{s.status}</span>
+                        <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
+                          <td className="py-3.5 pr-3 text-[#B8860B] font-semibold font-technical">#{formatBillNoForDisplay(s.id || s.uuid || "")}</td>
+                          <td className="py-3.5 pr-3 font-technical text-slate-800">{s.phone}</td>
+                          <td className="py-3.5 pr-3 max-w-xs truncate text-slate-600" title={s.message}>{s.message}</td>
+                          <td className="py-3.5 pr-3 font-technical text-slate-500">{s.created_time}</td>
+                          <td className="py-3.5 pr-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                              s.status === "Sent" || s.status === "Delivered" 
+                                ? "bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7]" 
+                                : s.status === "Failed" 
+                                ? "bg-[#FDF2F2] text-[#E11D48] border border-[#FDE2E2]" 
+                                : s.status === "Sending" 
+                                ? "bg-sky-50 text-sky-700 border border-sky-200" 
+                                : "bg-slate-100 text-slate-600"
+                            }`}>
+                              {s.status}
+                            </span>
                           </td>
-                          <td className="py-3 flex gap-2">
+                          <td className="py-3.5 text-right flex justify-end gap-1.5">
                             {["Pending", "Queued"].includes(s.status) && (
                               <button onClick={() => {
                                 fetch('/api/v1/sms/cancel', {
@@ -3559,7 +3581,7 @@ export default function Dashboard() {
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ smsId: s.id })
                                 }).then(refreshData);
-                              }} className="text-rose-600 hover:bg-rose-50 border border-rose-200 rounded px-2 py-1 text-xs">Cancel</button>
+                              }} className="text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1 text-xs font-semibold">Cancel</button>
                             )}
                             {s.status === "Failed" && (
                               <button onClick={() => {
@@ -3568,7 +3590,7 @@ export default function Dashboard() {
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({ smsId: s.id })
                                 }).then(refreshData);
-                              }} className="text-blue-600 hover:bg-blue-50 border border-blue-200 rounded px-2 py-1 text-xs">Retry</button>
+                              }} className="text-[#0B1320] hover:bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold">Retry</button>
                             )}
                           </td>
                         </tr>
@@ -3581,163 +3603,182 @@ export default function Dashboard() {
 
           {/* DEDICATED SMS TEMPLATES TAB */}
           {activeTab === "sms-templates" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <div className="mb-4">
+            <div className="sbj-card p-6 md:p-8 max-w-4xl mx-auto relative">
+              <div className="mb-2">
                 <button 
                   onClick={() => setActiveTab("sms")}
-                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
                 >
-                  &larr; Back to Send SMS
+                  <span>&larr;</span> Back to Send SMS
                 </button>
               </div>
-              <div className="max-w-4xl mx-auto">
-                <h3 className="font-bold text-lg text-slate-800 mb-6 font-technical">Manage SMS Templates</h3>
-                
-                {/* Template Add/Edit Form */}
-                <form onSubmit={handleSaveTemplate} className="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-8 space-y-4">
-                  <h4 className="font-bold text-sm text-slate-700 uppercase tracking-wider mb-2">
-                    {isEditingTemplate ? "✏️ Edit Template" : "➕ Add New Template"}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                    <div className="form-group md:col-span-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Template Name</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="e.g. Festival Offer"
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none bg-white font-semibold"
-                        value={editTemplateName}
-                        onChange={(e) => setEditTemplateName(e.target.value)}
-                      />
-                    </div>
-                    <div className="form-group md:col-span-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Template Content (Variables like {"{CustomerName}"} allowed)</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="Dear {CustomerName}, thank you for shopping at..."
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none bg-white font-semibold"
-                        value={editTemplateContent}
-                        onChange={(e) => setEditTemplateContent(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    {isEditingTemplate && (
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          setEditTemplateName("");
-                          setEditTemplateContent("");
-                          setIsEditingTemplate(false);
-                        }}
-                        className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold hover:bg-slate-100"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                    <button 
-                      type="submit" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs"
-                    >
-                      {isEditingTemplate ? "Update Template" : "Save Template"}
-                    </button>
-                  </div>
-                </form>
 
-                {/* Templates List */}
-                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <table className="w-full text-left text-sm min-w-[700px]">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50 text-slate-500 font-bold">
-                        <th className="p-4 text-xs uppercase tracking-wider w-1/4">Name</th>
-                        <th className="p-4 text-xs uppercase tracking-wider w-2/3">Content</th>
-                        <th className="p-4 text-xs uppercase tracking-wider w-1/12 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                      {smsTemplates.map((t, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="p-4 text-slate-900">{t.name}</td>
-                          <td className="p-4 text-slate-500 text-xs font-medium max-w-md truncate" title={t.content}>{t.content}</td>
-                          <td className="p-4 text-right flex justify-end gap-2">
-                            <button 
-                              onClick={() => {
-                                setEditTemplateId(t.id);
-                                setEditTemplateName(t.name);
-                                setEditTemplateContent(t.content);
-                                setIsEditingTemplate(true);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                              }}
-                              className="text-blue-600 hover:bg-blue-50 border border-blue-200 rounded px-2.5 py-1 text-xs"
-                            >
-                              Edit
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteTemplate(t.name)}
-                              className="text-rose-600 hover:bg-rose-50 border border-rose-200 rounded px-2.5 py-1 text-xs"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
+              <div className="pb-6 border-b border-slate-100 mb-6">
+                <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">Manage SMS Templates</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Customize template blueprints with dynamic business variables</p>
               </div>
+              
+              {/* Template Add/Edit Form */}
+              <form onSubmit={handleSaveTemplate} className="bg-[#FAFBFD] border border-slate-100 rounded-2xl p-5 mb-8 space-y-4">
+                <h4 className="font-serif text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  {isEditingTemplate ? "Edit Template" : "Add New Template"}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div className="form-group md:col-span-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Template Name</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. Festival Offer"
+                      className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
+                      value={editTemplateName}
+                      onChange={(e) => setEditTemplateName(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group md:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Template Content</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Dear {CustomerName}, thank you for visiting..."
+                      className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
+                      value={editTemplateContent}
+                      onChange={(e) => setEditTemplateContent(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  {isEditingTemplate && (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setEditTemplateName("");
+                        setEditTemplateContent("");
+                        setIsEditingTemplate(false);
+                      }}
+                      className="px-4 py-2 border border-slate-200/90 rounded-xl text-xs font-semibold hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <button 
+                    type="submit" 
+                    className="bg-[#0B1320] hover:bg-[#152238] text-white font-semibold px-4 py-2.5 rounded-xl text-xs shadow-sm cursor-pointer"
+                  >
+                    {isEditingTemplate ? "Update Template" : "Save Template"}
+                  </button>
+                </div>
+              </form>
+
+              {/* Templates List */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                      <th className="pb-3 pr-3 font-semibold w-1/4">NAME</th>
+                      <th className="pb-3 pr-3 font-semibold w-2/3">CONTENT</th>
+                      <th className="pb-3 font-semibold text-right w-1/12">ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 font-normal">
+                    {smsTemplates.map((t, idx) => (
+                      <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
+                        <td className="py-3.5 pr-3 text-slate-900 font-semibold">{t.name}</td>
+                        <td className="py-3.5 pr-3 text-slate-600 max-w-md truncate" title={t.content}>{t.content}</td>
+                        <td className="py-3.5 text-right flex justify-end gap-1.5">
+                          <button 
+                            onClick={() => {
+                              setEditTemplateId(t.id);
+                              setEditTemplateName(t.name);
+                              setEditTemplateContent(t.content);
+                              setIsEditingTemplate(true);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="text-[#0B1320] hover:bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold shadow-xs"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteTemplate(t.name)}
+                            className="text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1 text-xs font-semibold shadow-xs"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
             </div>
           )}
 
           {/* NEW BILLING TAB */}
           {activeTab === "billing" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-4xl mx-auto">
-              <div className="mb-4">
+            <div className="sbj-card p-6 md:p-8 max-w-4xl mx-auto relative">
+              <div className="mb-2">
                 <button 
                   onClick={() => setActiveTab("dashboard")}
-                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
                 >
-                  &larr; Back to Dashboard
-                </button>
-              </div>
-              <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-6">
-                <button 
-                  onClick={() => setBillingType("purchase")}
-                  className={`px-6 py-2 text-sm font-bold rounded-md transition-all ${billingType === "purchase" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-700"}`}
-                >
-                  Item Purchase Bill
-                </button>
-                <button 
-                  onClick={() => setBillingType("loan")}
-                  className={`px-6 py-2 text-sm font-bold rounded-md transition-all ${billingType === "loan" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-700"}`}
-                >
-                  Loan Finance Bill
+                  <span>&larr;</span> Back to Dashboard
                 </button>
               </div>
 
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-100 mb-6">
+                <div>
+                  <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">New Billing</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Generate sales invoices and loan pawn slips</p>
+                </div>
+                
+                {/* Switcher */}
+                <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/60">
+                  <button 
+                    onClick={() => setBillingType("purchase")}
+                    className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                      billingType === "purchase" 
+                        ? "bg-[#0B1320] text-[#E5C378] shadow-sm" 
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Item Purchase Bill
+                  </button>
+                  <button 
+                    onClick={() => setBillingType("loan")}
+                    className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+                      billingType === "loan" 
+                        ? "bg-[#0B1320] text-[#E5C378] shadow-sm" 
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Loan Finance Bill
+                  </button>
+                </div>
+              </div>
+
               {/* Common Customer Selection - Name & Phone separate inputs with autocomplete */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 
                 {/* Customer Name Input */}
                 <div className="form-group relative">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Customer Name</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Customer Name</label>
                   <input 
                     type="text" 
-                    className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs bg-white outline-none focus:border-[#C5A880] font-medium"
                     placeholder="Enter customer name..." 
                     value={billingCustName}
                     onChange={(e) => handleBillingCustNameChange(e.target.value)}
                   />
                   {nameSuggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
                       {nameSuggestions.map((c, idx) => (
                         <div 
                           key={idx}
                           onClick={() => selectCustomer(c)}
                           className="p-3 text-xs font-semibold cursor-pointer hover:bg-slate-50 flex justify-between"
                         >
-                          <span>{c.name}</span>
+                          <span className="text-slate-900">{c.name}</span>
                           <span className="text-slate-400">{c.phone}</span>
                         </div>
                       ))}
@@ -3747,23 +3788,23 @@ export default function Dashboard() {
 
                 {/* Phone Number Input */}
                 <div className="form-group relative">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Phone Number</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Phone Number</label>
                   <input 
                     type="text" 
-                    className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-50 outline-none focus:border-blue-500 focus:bg-white"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs bg-white outline-none focus:border-[#C5A880] font-medium"
                     placeholder="Enter phone number..." 
                     value={billingCustPhone}
                     onChange={(e) => handleBillingCustPhoneChange(e.target.value)}
                   />
                   {phoneSuggestions.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
                       {phoneSuggestions.map((c, idx) => (
                         <div 
                           key={idx}
                           onClick={() => selectCustomer(c)}
                           className="p-3 text-xs font-semibold cursor-pointer hover:bg-slate-50 flex justify-between"
                         >
-                          <span>{c.name}</span>
+                          <span className="text-slate-900">{c.name}</span>
                           <span className="text-slate-400">{c.phone}</span>
                         </div>
                       ))}
@@ -3777,11 +3818,11 @@ export default function Dashboard() {
               {billingType === "purchase" && (
                 <form onSubmit={handleSavePurchase} className="space-y-6">
                   <div className="flex items-center gap-6 pb-4 border-b border-slate-100">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Item Category:</label>
-                    <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Item Category:</label>
+                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-slate-700">
                       <input type="radio" name="p-cat" checked={purchaseCategory === "Jewelry"} onChange={() => setPurchaseCategory("Jewelry")} /> Jewelry
                     </label>
-                    <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-slate-700">
                       <input type="radio" name="p-cat" checked={purchaseCategory === "Furniture"} onChange={() => setPurchaseCategory("Furniture")} /> Furniture
                     </label>
                   </div>
@@ -3793,7 +3834,7 @@ export default function Dashboard() {
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Item Name</label>
                           <input 
                             type="text" 
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                             required
                             value={item.particulars}
                             onChange={(e) => {
@@ -3808,7 +3849,7 @@ export default function Dashboard() {
                             }}
                           />
                           {activeItemSuggestions[item.id]?.length > 0 && (
-                            <div onClick={(e) => e.stopPropagation()} className="absolute left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                            <div onClick={(e) => e.stopPropagation()} className="absolute left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
                               {activeItemSuggestions[item.id].map((suggestedItem, sIdx) => (
                                 <div 
                                   key={sIdx}
@@ -3831,7 +3872,7 @@ export default function Dashboard() {
                               <input 
                                 type="number" 
                                 step="any"
-                                className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                                className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                                 value={item.grams}
                                 onChange={(e) => updatePurchaseItem(item.id, "grams", e.target.value)}
                               />
@@ -3840,7 +3881,7 @@ export default function Dashboard() {
                               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mg</label>
                               <input 
                                 type="number" 
-                                className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                                className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                                 value={item.mg}
                                 onChange={(e) => updatePurchaseItem(item.id, "mg", e.target.value)}
                               />
@@ -3851,7 +3892,7 @@ export default function Dashboard() {
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Qty</label>
                           <input 
                             type="number" 
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                             required
                             value={item.qty}
                             onChange={(e) => updatePurchaseItem(item.id, "qty", e.target.value)}
@@ -3861,7 +3902,7 @@ export default function Dashboard() {
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Amount (₹)</label>
                           <input 
                             type="number" 
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                             required
                             value={item.amount}
                             onChange={(e) => updatePurchaseItem(item.id, "amount", e.target.value)}
@@ -3871,9 +3912,9 @@ export default function Dashboard() {
                           <button 
                             type="button" 
                             onClick={() => removePurchaseRow(item.id)}
-                            className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg"
+                            className="text-rose-500 hover:bg-rose-50 p-2 rounded-xl transition-all"
                           >
-                            <X size={18} />
+                            <X size={16} />
                           </button>
                         </div>
                       </div>
@@ -3881,23 +3922,24 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-                    <button type="button" onClick={addPurchaseRow} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50">Add Item</button>
-                    <div className="text-lg font-bold text-slate-700">
-                      Total: <span className="text-blue-600">₹{purchaseItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    <button type="button" onClick={addPurchaseRow} className="px-4 py-2 border border-slate-200/90 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-all">+ Add Item</button>
+                    <div className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      <span>Total:</span>
+                      <span className="font-serif text-xl font-bold text-slate-900">₹{purchaseItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center mt-6">
-                    <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 pt-4 border-t border-slate-100">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer select-none">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer" 
+                        className="w-4 h-4 rounded text-[#0B1320] focus:ring-[#C5A880] border-slate-300 cursor-pointer" 
                         checked={sendThankYouSms} 
                         onChange={(e) => setSendThankYouSms(e.target.checked)} 
                       />
                       Send Thank You SMS to Customer
                     </label>
-                    <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm">
+                    <button type="submit" className="px-6 py-2.5 bg-[#0B1320] hover:bg-[#152238] text-white text-xs font-semibold rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                       Save & Print Invoice
                     </button>
                   </div>
@@ -3909,30 +3951,30 @@ export default function Dashboard() {
                 <form onSubmit={handleSaveLoan} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Father's/Husband's Name</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Father's/Husband's Name</label>
                       <input 
                         type="text" 
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                         required
                         value={loanDetails.father}
                         onChange={(e) => setLoanDetails(prev => ({ ...prev, father: e.target.value }))}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Ration/Aadhar ID Proof</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ration/Aadhar ID Proof</label>
                       <input 
                         type="text" 
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                         required
                         value={loanDetails.idProof}
                         onChange={(e) => setLoanDetails(prev => ({ ...prev, idProof: e.target.value }))}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Address</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Address</label>
                       <input 
                         type="text" 
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                         required
                         placeholder="Enter address..." 
                         value={loanDetails.address}
@@ -3940,10 +3982,10 @@ export default function Dashboard() {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Mandal</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mandal</label>
                       <input 
                         type="text" 
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                         required
                         placeholder="Enter mandal..." 
                         value={loanDetails.mandal}
@@ -3951,10 +3993,10 @@ export default function Dashboard() {
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Taken Date</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Taken Date</label>
                       <input 
                         type="date" 
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none" 
+                        className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                         required
                         value={loanDetails.takenDate}
                         onChange={(e) => setLoanDetails(prev => ({ ...prev, takenDate: e.target.value }))}
@@ -3963,24 +4005,24 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex items-center gap-6 pb-4 border-b border-slate-100">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Metal Type:</label>
-                    <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Metal Type:</label>
+                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-slate-700">
                       <input type="radio" name="l-metal" checked={loanMetalType === "Gold"} onChange={() => setLoanMetalType("Gold")} /> Gold
                     </label>
-                    <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-slate-700">
+                    <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-slate-700">
                       <input type="radio" name="l-metal" checked={loanMetalType === "Silver"} onChange={() => setLoanMetalType("Silver")} /> Silver
                     </label>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="font-bold text-sm text-slate-700">Pledged Items Checklist</h4>
+                    <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider">Pledged Items Checklist</h4>
                     {loanPledgedItems.map((item, idx) => (
                       <div key={item.id} className="grid grid-cols-12 gap-2 md:gap-3 items-end w-full border-b border-slate-100 pb-3 md:pb-0 md:border-none">
                         <div className="form-group relative col-span-12 md:col-span-3">
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Item Name</label>
                           <input 
                             type="text" 
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none focus:border-[#C5A880]" 
                             required
                             placeholder="Enter item name..."
                             value={item.name}
@@ -3996,7 +4038,7 @@ export default function Dashboard() {
                             }}
                           />
                           {activeItemSuggestions[item.id]?.length > 0 && (
-                            <div onClick={(e) => e.stopPropagation()} className="absolute left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
+                            <div onClick={(e) => e.stopPropagation()} className="absolute left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-48 overflow-y-auto mt-1 divide-y divide-slate-50">
                               {activeItemSuggestions[item.id].map((suggestedItem, sIdx) => (
                                 <div 
                                   key={sIdx}
@@ -4016,7 +4058,7 @@ export default function Dashboard() {
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Qty</label>
                           <input 
                             type="number" 
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none focus:border-[#C5A880]" 
                             required
                             min="1"
                             value={item.qty || 1}
@@ -4027,7 +4069,7 @@ export default function Dashboard() {
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Yield/KDM</label>
                           <input 
                             type="text" 
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none focus:border-[#C5A880]" 
                             placeholder="e.g. 916"
                             value={item.yield}
                             onChange={(e) => updateLoanItem(item.id, "yield", e.target.value)}
@@ -4038,7 +4080,7 @@ export default function Dashboard() {
                           <input 
                             type="number" 
                             step="any"
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none focus:border-[#C5A880]" 
                             required
                             placeholder="0.00"
                             value={item.grossWeight}
@@ -4050,7 +4092,7 @@ export default function Dashboard() {
                           <input 
                             type="number" 
                             step="any"
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none focus:border-[#C5A880]" 
                             required
                             placeholder="0.00"
                             value={item.netWeight}
@@ -4061,7 +4103,7 @@ export default function Dashboard() {
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Remarks</label>
                           <input 
                             type="text" 
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500 focus:bg-white" 
+                            className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none focus:border-[#C5A880]" 
                             placeholder="Remarks..."
                             value={item.remarks}
                             onChange={(e) => updateLoanItem(item.id, "remarks", e.target.value)}
@@ -4071,9 +4113,9 @@ export default function Dashboard() {
                           <button 
                             type="button" 
                             onClick={() => removeLoanRow(item.id)}
-                            className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-all"
+                            className="text-rose-500 hover:bg-rose-50 p-2 rounded-xl transition-all"
                           >
-                            <X size={18} />
+                            <X size={16} />
                           </button>
                         </div>
                       </div>
@@ -4081,41 +4123,41 @@ export default function Dashboard() {
                   </div>
 
                   <div className="flex justify-between items-center pt-2">
-                    <button type="button" onClick={addLoanRow} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50">Add Item</button>
+                    <button type="button" onClick={addLoanRow} className="px-4 py-2 border border-slate-200/90 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-all">+ Add Item</button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Loan Finance Amount (₹)</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Loan Finance Amount (₹)</label>
                       <input 
                         type="number" 
-                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500" 
+                        className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none focus:border-[#C5A880]" 
                         required
                         value={loanDetails.amount}
                         onChange={(e) => setLoanDetails(prev => ({ ...prev, amount: e.target.value }))}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Interest Rate (Auto per month)</label>
-                      <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-100 outline-none font-semibold text-blue-600" readOnly value={loanDetails.interestRate} />
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Interest Rate (Auto per month)</label>
+                      <input type="text" className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs bg-slate-50 outline-none font-semibold text-slate-700" readOnly value={loanDetails.interestRate} />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">To be released Date</label>
-                      <input type="date" className="w-full border border-slate-200 rounded-lg p-2.5 text-sm bg-slate-100 outline-none font-semibold text-slate-700" readOnly value={loanDetails.endDate} />
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">To be released Date</label>
+                      <input type="date" className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs bg-slate-50 outline-none font-semibold text-slate-700" readOnly value={loanDetails.endDate} />
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center mt-6">
-                    <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 pt-4 border-t border-slate-100">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer select-none">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer" 
+                        className="w-4 h-4 rounded text-[#0B1320] focus:ring-[#C5A880] border-slate-300 cursor-pointer" 
                         checked={sendThankYouSms} 
                         onChange={(e) => setSendThankYouSms(e.target.checked)} 
                       />
                       Send Thank You SMS to Customer
                     </label>
-                    <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm">
+                    <button type="submit" className="px-6 py-2.5 bg-[#0B1320] hover:bg-[#152238] text-white text-xs font-semibold rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                       Save & Print Pawn Slip
                     </button>
                   </div>
@@ -4126,179 +4168,237 @@ export default function Dashboard() {
 
           {/* CUSTOMERS LIST TAB */}
           {activeTab === "customers" && (
-            <div className="space-y-6">
+            <div className="sbj-card p-6 md:p-8 relative">
+              {/* Back to Dashboard Link */}
               {!selectedProfileCustomer && (
-                <div className="mb-4">
+                <div className="mb-2">
                   <button 
                     onClick={() => setActiveTab("dashboard")}
-                    className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
                   >
-                    &larr; Back to Dashboard
+                    <span>&larr;</span> Back to Dashboard
                   </button>
                 </div>
               )}
               
               {/* Profile Details Overlay */}
               {selectedProfileCustomer ? (
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                  <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-6">
-                    <div>
-                      <button onClick={() => setSelectedProfileCustomer(null)} className="text-xs font-bold text-slate-400 hover:text-slate-600 mb-2 block">← BACK TO LIST</button>
-                      <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        {selectedProfileCustomer.name}
-                        <span className="text-xs font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{selectedProfileCustomer.id}</span>
-                      </h3>
+                <div>
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setSelectedProfileCustomer(null)} 
+                      className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
+                    >
+                      <span>&larr;</span> Back to Customers List
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-100 mb-6">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-full bg-[#0B1320] text-[#E5C378] flex items-center justify-center font-serif text-lg font-bold shadow-sm">
+                        {selectedProfileCustomer.name?.charAt(0)?.toUpperCase() || "C"}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-serif text-2xl font-bold text-slate-900">{selectedProfileCustomer.name}</h2>
+                          <span className="text-[10px] font-bold bg-[#F4EFE6] text-[#8C6404] border border-[#E7DCB9] px-2 py-0.5 rounded">
+                            ID: {selectedProfileCustomer.id}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5">Registered Customer Profile</p>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleOpenEditCustomer(selectedProfileCustomer)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-all">Edit Profile</button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleOpenEditCustomer(selectedProfileCustomer)} 
+                        className="px-4 py-2 border border-slate-200/90 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition-all shadow-xs"
+                      >
+                        Edit Profile
+                      </button>
                       <button 
                         onClick={() => handleDeleteCustomer(selectedProfileCustomer.id)} 
-                        className="px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-sm font-semibold hover:bg-rose-50 transition-all flex items-center gap-1.5"
+                        className="px-4 py-2 border border-rose-200 text-rose-600 rounded-xl text-xs font-semibold hover:bg-rose-50 transition-all flex items-center gap-1.5 shadow-xs"
                       >
-                        <Trash2 size={16} /> Delete Customer
+                        <Trash2 size={14} /> Delete Customer
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-slate-50 p-5 rounded-lg mb-8">
+                  {/* Info Cards Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-[#FAFBFD] border border-slate-100 rounded-2xl mb-8">
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Phone Number</span>
-                      <strong className="text-sm text-slate-700">{selectedProfileCustomer.phone}</strong>
+                      <strong className="text-xs font-bold text-slate-800 font-technical">{selectedProfileCustomer.phone}</strong>
                     </div>
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Full Address</span>
-                      <strong className="text-sm text-slate-700">{selectedProfileCustomer.address}</strong>
+                      <strong className="text-xs font-semibold text-slate-800">{selectedProfileCustomer.address || "-"}</strong>
                     </div>
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Mandal</span>
-                      <strong className="text-sm text-slate-700">{selectedProfileCustomer.mandal || "-"}</strong>
+                      <strong className="text-xs font-semibold text-slate-800">{selectedProfileCustomer.mandal || "-"}</strong>
                     </div>
                   </div>
 
                   {/* Customer Purchase/Loan list */}
                   <div className="space-y-8">
                     <div>
-                      <h4 className="font-bold text-slate-700 mb-3 uppercase tracking-wider text-xs">Item Purchase History</h4>
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-slate-100 text-slate-400 font-semibold">
-                            <th className="pb-2">Date</th>
-                            <th className="pb-2">Bill No</th>
-                            <th className="pb-2">Category</th>
-                            <th className="pb-2">Items Purchased</th>
-                            <th className="pb-2">Total Amount</th>
-                            <th className="pb-2">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                          {transactions
-                            .filter(t => t.customerId === selectedProfileCustomer.id && t.type === "purchase")
-                            .map((p, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/50 font-semibold">
-                                <td className="py-2.5">{formatDateToDDMMYYYY(p.date)}</td>
-                                <td className="py-2.5 text-blue-600">{formatBillNoForDisplay(p.id)}</td>
-                                <td className="py-2.5">
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${p.category === "Furniture" ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-800"}`}>{p.category}</span>
-                                </td>
-                                <td className="py-2.5">{p.items?.map((i: any) => i.particulars).join(', ')}</td>
-                                <td className="py-2.5 text-slate-700">₹{p.amount.toLocaleString('en-IN')}</td>
-                                <td className="py-2.5">
-                                  <button onClick={() => handlePrintTicket(p, selectedProfileCustomer, "purchase")} className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-2.5 py-1 flex items-center gap-1.5 text-slate-700">
-                                    Print Bill
-                                  </button>
-                                </td>
-                              </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-serif text-xs font-bold text-slate-900 tracking-wider uppercase">Item Purchase History</h4>
+                        <div className="w-8 h-0.5 bg-[#C5A880]"></div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs text-left">
+                          <thead>
+                            <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                              <th className="pb-3 pr-3">Date</th>
+                              <th className="pb-3 pr-3">Bill No</th>
+                              <th className="pb-3 pr-3">Category</th>
+                              <th className="pb-3 pr-3">Items Purchased</th>
+                              <th className="pb-3 pr-3">Total Amount</th>
+                              <th className="pb-3 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50 font-normal">
+                            {transactions
+                              .filter(t => t.customerId === selectedProfileCustomer.id && t.type === "purchase")
+                              .map((p, idx) => (
+                                <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
+                                  <td className="py-3 pr-3 text-slate-600">{formatDateToDDMMYYYY(p.date)}</td>
+                                  <td className="py-3 pr-3 text-[#B8860B] font-semibold">#{formatBillNoForDisplay(p.id)}</td>
+                                  <td className="py-3 pr-3">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7]">
+                                      {p.category}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 pr-3 text-slate-800 font-medium">{p.items?.map((i: any) => i.particulars).join(', ')}</td>
+                                  <td className="py-3 pr-3 font-bold text-slate-900">₹{p.amount.toLocaleString('en-IN')}</td>
+                                  <td className="py-3 text-right">
+                                    <button 
+                                      onClick={() => handlePrintTicket(p, selectedProfileCustomer, "purchase")} 
+                                      className="text-xs bg-white hover:bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1 text-slate-700 font-semibold shadow-xs"
+                                    >
+                                      Print Bill
+                                    </button>
+                                  </td>
+                                </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-slate-700 mb-3 uppercase tracking-wider text-xs">Loan Finance History</h4>
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-slate-100 text-slate-400 font-semibold">
-                            <th className="pb-2">Date</th>
-                            <th className="pb-2">Serial No</th>
-                            <th className="pb-2">Pledged Items</th>
-                            <th className="pb-2">Loan Amount</th>
-                            <th className="pb-2">Due Date</th>
-                            <th className="pb-2">Status</th>
-                            <th className="pb-2">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                          {transactions
-                            .filter(t => t.customerId === selectedProfileCustomer.id && t.type === "loan")
-                            .map((l, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50/50 font-semibold">
-                                <td className="py-2.5">{formatDateToDDMMYYYY(l.date)}</td>
-                                <td className="py-2.5">{formatBillNoForDisplay(l.id)}</td>
-                                <td className="py-2.5">{l.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
-                                <td className="py-2.5">₹{l.amount.toLocaleString('en-IN')}</td>
-                                <td className="py-2.5">{formatDateToDDMMYYYY(l.loanDetails?.endDate)}</td>
-                                <td className="py-2.5">
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${l.status === "Cleared" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{l.status || "Pending"}</span>
-                                </td>
-                                <td className="py-2.5 flex gap-1">
-                                  <button onClick={() => handlePrintTicket(l, selectedProfileCustomer, "loan")} className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-2.5 py-1 text-slate-700">
-                                    Print Ticket
-                                  </button>
-                                </td>
-                              </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-serif text-xs font-bold text-slate-900 tracking-wider uppercase">Loan Finance History</h4>
+                        <div className="w-8 h-0.5 bg-[#C5A880]"></div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs text-left">
+                          <thead>
+                            <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                              <th className="pb-3 pr-3">Date</th>
+                              <th className="pb-3 pr-3">Serial No</th>
+                              <th className="pb-3 pr-3">Pledged Items</th>
+                              <th className="pb-3 pr-3">Loan Amount</th>
+                              <th className="pb-3 pr-3">Due Date</th>
+                              <th className="pb-3 pr-3">Status</th>
+                              <th className="pb-3 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50 font-normal">
+                            {transactions
+                              .filter(t => t.customerId === selectedProfileCustomer.id && t.type === "loan")
+                              .map((l, idx) => (
+                                <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
+                                  <td className="py-3 pr-3 text-slate-600">{formatDateToDDMMYYYY(l.date)}</td>
+                                  <td className="py-3 pr-3 text-[#B8860B] font-semibold">#{formatBillNoForDisplay(l.id)}</td>
+                                  <td className="py-3 pr-3 text-slate-800 font-medium">{l.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
+                                  <td className="py-3 pr-3 font-bold text-slate-900">₹{l.amount.toLocaleString('en-IN')}</td>
+                                  <td className="py-3 pr-3 text-slate-600">{formatDateToDDMMYYYY(l.loanDetails?.endDate)}</td>
+                                  <td className="py-3 pr-3">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                                      l.status === "Cleared" 
+                                        ? "bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7]" 
+                                        : "bg-[#FDF2F2] text-[#E11D48] border border-[#FDE2E2]"
+                                    }`}>
+                                      {l.status || "PENDING"}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 text-right">
+                                    <button 
+                                      onClick={() => handlePrintTicket(l, selectedProfileCustomer, "loan")} 
+                                      className="text-xs bg-white hover:bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1 text-slate-700 font-semibold shadow-xs"
+                                    >
+                                      Print Ticket
+                                    </button>
+                                  </td>
+                                </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center gap-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div className="flex-1 relative max-w-sm">
-                      <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+                <div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6">
+                    <div className="flex items-center gap-4">
+                      <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">Customers Data</h2>
+                      <button 
+                        onClick={handleOpenAddCustomer} 
+                        className="bg-[#0B1320] hover:bg-[#152238] text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                      >
+                        <span className="text-[#E5C378] font-bold text-sm">+</span> Add Customer
+                      </button>
+                    </div>
+
+                    <div className="w-full sm:w-64 relative">
+                      <Search className="absolute left-3 top-2.5 text-slate-400" size={15} />
                       <input 
                         type="text" 
-                        className="w-full border border-slate-200 rounded-lg p-2.5 pl-10 text-sm outline-none focus:border-blue-500" 
-                        placeholder="Search customer name or phone..." 
+                        className="w-full border border-slate-200/90 rounded-xl p-2 pl-9 text-xs bg-white outline-none focus:border-[#C5A880] placeholder:text-slate-400 font-medium" 
+                        placeholder="Search name or phone..." 
                         value={searchCustomerQuery}
                         onChange={(e) => setSearchCustomerQuery(e.target.value)}
                       />
                     </div>
-                    <button onClick={handleOpenAddCustomer} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg text-sm transition-all flex items-center gap-1.5 shadow-sm">
-                      <PlusCircle size={16} /> Add Customer
-                    </button>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm overflow-x-auto">
-                    <table className="w-full text-left text-sm min-w-[800px]">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="border-b border-slate-100 bg-slate-50 text-slate-500 font-bold">
-                          <th className="p-4 text-xs uppercase tracking-wider">ID</th>
-                          <th className="p-4 text-xs uppercase tracking-wider">Customer Name</th>
-                          <th className="p-4 text-xs uppercase tracking-wider">Phone</th>
-                          <th className="p-4 text-xs uppercase tracking-wider">Father's Name</th>
-                          <th className="p-4 text-xs uppercase tracking-wider">ID Proof</th>
-                          <th className="p-4 text-xs uppercase tracking-wider">Address</th>
-                          <th className="p-4 text-xs uppercase tracking-wider">Mandal</th>
+                        <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                          <th className="pb-3 pr-3 font-semibold">ID</th>
+                          <th className="pb-3 pr-3 font-semibold">CUSTOMER NAME</th>
+                          <th className="pb-3 pr-3 font-semibold">PHONE</th>
+                          <th className="pb-3 pr-3 font-semibold">FATHER'S NAME</th>
+                          <th className="pb-3 pr-3 font-semibold">ID PROOF</th>
+                          <th className="pb-3 pr-3 font-semibold">ADDRESS</th>
+                          <th className="pb-3 font-semibold">MANDAL</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                      <tbody className="divide-y divide-slate-50 font-normal">
                         {customers
                           .filter(c => matchesUniversal(c, searchCustomerQuery))
                           .map((c, idx) => (
-                            <tr key={idx} onClick={() => setSelectedProfileCustomer(c)} className="hover:bg-slate-50 cursor-pointer transition-all">
-                              <td className="p-4 text-xs text-slate-400">{c.id}</td>
-                              <td className="p-4 text-slate-800 font-bold text-blue-600 hover:underline">{c.name}</td>
-                              <td className="p-4 text-slate-600">{c.phone}</td>
-                              <td className="p-4 text-slate-600">{c.father || "-"}</td>
-                              <td className="p-4 text-xs text-slate-500">{c.idproof || "-"}</td>
-                              <td className="p-4 text-slate-600">{c.address || "-"}</td>
-                              <td className="p-4 text-slate-600">{c.mandal || "-"}</td>
+                            <tr key={idx} onClick={() => setSelectedProfileCustomer(c)} className="hover:bg-[#FAFBFD] transition-colors cursor-pointer">
+                              <td className="py-3.5 pr-3 text-[#B8860B] font-semibold text-xs">#{c.id}</td>
+                              <td className="py-3.5 pr-3 text-slate-900 font-semibold hover:text-[#B8860B] transition-colors">{c.name}</td>
+                              <td className="py-3.5 pr-3 text-slate-600 font-technical">{c.phone}</td>
+                              <td className="py-3.5 pr-3 text-slate-600">{c.father || "-"}</td>
+                              <td className="py-3.5 pr-3 text-slate-500 font-technical">{c.idproof || "-"}</td>
+                              <td className="py-3.5 pr-3 text-slate-600">{c.address || "-"}</td>
+                              <td className="py-3.5 text-slate-600">{c.mandal || "-"}</td>
                             </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  <div className="pt-6 border-t border-slate-100 mt-2 flex justify-between items-center text-xs text-slate-400">
+                    <span>Showing {customers.filter(c => matchesUniversal(c, searchCustomerQuery)).length} registered customers</span>
                   </div>
                 </div>
               )}
@@ -4547,45 +4647,54 @@ export default function Dashboard() {
 
           {/* SETTINGS TAB */}
           {activeTab === "settings" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <div className="mb-4">
+            <div className="sbj-card p-6 md:p-8 relative">
+              <div className="mb-2">
                 <button 
                   onClick={() => setActiveTab("dashboard")}
-                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
                 >
-                  &larr; Back to Dashboard
+                  <span>&larr;</span> Back to Dashboard
                 </button>
               </div>
-              <h3 className="font-bold text-lg text-slate-800 mb-4">SMS Device Bridge Configuration</h3>
-              <p className="text-xs text-slate-400 font-semibold mb-6">Manage registered Android Bridge devices. WebSocket connections dynamically route the pending queue automatically.</p>
+
+              <div className="pb-6 border-b border-slate-100 mb-6">
+                <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">SMS Device Bridge Configuration</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Manage registered Android Bridge devices. WebSocket connections dynamically route the pending queue automatically.</p>
+              </div>
               
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px] text-left text-sm divide-y divide-slate-100">
+              <div className="overflow-x-auto mb-8">
+                <table className="w-full text-xs text-left">
                   <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 font-bold">
-                      <th className="pb-3">Device UUID</th>
-                      <th className="pb-3">Device Name</th>
-                      <th className="pb-3">Model</th>
-                      <th className="pb-3">Battery</th>
-                      <th className="pb-3">SIM operator</th>
-                      <th className="pb-3">Connection</th>
-                      <th className="pb-3">Last Seen</th>
-                      <th className="pb-3">Action</th>
+                    <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                      <th className="pb-3 pr-3 font-semibold">DEVICE UUID</th>
+                      <th className="pb-3 pr-3 font-semibold">DEVICE NAME</th>
+                      <th className="pb-3 pr-3 font-semibold">MODEL</th>
+                      <th className="pb-3 pr-3 font-semibold">BATTERY</th>
+                      <th className="pb-3 pr-3 font-semibold">SIM OPERATOR</th>
+                      <th className="pb-3 pr-3 font-semibold">CONNECTION</th>
+                      <th className="pb-3 pr-3 font-semibold">LAST SEEN</th>
+                      <th className="pb-3 font-semibold text-right">ACTION</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50 font-semibold">
+                  <tbody className="divide-y divide-slate-50 font-normal">
                     {smsDevices.map((d, idx) => (
-                      <tr key={idx}>
-                        <td className="py-3 text-slate-400">#{d.id}</td>
-                        <td className="py-3">{d.name}</td>
-                        <td className="py-3">{d.model}</td>
-                        <td className="py-3">{d.battery}%</td>
-                        <td className="py-3">{d.sim}</td>
-                        <td className="py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${d.connection === "Connected" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{d.connection}</span>
+                      <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
+                        <td className="py-3.5 pr-3 text-[#B8860B] font-semibold font-technical">#{d.id}</td>
+                        <td className="py-3.5 pr-3 font-semibold text-slate-900">{d.name}</td>
+                        <td className="py-3.5 pr-3 text-slate-600">{d.model}</td>
+                        <td className="py-3.5 pr-3 font-technical text-slate-700">{d.battery}%</td>
+                        <td className="py-3.5 pr-3 text-slate-600">{d.sim}</td>
+                        <td className="py-3.5 pr-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                            d.connection === "Connected" 
+                              ? "bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7]" 
+                              : "bg-[#FDF2F2] text-[#E11D48] border border-[#FDE2E2]"
+                          }`}>
+                            {d.connection}
+                          </span>
                         </td>
-                        <td className="py-3">{d.last_seen}</td>
-                        <td className="py-3">
+                        <td className="py-3.5 pr-3 text-slate-500 font-technical">{d.last_seen}</td>
+                        <td className="py-3.5 text-right">
                           <button 
                             onClick={() => {
                               if (confirm("Remove registered device?")) {
@@ -4596,7 +4705,7 @@ export default function Dashboard() {
                                 }).then(refreshData);
                               }
                             }}
-                            className="text-rose-500 hover:bg-rose-50 rounded px-2 py-1 text-xs border border-rose-200"
+                            className="text-rose-600 hover:bg-rose-50 rounded-lg px-2.5 py-1 text-xs border border-rose-200 font-semibold shadow-xs"
                           >
                             Unregister
                           </button>
@@ -4607,55 +4716,59 @@ export default function Dashboard() {
                 </table>
               </div>
 
-              <div className="mt-6 bg-slate-50 border border-slate-200 rounded-xl p-5">
+              {/* Connection Guide Banner */}
+              <div className="bg-[#FAFBFD] border border-slate-100 rounded-2xl p-5 mb-8">
                 <div 
                   onClick={() => setShowConnectionGuide(!showConnectionGuide)} 
                   className="flex justify-between items-center cursor-pointer select-none"
                 >
-                  <h4 className="font-bold text-sm text-slate-800">How to Connect your Android Phone & Send SMS</h4>
-                  <button className="text-xs bg-white hover:bg-slate-100 border border-slate-200 rounded px-2.5 py-1 font-semibold text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#E5C378]"></span>
+                    <h4 className="font-serif text-xs font-bold text-slate-900 uppercase tracking-wider">How to Connect your Android Phone & Send SMS</h4>
+                  </div>
+                  <button className="text-xs bg-white hover:bg-slate-50 border border-slate-200/90 rounded-lg px-3 py-1 font-semibold text-slate-700 shadow-xs cursor-pointer">
                     {showConnectionGuide ? "Hide Guide" : "Show Guide"}
                   </button>
                 </div>
                 {showConnectionGuide && (
-                  <ol className="list-decimal list-inside text-xs text-slate-600 font-semibold space-y-2.5 mt-4 pt-4 border-t border-slate-100/50">
+                  <ol className="list-decimal list-inside text-xs text-slate-600 font-medium space-y-2 mt-4 pt-4 border-t border-slate-200/60 leading-relaxed">
                     <li>Install the <strong>SmartShop SMS Bridge</strong> Android app on your phone.</li>
                     <li>Find your laptop's Local IP address (e.g. on Windows, open Command Prompt, run <code>ipconfig</code>, and copy your <strong>IPv4 Address</strong>, e.g. <code>192.168.1.15</code>).</li>
                     <li>In the Android app, enter the Server URL as: <code>http://&lt;your-laptop-ip&gt;:8000</code> (example: <code>http://192.168.1.15:8000</code>).</li>
                     <li>Enter a Device Name for identification, then click <strong>Register Device</strong>.</li>
                     <li>Refresh this settings page on your browser to see your device in the list above.</li>
-                    <li>In the Android app, click the green <strong>Connect</strong> button. The status badge will change to <span className="text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200 font-bold uppercase">Connected</span> and any pending SMS will send immediately!</li>
+                    <li>In the Android app, click the green <strong>Connect</strong> button. The status badge will change to <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-bold uppercase text-[10px]">CONNECTED</span> and any pending SMS will send immediately!</li>
                   </ol>
                 )}
               </div>
 
-              <div className="mt-8 pt-8 border-t border-slate-100">
-                <h4 className="font-bold text-sm text-slate-800 mb-3">Other Settings</h4>
-                <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden bg-slate-50/50">
+              <div className="pt-6 border-t border-slate-100">
+                <h4 className="font-serif text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Other Settings</h4>
+                <div className="border border-slate-200/90 rounded-2xl divide-y divide-slate-100 overflow-hidden bg-white shadow-xs">
                   <div className="p-4 flex items-center justify-between">
                     <div>
-                      <h5 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <h5 className="text-xs font-bold text-slate-800 flex items-center gap-2">
                         {theme === "dark" ? (
                           <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd"></path></svg>
                         ) : (
-                          <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                          <svg className="w-4 h-4 text-[#0B1320]" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         )}
                         System Theme Settings
                       </h5>
-                      <p className="text-xs text-slate-400 font-semibold mt-0.5">Toggle between Light and Dark mode interface.</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Toggle between Luxury Light and Midnight Dark interface modes.</p>
                     </div>
-                    <div className="flex bg-slate-200/50 p-1 rounded-lg">
+                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/60">
                       <button 
                         type="button" 
                         onClick={() => handleToggleTheme("light")}
-                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${theme === "light" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${theme === "light" ? "bg-[#0B1320] text-[#E5C378] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
                       >
                         Light
                       </button>
                       <button 
                         type="button" 
                         onClick={() => handleToggleTheme("dark")}
-                        className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${theme === "dark" ? "bg-slate-800 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${theme === "dark" ? "bg-[#0B1320] text-[#E5C378] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
                       >
                         Dark
                       </button>
@@ -4666,10 +4779,10 @@ export default function Dashboard() {
                     className="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-all"
                   >
                     <div>
-                      <h5 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                        <List size={16} className="text-blue-600" /> Item Catalog Settings
+                      <h5 className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                        <List size={15} className="text-[#B8860B]" /> Item Catalog Settings
                       </h5>
-                      <p className="text-xs text-slate-400 font-semibold mt-0.5">Add, edit, or delete items from the auto-suggestion lists for sales and loans.</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Add, edit, or delete items from the auto-suggestion lists for sales and loans.</p>
                     </div>
                     <ChevronRight size={16} className="text-slate-400" />
                   </div>
@@ -4680,53 +4793,54 @@ export default function Dashboard() {
 
           {/* ITEM CATALOG TAB */}
           {activeTab === "item-catalog" && (
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <div className="mb-4">
+            <div className="sbj-card p-6 md:p-8 relative">
+              <div className="mb-2">
                 <button 
                   onClick={() => setActiveTab("settings")}
-                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-all"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
                 >
-                  &larr; Back to Settings
+                  <span>&larr;</span> Back to Settings
                 </button>
               </div>
-              <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-100 mb-6">
                 <div>
-                  <h3 className="font-bold text-lg text-slate-800">Manage Item Catalog</h3>
-                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Manage items used in sales and loans to populate auto-suggestions list.</p>
+                  <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">Manage Item Catalog</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Manage items used in sales and loans to populate auto-suggestions list.</p>
                 </div>
                 <button 
                   onClick={() => {
                     setItemForm({ id: "", name: "", category: "Jewelry" });
                     setShowItemModal(true);
                   }} 
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                  className="bg-[#0B1320] hover:bg-[#152238] text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
-                  <PlusCircle size={14} /> Add New Item
+                  <span className="text-[#E5C378] font-bold text-sm">+</span> Add New Item
                 </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Jewelry List */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
-                  <h4 className="font-bold text-sm text-slate-700 mb-3 border-b border-slate-200 pb-2 flex justify-between items-center">
-                    <span>Jewelry Items</span>
-                    <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                <div className="bg-[#FAFBFD] border border-slate-100 rounded-2xl p-5 shadow-xs">
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200/80 mb-3">
+                    <h4 className="font-serif text-xs font-bold text-slate-900 uppercase tracking-wider">Jewelry Items</h4>
+                    <span className="text-[10px] bg-[#F4EFE6] text-[#8C6404] border border-[#E7DCB9] px-2 py-0.5 rounded-full font-bold">
                       {safeItems.filter(i => i.category === "Jewelry").length} items
                     </span>
-                  </h4>
+                  </div>
                   <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
                     {safeItems
                       .filter(i => i.category === "Jewelry")
                       .map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center py-2 text-xs font-semibold">
+                        <div key={idx} className="flex justify-between items-center py-2.5 text-xs font-medium">
                           <span className="text-slate-800">{item.name}</span>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1.5">
                             <button 
                               onClick={() => {
                                 setItemForm(item);
                                 setShowItemModal(true);
                               }} 
-                              className="text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-100"
+                              className="text-[#0B1320] hover:bg-slate-100 bg-white px-2 py-0.5 rounded-lg border border-slate-200/90 text-xs font-semibold shadow-xs"
                             >
                               Edit
                             </button>
@@ -4736,7 +4850,7 @@ export default function Dashboard() {
                                   fetch(`/api/v1/items/${item.id}`, { method: "DELETE" }).then(refreshData);
                                 }
                               }} 
-                              className="text-rose-600 hover:text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-100"
+                              className="text-rose-600 hover:bg-rose-50 bg-white px-2 py-0.5 rounded-lg border border-rose-200 text-xs font-semibold shadow-xs"
                             >
                               Remove
                             </button>
@@ -4747,26 +4861,26 @@ export default function Dashboard() {
                 </div>
 
                 {/* Furniture List */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
-                  <h4 className="font-bold text-sm text-slate-700 mb-3 border-b border-slate-200 pb-2 flex justify-between items-center">
-                    <span>Furniture Items</span>
-                    <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                <div className="bg-[#FAFBFD] border border-slate-100 rounded-2xl p-5 shadow-xs">
+                  <div className="flex justify-between items-center pb-3 border-b border-slate-200/80 mb-3">
+                    <h4 className="font-serif text-xs font-bold text-slate-900 uppercase tracking-wider">Furniture Items</h4>
+                    <span className="text-[10px] bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7] px-2 py-0.5 rounded-full font-bold">
                       {safeItems.filter(i => i.category === "Furniture").length} items
                     </span>
-                  </h4>
+                  </div>
                   <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
                     {safeItems
                       .filter(i => i.category === "Furniture")
                       .map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center py-2 text-xs font-semibold">
+                        <div key={idx} className="flex justify-between items-center py-2.5 text-xs font-medium">
                           <span className="text-slate-800">{item.name}</span>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1.5">
                             <button 
                               onClick={() => {
                                 setItemForm(item);
                                 setShowItemModal(true);
                               }} 
-                              className="text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-100"
+                              className="text-[#0B1320] hover:bg-slate-100 bg-white px-2 py-0.5 rounded-lg border border-slate-200/90 text-xs font-semibold shadow-xs"
                             >
                               Edit
                             </button>
@@ -4776,7 +4890,7 @@ export default function Dashboard() {
                                   fetch(`/api/v1/items/${item.id}`, { method: "DELETE" }).then(refreshData);
                                 }
                               }} 
-                              className="text-rose-600 hover:text-rose-800 bg-rose-50 px-2 py-0.5 rounded border border-rose-100"
+                              className="text-rose-600 hover:bg-rose-50 bg-white px-2 py-0.5 rounded-lg border border-rose-200 text-xs font-semibold shadow-xs"
                             >
                               Remove
                             </button>
@@ -4792,28 +4906,30 @@ export default function Dashboard() {
           {/* README GUIDE TAB */}
           {activeTab === "readme" && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 border border-slate-800 rounded-xl p-6 shadow-lg text-white">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-blue-600/20 text-blue-400 rounded-lg">
-                    <BookOpen size={24} />
+              {/* Luxury Hero Banner */}
+              <div className="bg-[#0B1320] border border-[#162238] rounded-2xl p-6 md:p-8 shadow-sm text-white relative overflow-hidden">
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-[#E5C378]"></span>
+                    <span className="font-cinzel text-[10px] font-bold text-[#E5C378] tracking-widest uppercase">Official Documentation</span>
                   </div>
-                  <h3 className="font-bold text-xl">Interactive System Guide</h3>
+                  <h2 className="font-serif text-2xl md:text-3xl font-bold text-white mb-2">Interactive System Guide</h2>
+                  <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                    Welcome to the Sri Sai Balaji interactive user manual. Explore features, configuration steps, and troubleshooting guides to manage your jewelry store and loan finance business efficiently.
+                  </p>
                 </div>
-                <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-                  Welcome to the Sri Sai Balaji interactive user manual. Explore features, configuration steps, and troubleshooting guides to manage your store and loans efficiently.
-                </p>
               </div>
 
               {/* Sub-tabs inside Readme */}
-              <div className="flex border-b border-slate-200 gap-4">
+              <div className="flex border-b border-slate-200 gap-6">
                 {["Overview", "SMS Bridge App", "Bulk Import Guide", "FAQs"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setReadmeSubTab(tab)}
-                    className={`pb-3 text-sm font-bold border-b-2 transition-all px-1 ${
+                    className={`pb-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
                       readmeSubTab === tab 
-                        ? "border-blue-600 text-blue-600" 
-                        : "border-transparent text-slate-400 hover:text-slate-600"
+                        ? "border-[#C5A880] text-slate-900 font-bold" 
+                        : "border-transparent text-slate-400 hover:text-slate-700"
                     }`}
                   >
                     {tab}
@@ -4824,48 +4940,54 @@ export default function Dashboard() {
               {/* Readme content based on sub-tab */}
               {readmeSubTab === "Overview" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                    <h4 className="font-bold text-base text-slate-800 mb-3">✨ Core Capabilities</h4>
-                    <ul className="space-y-3 text-sm text-slate-600">
+                  <div className="sbj-card p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider">Core Capabilities</h4>
+                      <div className="w-8 h-0.5 bg-[#C5A880]"></div>
+                    </div>
+                    <ul className="space-y-3.5 text-xs text-slate-600 leading-relaxed">
                       <li className="flex items-start gap-2.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#C5A880] mt-1.5 flex-shrink-0" />
                         <div>
-                          <strong>New Billing</strong>: Print invoices instantly with automated SGST/CGST, multi-item catalogs, and dynamic barcode/bill numbers.
+                          <strong className="text-slate-800">New Billing</strong>: Print invoices instantly with automated SGST/CGST, multi-item catalogs, and dynamic bill numbers.
                         </div>
                       </li>
                       <li className="flex items-start gap-2.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#C5A880] mt-1.5 flex-shrink-0" />
                         <div>
-                          <strong>Offline Loans</strong>: Record jewelry/furniture details, custom monthly interest rates, Taken Date, and Period End dates.
+                          <strong className="text-slate-800">Offline Loans</strong>: Record jewelry/furniture details, custom monthly interest rates, Taken Date, and Period End dates.
                         </div>
                       </li>
                       <li className="flex items-start gap-2.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#C5A880] mt-1.5 flex-shrink-0" />
                         <div>
-                          <strong>Custom Cleared Dates</strong>: Fully log the exact closing/clearance date for loans and display it dynamically in details and records.
+                          <strong className="text-slate-800">Custom Cleared Dates</strong>: Fully log the exact closing/clearance date for loans and display it dynamically in details and records.
                         </div>
                       </li>
                     </ul>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                    <h4 className="font-bold text-base text-slate-800 mb-3">🛠️ System Architecture</h4>
-                    <div className="flex flex-col gap-3 text-sm text-slate-600">
-                      <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
-                        <span className="font-bold text-slate-700">Frontend Web UI</span>
-                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold">Next.js (Vite/Turbopack)</span>
+                  <div className="sbj-card p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider">System Architecture</h4>
+                      <div className="w-8 h-0.5 bg-[#C5A880]"></div>
+                    </div>
+                    <div className="flex flex-col gap-2.5 text-xs text-slate-600">
+                      <div className="flex items-center justify-between p-2.5 bg-[#FAFBFD] border border-slate-100 rounded-xl">
+                        <span className="font-semibold text-slate-800">Frontend Web UI</span>
+                        <span className="text-[10px] bg-[#F4EFE6] text-[#8C6404] border border-[#E7DCB9] px-2 py-0.5 rounded font-bold">Next.js + Tailwind</span>
                       </div>
-                      <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
-                        <span className="font-bold text-slate-700">Backend Server API</span>
-                        <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-semibold">FastAPI + Python Uvicorn</span>
+                      <div className="flex items-center justify-between p-2.5 bg-[#FAFBFD] border border-slate-100 rounded-xl">
+                        <span className="font-semibold text-slate-800">Backend Server API</span>
+                        <span className="text-[10px] bg-[#0B1320] text-[#E5C378] px-2 py-0.5 rounded font-bold">FastAPI + Python Uvicorn</span>
                       </div>
-                      <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
-                        <span className="font-bold text-slate-700">Database</span>
-                        <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-semibold">PostgreSQL (Supabase)</span>
+                      <div className="flex items-center justify-between p-2.5 bg-[#FAFBFD] border border-slate-100 rounded-xl">
+                        <span className="font-semibold text-slate-800">Database Engine</span>
+                        <span className="text-[10px] bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7] px-2 py-0.5 rounded font-bold">PostgreSQL / Supabase</span>
                       </div>
-                      <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg">
-                        <span className="font-bold text-slate-700">Real-time Sync</span>
-                        <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-semibold">WebSockets Connection</span>
+                      <div className="flex items-center justify-between p-2.5 bg-[#FAFBFD] border border-slate-100 rounded-xl">
+                        <span className="font-semibold text-slate-800">Real-time Sync</span>
+                        <span className="text-[10px] bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7] px-2 py-0.5 rounded font-bold">WebSocket Bridge</span>
                       </div>
                     </div>
                   </div>
@@ -4873,36 +4995,36 @@ export default function Dashboard() {
               )}
 
               {readmeSubTab === "SMS Bridge App" && (
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+                <div className="sbj-card p-6 md:p-8 space-y-6">
                   <div>
-                    <h4 className="font-bold text-base text-slate-800 mb-2">📱 Android Foreground Service & Connection</h4>
-                    <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                    <h4 className="font-serif text-base font-bold text-slate-900 mb-2">Android Foreground Service & Connection</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed mb-4">
                       The Android app uses a dedicated <strong>Foreground Service</strong> to stay connected in the background. It will automatically reconnect when your phone starts up (using the boot receiver) and maintains a highly battery-efficient network connection.
                     </p>
                     
-                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-3 text-sm text-slate-600 font-semibold">
+                    <div className="bg-[#FAFBFD] rounded-2xl p-5 border border-slate-100 space-y-3 text-xs text-slate-700 font-medium">
                       <div className="flex items-start gap-2.5">
-                        <span className="text-blue-600 font-bold">1.</span>
+                        <span className="text-[#B8860B] font-bold">1.</span>
                         <span>Open the <strong>SmartShop SMS Bridge</strong> app on your Android device.</span>
                       </div>
                       <div className="flex items-start gap-2.5">
-                        <span className="text-blue-600 font-bold">2.</span>
-                        <span>Input Server URL: <code className="bg-white px-2 py-0.5 rounded border border-slate-200 text-xs">http://&lt;your-local-ip&gt;:8000</code>.</span>
+                        <span className="text-[#B8860B] font-bold">2.</span>
+                        <span>Input Server URL: <code className="bg-white px-2 py-0.5 rounded border border-slate-200 font-technical text-slate-800">http://&lt;your-local-ip&gt;:8000</code>.</span>
                       </div>
                       <div className="flex items-start gap-2.5">
-                        <span className="text-blue-600 font-bold">3.</span>
+                        <span className="text-[#B8860B] font-bold">3.</span>
                         <span>Click <strong>Register Device</strong>, then click <strong>Connect</strong>.</span>
                       </div>
                       <div className="flex items-start gap-2.5">
-                        <span className="text-blue-600 font-bold">4.</span>
+                        <span className="text-[#B8860B] font-bold">4.</span>
                         <span>Make sure to allow <strong>SMS and Notification permissions</strong> when prompted!</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="pt-4 border-t border-slate-100">
-                    <h5 className="font-bold text-sm text-slate-800 mb-2">⚙️ Background Operation & Keep-Alive</h5>
-                    <p className="text-xs text-slate-500 leading-relaxed">
+                    <h5 className="font-serif text-xs font-bold text-slate-900 uppercase tracking-wider mb-1.5">Background Operation & Keep-Alive</h5>
+                    <p className="text-xs text-slate-400 leading-relaxed">
                       To comply with battery optimization settings, our app runs pings once every 60 seconds. This avoids continuous radio wake-ups, preserving battery life while ensuring that you receive real-time SMS requests instantly whenever you trigger reminders or billing alerts on the laptop.
                     </p>
                   </div>
@@ -4910,45 +5032,45 @@ export default function Dashboard() {
               )}
 
               {readmeSubTab === "Bulk Import Guide" && (
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
+                <div className="sbj-card p-6 md:p-8 space-y-6">
                   <div>
-                    <h4 className="font-bold text-base text-slate-800 mb-2">📂 Upload Template Details</h4>
-                    <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                    <h4 className="font-serif text-base font-bold text-slate-900 mb-2">Upload Template Details</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed mb-4">
                       When using the Bulk Import tool, you paste standard CSV rows. You can leave optional columns empty (e.g. `,,`), specify item quantities using `2x ItemName`, and log custom cleared dates!
                     </p>
 
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">CSV Headers Template</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CSV Headers Template</span>
                         <button 
                           onClick={() => {
                             navigator.clipboard.writeText("BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal,ClearedDate");
                             alert("Headers copied to clipboard!");
                           }}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"
+                          className="text-xs text-[#8C6404] hover:text-[#5C3F08] font-semibold flex items-center gap-1 bg-[#F4EFE6] px-2.5 py-1 rounded-lg border border-[#E7DCB9] cursor-pointer"
                         >
                           Copy Headers
                         </button>
                       </div>
-                      <code className="block bg-slate-800 text-slate-200 p-3 rounded font-mono text-xs font-bold select-all leading-normal break-all">
+                      <code className="block bg-[#0B1320] text-[#E5C378] p-3.5 rounded-xl font-technical text-xs font-medium select-all leading-normal break-all">
                         BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal,ClearedDate
                       </code>
                     </div>
 
-                    <div className="space-y-3 mt-4">
+                    <div className="space-y-2.5 mt-5">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Example Pasteable Data</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Example Pasteable Data</span>
                         <button 
                           onClick={() => {
                             navigator.clipboard.writeText(`101,Rajesh,9876543210,15000,1.5%,2025-01-10,2026-01-10,2x Gold Ring;1x Gold Chain,Cleared,2025-04-10,,,Chennai,,2025-04-10\n102,Karan,,8000,2.0%,2025-02-15,2026-02-15,1x Silver Plate,Pending,2025-02-15,,,Mandal-A,,`);
                             alert("Sample rows copied to clipboard!");
                           }}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded"
+                          className="text-xs text-[#8C6404] hover:text-[#5C3F08] font-semibold flex items-center gap-1 bg-[#F4EFE6] px-2.5 py-1 rounded-lg border border-[#E7DCB9] cursor-pointer"
                         >
                           Copy Sample Rows
                         </button>
                       </div>
-                      <code className="block bg-slate-800 text-slate-200 p-3 rounded font-mono text-xs font-bold select-all leading-relaxed whitespace-pre overflow-x-auto">
+                      <code className="block bg-[#0B1320] text-slate-200 p-3.5 rounded-xl font-technical text-xs font-medium select-all leading-relaxed whitespace-pre overflow-x-auto">
 {`101,Rajesh,9876543210,15000,1.5%,2025-01-10,2026-01-10,2x Gold Ring;1x Gold Chain,Cleared,2025-04-10,,,Chennai,,2025-04-10
 102,Karan,,8000,2.0%,2025-02-15,2026-02-15,1x Silver Plate,Pending,2025-02-15,,,Mandal-A,,`}
                       </code>
@@ -4958,27 +5080,27 @@ export default function Dashboard() {
               )}
 
               {readmeSubTab === "FAQs" && (
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
-                  <h4 className="font-bold text-base text-slate-800 mb-2">💬 Frequently Asked Questions</h4>
+                <div className="sbj-card p-6 md:p-8 space-y-4">
+                  <h4 className="font-serif text-base font-bold text-slate-900 mb-2">Frequently Asked Questions</h4>
                   
                   <div className="divide-y divide-slate-100">
-                    <div className="py-3">
-                      <h5 className="font-bold text-sm text-slate-800 mb-1">Q: How do I skip SMS for old customers who don't have phone numbers?</h5>
-                      <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                    <div className="py-3.5">
+                      <h5 className="font-semibold text-xs text-slate-900 mb-1">Q: How do I skip SMS for old customers who don't have phone numbers?</h5>
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         A: Simply leave the phone number blank or enter <code>-</code>. The backend automatically checks for this and skips queueing SMS messages for them.
                       </p>
                     </div>
 
-                    <div className="py-3">
-                      <h5 className="font-bold text-sm text-slate-800 mb-1">Q: What happens if I send a custom SMS to a number not saved in customers database?</h5>
-                      <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                    <div className="py-3.5">
+                      <h5 className="font-semibold text-xs text-slate-900 mb-1">Q: What happens if I send a custom SMS to a number not saved in customers database?</h5>
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         A: The system automatically registers and creates a profile for that customer in the database so you can track them in the future!
                       </p>
                     </div>
 
-                    <div className="py-3">
-                      <h5 className="font-bold text-sm text-slate-800 mb-1">Q: How do I change the system theme background?</h5>
-                      <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                    <div className="py-3.5">
+                      <h5 className="font-semibold text-xs text-slate-900 mb-1">Q: How do I change the system theme background?</h5>
+                      <p className="text-xs text-slate-500 leading-relaxed">
                         A: Go to <strong>Settings &rarr; Other Settings</strong> to toggle between Light and Pure Black theme modes instantly!
                       </p>
                     </div>
@@ -4990,22 +5112,24 @@ export default function Dashboard() {
 
           {/* LOAN REMINDERS TAB */}
           {activeTab === "loan-reminders" && (
-            <div className="space-y-4">
-              <button 
-                onClick={() => setActiveTab("loan-history")} 
-                className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-all"
-              >
-                ← BACK TO LOAN HISTORY
-              </button>
+            <div className="space-y-6">
+              <div className="mb-2">
+                <button 
+                  onClick={() => setActiveTab("loan-history")} 
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#B8860B] hover:text-[#8C6404] transition-all cursor-pointer"
+                >
+                  <span>&larr;</span> Back to Loan History
+                </button>
+              </div>
 
               {/* BULK BROADCAST REMINDER PANEL */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div className="sbj-card p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
                   <div>
-                    <h4 className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-                      <MessageSquare size={16} className="text-blue-600" /> Bulk Broadcast Reminder (One-Click SMS)
+                    <h4 className="font-serif text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                      <MessageSquare size={16} className="text-[#B8860B]" /> Bulk Broadcast Reminder (One-Click SMS)
                     </h4>
-                    <p className="text-[11px] text-slate-400 font-semibold mt-0.5">
+                    <p className="text-xs text-slate-400 mt-0.5">
                       Draft a message and send it to all customers with pending (due/overdue) loans in one click.
                     </p>
                   </div>
@@ -5016,7 +5140,7 @@ export default function Dashboard() {
                         const pendingWithPhones = remindersStatus.filter(r => r.daysLeft <= 0 && r.phone && r.phone !== "-");
                         setSelectedBulkReminderTxnIds(pendingWithPhones.map(r => r.loanId));
                       }}
-                      className="px-3 py-1.5 border border-blue-200 text-blue-700 hover:bg-blue-50 font-bold rounded-lg text-xs transition-all bg-white"
+                      className="px-3 py-1.5 border border-slate-200/90 text-slate-700 hover:bg-slate-50 font-semibold rounded-xl text-xs transition-all bg-white shadow-xs cursor-pointer"
                     >
                       Select All Pending Loans ({remindersStatus.filter(r => r.daysLeft <= 0 && r.phone && r.phone !== "-").length})
                     </button>
@@ -5024,7 +5148,7 @@ export default function Dashboard() {
                       <button 
                         type="button"
                         onClick={() => setSelectedBulkReminderTxnIds([])}
-                        className="px-3 py-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold rounded-lg text-xs transition-all bg-white"
+                        className="px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 font-semibold rounded-xl text-xs transition-all bg-white shadow-xs cursor-pointer"
                       >
                         Clear Selection
                       </button>
@@ -5032,31 +5156,31 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-xs font-bold text-slate-400 block">Edit SMS Message Template</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Edit SMS Message Template</label>
                     <textarea 
                       rows={3}
-                      className="w-full border border-slate-200 rounded-lg p-2.5 text-xs outline-none bg-white font-semibold text-slate-700 focus:border-blue-500 transition-colors"
+                      className="w-full border border-slate-200/90 rounded-xl p-3 text-xs outline-none bg-white font-medium text-slate-800 focus:border-[#C5A880] transition-colors"
                       value={bulkReminderMessage}
                       onChange={(e) => setBulkReminderMessage(e.target.value)}
                     />
-                    <div className="text-[10px] text-slate-400 font-semibold flex gap-3">
+                    <div className="text-[10px] text-slate-400 flex gap-3">
                       <span>Use <strong>{`{CustomerName}`}</strong> and <strong>{`{LoanId}`}</strong> as automatic placeholders.</span>
                     </div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex flex-col justify-between">
+                  <div className="bg-[#FAFBFD] rounded-2xl p-4 border border-slate-100 flex flex-col justify-between">
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Selected Recipients</span>
-                      <span className="text-xl font-extrabold text-blue-600">{selectedBulkReminderTxnIds.length} Customers</span>
+                      <span className="text-xl font-bold font-serif text-slate-900">{selectedBulkReminderTxnIds.length} Customers</span>
                       {selectedBulkReminderTxnIds.length > 0 && (
-                        <div className="max-h-20 overflow-y-auto text-[10px] text-slate-500 font-semibold space-y-0.5 mt-2 bg-white p-1.5 rounded border border-slate-200">
+                        <div className="max-h-20 overflow-y-auto text-[10px] text-slate-500 font-medium space-y-0.5 mt-2 bg-white p-2 rounded-xl border border-slate-200/80">
                           {selectedBulkReminderTxnIds.map(txnId => {
                             const r = remindersStatus.find(rem => rem.loanId === txnId);
                             return r ? (
                               <div key={txnId} className="flex justify-between">
-                                <span>{r.customerName}</span>
-                                <span className="text-slate-400">{r.phone}</span>
+                                <span className="text-slate-800 font-semibold">{r.customerName}</span>
+                                <span className="text-slate-400 font-technical">{r.phone}</span>
                               </div>
                             ) : null;
                           })}
@@ -5067,139 +5191,139 @@ export default function Dashboard() {
                       type="button"
                       disabled={selectedBulkReminderTxnIds.length === 0}
                       onClick={handleSendBulkReminders}
-                      className="w-full mt-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                      className="w-full mt-3 bg-[#0B1320] hover:bg-[#152238] disabled:bg-slate-100 disabled:text-slate-400 text-white font-semibold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                     >
-                      <Send size={12} /> Send Bulk Reminders
+                      <Send size={12} className="text-[#E5C378]" /> Send Bulk Reminders
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-6">
-              <div className="flex justify-between items-center gap-4 border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="font-bold text-lg text-slate-800">Automated Loan Reminders</h3>
-                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Automated SMS warnings are sent in Telugu at 30 days left and 7 days left before maturity.</p>
+              <div className="sbj-card p-6 md:p-8 space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-100">
+                  <div>
+                    <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">Automated Loan Reminders</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">Automated SMS warnings are sent in Telugu at 30 days left and 7 days left before maturity.</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      fetch("/api/v1/loans/trigger-reminders", { method: "POST" })
+                        .then(res => res.json())
+                        .then(data => {
+                          alert(`Reminder check completed! Sent ${data.count} reminders successfully.`);
+                          refreshData();
+                        });
+                    }}
+                    className="bg-[#0B1320] hover:bg-[#152238] text-white font-semibold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    <Bell size={14} className="text-[#E5C378]" /> Scan & Send Reminders
+                  </button>
                 </div>
-                <button 
-                  onClick={() => {
-                    fetch("/api/v1/loans/trigger-reminders", { method: "POST" })
-                      .then(res => res.json())
-                      .then(data => {
-                        alert(`Reminder check completed! Sent ${data.count} reminders successfully.`);
-                        refreshData();
-                      });
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm"
-                >
-                  <Bell size={14} /> Scan & Send Reminders
-                </button>
-              </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm divide-y divide-slate-100">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-slate-500 font-bold">
-                      <th className="pb-3 text-xs uppercase tracking-wider">Loan ID</th>
-                      <th className="pb-3 text-xs uppercase tracking-wider">Customer Name</th>
-                      <th className="pb-3 text-xs uppercase tracking-wider">Phone</th>
-                      <th className="pb-3 text-xs uppercase tracking-wider">Amount</th>
-                      <th className="pb-3 text-xs uppercase tracking-wider">Release Date</th>
-                      <th className="pb-3 text-xs uppercase tracking-wider">Days Left</th>
-                      <th className="pb-3 text-xs uppercase tracking-wider text-center">30-Day Reminder</th>
-                      <th className="pb-3 text-xs uppercase tracking-wider text-center">7-Day Reminder</th>
-                      <th className="pb-3 text-xs uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                    {remindersStatus.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="py-6 text-center text-slate-400 text-xs font-semibold">
-                          No active loans found.
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="pb-3 pr-3 font-semibold">LOAN ID</th>
+                        <th className="pb-3 pr-3 font-semibold">CUSTOMER NAME</th>
+                        <th className="pb-3 pr-3 font-semibold">PHONE</th>
+                        <th className="pb-3 pr-3 font-semibold">AMOUNT</th>
+                        <th className="pb-3 pr-3 font-semibold">RELEASE DATE</th>
+                        <th className="pb-3 pr-3 font-semibold">DAYS LEFT</th>
+                        <th className="pb-3 pr-3 font-semibold text-center">30-DAY REMINDER</th>
+                        <th className="pb-3 pr-3 font-semibold text-center">7-DAY REMINDER</th>
+                        <th className="pb-3 font-semibold text-right">ACTIONS</th>
                       </tr>
-                    ) : (
-                      remindersStatus.map((r, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="py-3.5 text-blue-600">#{formatBillNoForDisplay(r.loanId)}</td>
-                          <td className="py-3.5 text-slate-800">{r.customerName}</td>
-                          <td className="py-3.5 text-slate-500 text-xs">{r.phone}</td>
-                          <td className="py-3.5">₹{r.amount.toLocaleString('en-IN')}</td>
-                          <td className="py-3.5 text-xs">{formatDateToDDMMYYYY(r.endDate)}</td>
-                          <td className="py-3.5">
-                            {r.daysLeft <= 0 ? (
-                              <span className="bg-rose-100 text-rose-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
-                                Overdue ({Math.abs(r.daysLeft)}d ago)
-                              </span>
-                            ) : r.daysLeft <= 30 ? (
-                              <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
-                                {r.daysLeft} days left
-                              </span>
-                            ) : (
-                              <span className="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
-                                {r.daysLeft} days left
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 text-center">
-                            {r.sent30Day ? (
-                              <span className="text-emerald-600 text-xs bg-emerald-50 px-2 py-0.5 border border-emerald-200 rounded-full">Sent</span>
-                            ) : (
-                              <span className="text-slate-400 text-xs bg-slate-50 px-2 py-0.5 border border-slate-200 rounded-full">Not Sent</span>
-                            )}
-                          </td>
-                          <td className="py-3.5 text-center">
-                            {r.sent7Day ? (
-                              <span className="text-emerald-600 text-xs bg-emerald-50 px-2 py-0.5 border border-emerald-200 rounded-full">Sent</span>
-                            ) : (
-                              <span className="text-slate-400 text-xs bg-slate-50 px-2 py-0.5 border border-slate-200 rounded-full">Not Sent</span>
-                            )}
-                          </td>
-                          <td className="py-3.5">
-                            <button
-                              onClick={() => {
-                                const tplName = r.daysLeft <= 7 ? "Loan Warning (7 Days)" : "Loan Warning (30 Days)";
-                                const tpl = smsTemplates.find(t => t.name === tplName);
-                                const defaultMsg = tplName === "Loan Warning (7 Days)"
-                                  ? `ప్రియమైన ${r.customerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ గడువు ముగియడానికి ఇంకా 7 రోజులు మాత్రమే మిగిలి ఉంది (లోన్ నంబర్: ${r.loanId}). త్వరగా చెల్లించవలసిందిగా కోరుతున్నాము, లేనిచో అదనపు వడ్డీ వసూలు చేయబడుతుంది.`
-                                  : `ప్రియమైన ${r.customerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ గడువు ముగియడానికి ఇంకా 30 రోజులు మాత్రమే మిగిలి ఉంది (లోన్ నంబర్: ${r.loanId}). దయచేసి గమనించగలరు.`;
-                                const fallbackMessage = tpl 
-                                  ? tpl.content
-                                      .replace("{CustomerName}", r.customerName)
-                                      .replace("{InvoiceNumber}", r.loanId)
-                                  : defaultMsg;
-                                const msg = prompt(
-                                  "Enter Telugu reminder custom message or click OK to send standard warning Telugu SMS:",
-                                  fallbackMessage
-                                );
-                                if (msg === null) return;
-                                
-                                fetch("/api/v1/sms/send", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    id: "SMS-" + Date.now(),
-                                    customerId: r.customerId,
-                                    phone: r.phone,
-                                    message: msg,
-                                    priority: 1
-                                  })
-                                }).then(() => {
-                                  alert("Telugu SMS Reminder queued successfully!");
-                                  refreshData();
-                                });
-                              }}
-                              className="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded px-2.5 py-1 text-slate-700"
-                            >
-                              Send SMS Now
-                            </button>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 font-normal">
+                      {remindersStatus.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} className="py-8 text-center text-slate-400 text-xs font-semibold">
+                            No active loans found.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ) : (
+                        remindersStatus.map((r, idx) => (
+                          <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
+                            <td className="py-3.5 pr-3 text-[#B8860B] font-semibold font-technical">#{formatBillNoForDisplay(r.loanId)}</td>
+                            <td className="py-3.5 pr-3 text-slate-900 font-semibold">{r.customerName}</td>
+                            <td className="py-3.5 pr-3 text-slate-600 font-technical">{r.phone}</td>
+                            <td className="py-3.5 pr-3 font-bold text-slate-900">₹{r.amount.toLocaleString('en-IN')}</td>
+                            <td className="py-3.5 pr-3 text-slate-600">{formatDateToDDMMYYYY(r.endDate)}</td>
+                            <td className="py-3.5 pr-3">
+                              {r.daysLeft <= 0 ? (
+                                <span className="bg-[#FDF2F2] text-[#E11D48] border border-[#FDE2E2] text-[10px] px-2 py-0.5 rounded font-bold uppercase">
+                                  Overdue ({Math.abs(r.daysLeft)}d ago)
+                                </span>
+                              ) : r.daysLeft <= 30 ? (
+                                <span className="bg-[#FEFCE8] text-[#854D0E] border border-[#FEF08A] text-[10px] px-2 py-0.5 rounded font-bold uppercase">
+                                  {r.daysLeft} days left
+                                </span>
+                              ) : (
+                                <span className="bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7] text-[10px] px-2 py-0.5 rounded font-bold uppercase">
+                                  {r.daysLeft} days left
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 pr-3 text-center">
+                              {r.sent30Day ? (
+                                <span className="text-[#15803D] text-[10px] bg-[#EDFDF2] px-2 py-0.5 border border-[#DCFCE7] rounded font-bold uppercase">Sent</span>
+                              ) : (
+                                <span className="text-slate-400 text-[10px] bg-slate-100 px-2 py-0.5 rounded font-semibold uppercase">Not Sent</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 pr-3 text-center">
+                              {r.sent7Day ? (
+                                <span className="text-[#15803D] text-[10px] bg-[#EDFDF2] px-2 py-0.5 border border-[#DCFCE7] rounded font-bold uppercase">Sent</span>
+                              ) : (
+                                <span className="text-slate-400 text-[10px] bg-slate-100 px-2 py-0.5 rounded font-semibold uppercase">Not Sent</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 text-right">
+                              <button
+                                onClick={() => {
+                                  const tplName = r.daysLeft <= 7 ? "Loan Warning (7 Days)" : "Loan Warning (30 Days)";
+                                  const tpl = smsTemplates.find(t => t.name === tplName);
+                                  const defaultMsg = tplName === "Loan Warning (7 Days)"
+                                    ? `ప్రియమైన ${r.customerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ గడువు ముగియడానికి ఇంకా 7 రోజులు మాత్రమే మిగిలి ఉంది (లోన్ నంబర్: ${r.loanId}). త్వరగా చెల్లించవలసిందిగా కోరుతున్నాము, లేనిచో అదనపు వడ్డీ వసూలు చేయబడుతుంది.`
+                                    : `ప్రియమైన ${r.customerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ గడువు ముగియడానికి ఇంకా 30 రోజులు మాత్రమే మిగిలి ఉంది (లోన్ నంబర్: ${r.loanId}). దయచేసి గమనించగలరు.`;
+                                  const fallbackMessage = tpl 
+                                    ? tpl.content
+                                        .replace("{CustomerName}", r.customerName)
+                                        .replace("{InvoiceNumber}", r.loanId)
+                                    : defaultMsg;
+                                  const msg = prompt(
+                                    "Enter Telugu reminder custom message or click OK to send standard warning Telugu SMS:",
+                                    fallbackMessage
+                                  );
+                                  if (msg === null) return;
+                                  
+                                  fetch("/api/v1/sms/send", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      id: "SMS-" + Date.now(),
+                                      customerId: r.customerId,
+                                      phone: r.phone,
+                                      message: msg,
+                                      priority: 1
+                                    })
+                                  }).then(() => {
+                                    alert("Telugu SMS Reminder queued successfully!");
+                                    refreshData();
+                                  });
+                                }}
+                                className="text-xs bg-white hover:bg-slate-50 border border-slate-200/90 rounded-lg px-2.5 py-1 text-slate-700 font-semibold shadow-xs"
+                              >
+                                Send SMS
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -5210,13 +5334,13 @@ export default function Dashboard() {
       {/* LOAN SUMMARY DETAILS MODAL */}
       {selectedLoanTxn && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-xl p-4 sm:p-6 flex flex-col justify-between max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-xl p-5 sm:p-7 flex flex-col justify-between max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
             <div>
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-3 sm:mb-4">
-                <div className="flex items-center gap-1.5 sm:gap-2.5">
-                  <h3 className="font-bold text-base sm:text-lg text-slate-800">Loan Summary</h3>
+              <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif font-bold text-lg text-slate-900">Loan Summary</h3>
                   {currentModalLoanIndex >= 0 && (
-                    <span className="text-[10px] sm:text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                    <span className="text-[10px] font-bold text-[#8C6404] bg-[#F4EFE6] px-2 py-0.5 rounded-full border border-[#E7DCB9]">
                       {currentModalLoanIndex + 1}/{activeLoanList.length}
                     </span>
                   )}
@@ -5227,106 +5351,108 @@ export default function Dashboard() {
                     disabled={!hasPrevModalLoan}
                     onClick={handlePrevModalLoan}
                     title="Previous Loan (Left Arrow Key)"
-                    className="px-2 py-1 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 font-bold flex items-center gap-1 text-[11px] sm:text-xs cursor-pointer"
+                    className="px-2.5 py-1 border border-slate-200/90 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 font-semibold flex items-center gap-1 text-xs cursor-pointer shadow-xs"
                   >
-                    <ChevronLeft size={14} /> Prev
+                    <ChevronLeft size={13} /> Prev
                   </button>
                   <button 
                     type="button"
                     disabled={!hasNextModalLoan}
                     onClick={handleNextModalLoan}
                     title="Next Loan (Right Arrow Key)"
-                    className="px-2 py-1 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 font-bold flex items-center gap-1 text-[11px] sm:text-xs cursor-pointer"
+                    className="px-2.5 py-1 border border-slate-200/90 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-30 font-semibold flex items-center gap-1 text-xs cursor-pointer shadow-xs"
                   >
-                    Next <ChevronRight size={14} />
+                    Next <ChevronRight size={13} />
                   </button>
-                  <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-600 ml-0.5 p-1"><X size={18} /></button>
+                  <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-700 ml-1 p-1 cursor-pointer"><X size={18} /></button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs font-semibold text-slate-600 mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-slate-100 divide-y divide-slate-50 sm:divide-y-0">
-                <div><strong>Bill No:</strong> <span className="text-blue-600 font-bold ml-1">#{formatBillNoForDisplay(selectedLoanTxn.id)}</span></div>
-                <div className="pt-1 sm:pt-0"><strong>Date:</strong> {formatDateToDDMMYYYY(selectedLoanTxn.date)}</div>
-                <div className="pt-1 sm:pt-2"><strong>Pledger Name:</strong> <span className="text-slate-900 font-bold">{customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</span></div>
-                <div className="pt-1 sm:pt-2"><strong>Father's Name:</strong> {selectedLoanTxn.loanDetails?.father || "-"}</div>
-                <div className="pt-1 sm:pt-2"><strong>ID Proof:</strong> {selectedLoanTxn.loanDetails?.idProof || "-"}</div>
-                <div className="pt-1 sm:pt-2"><strong>Phone No:</strong> {customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</div>
-                <div className="pt-1 sm:pt-2"><strong>Address:</strong> {selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}</div>
-                <div className="pt-1 sm:pt-2"><strong>Mandal:</strong> {selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50 sm:divide-y-0">
+                <div><span className="text-slate-400 font-medium">Bill No:</span> <span className="text-[#B8860B] font-bold ml-1">#{formatBillNoForDisplay(selectedLoanTxn.id)}</span></div>
+                <div className="pt-1 sm:pt-0"><span className="text-slate-400 font-medium">Date:</span> <span className="font-semibold text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.date)}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Pledger Name:</span> <span className="text-slate-900 font-bold ml-1">{customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Father's Name:</span> <span className="font-semibold text-slate-800 ml-1">{selectedLoanTxn.loanDetails?.father || "-"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">ID Proof:</span> <span className="font-technical text-slate-700 ml-1">{selectedLoanTxn.loanDetails?.idProof || "-"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Phone No:</span> <span className="font-technical text-slate-700 ml-1">{customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Address:</span> <span className="font-semibold text-slate-800 ml-1">{selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Mandal:</span> <span className="font-semibold text-slate-800 ml-1">{selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</span></div>
               </div>
 
-              <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Pledged Items</h4>
-              <table className="w-full text-left text-xs divide-y divide-slate-100 mb-4 border border-slate-100 rounded-lg">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-400 font-bold">
-                    <th className="p-2">Qty</th>
-                    <th className="p-2">Item Name</th>
-                    <th className="p-2">Yield</th>
-                    <th className="p-2">Gross</th>
-                    <th className="p-2">Net</th>
-                    <th className="p-2">Worth</th>
-                    <th className="p-2">Remarks</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 font-semibold">
-                  {selectedLoanTxn.loanDetails?.items?.map((item: any, idx: number) => {
-                    const isMulti = (selectedLoanTxn.loanDetails?.items?.length || 0) > 1;
-                    return (
-                      <tr key={idx}>
-                        <td className="p-2">{item.qty}</td>
-                        <td className="p-2">{item.name}</td>
-                        <td className="p-2">{isMulti ? "-" : (item.yield || "-")}</td>
-                        <td className="p-2">{isMulti ? "-" : (item.grossWeight ? item.grossWeight + "g" : "-")}</td>
-                        <td className="p-2">{isMulti ? "-" : (item.netWeight ? item.netWeight + "g" : "-")}</td>
-                        <td className="p-2">{isMulti ? "-" : (item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-")}</td>
-                        <td className="p-2 text-slate-500 font-medium">{item.remarks || "-"}</td>
-                      </tr>
-                    );
-                  })}
-                  {/* Total summary row if multiple items */}
-                  {((selectedLoanTxn.loanDetails?.items?.length || 0) > 1) && (() => {
-                    const firstItem = selectedLoanTxn.loanDetails?.items?.[0];
-                    const totalQty = selectedLoanTxn.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 0;
-                    return (
-                      <tr className="bg-slate-50/80 font-bold border-t border-slate-200 text-slate-800">
-                        <td className="p-2">{totalQty}</td>
-                        <td className="p-2 text-slate-500">Total (Combined)</td>
-                        <td className="p-2">{firstItem?.yield || "-"}</td>
-                        <td className="p-2 text-slate-900">{firstItem?.grossWeight ? firstItem.grossWeight + "g" : "-"}</td>
-                        <td className="p-2 text-slate-900">{firstItem?.netWeight ? firstItem.netWeight + "g" : "-"}</td>
-                        <td className="p-2 text-slate-900">{firstItem?.value ? "₹" + Number(firstItem.value).toLocaleString('en-IN') : "-"}</td>
-                        <td className="p-2">-</td>
-                      </tr>
-                    );
-                  })()}
-                </tbody>
-              </table>
+              <h4 className="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-2">Pledged Items</h4>
+              <div className="overflow-x-auto mb-4">
+                <table className="w-full text-left text-xs divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                  <thead>
+                    <tr className="bg-[#FAFBFD] text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                      <th className="p-2.5">Qty</th>
+                      <th className="p-2.5">Item Name</th>
+                      <th className="p-2.5">Yield</th>
+                      <th className="p-2.5">Gross</th>
+                      <th className="p-2.5">Net</th>
+                      <th className="p-2.5">Worth</th>
+                      <th className="p-2.5">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 font-medium">
+                    {selectedLoanTxn.loanDetails?.items?.map((item: any, idx: number) => {
+                      const isMulti = (selectedLoanTxn.loanDetails?.items?.length || 0) > 1;
+                      return (
+                        <tr key={idx} className="hover:bg-[#FAFBFD]">
+                          <td className="p-2.5">{item.qty}</td>
+                          <td className="p-2.5 font-semibold text-slate-900">{item.name}</td>
+                          <td className="p-2.5 text-slate-600">{isMulti ? "-" : (item.yield || "-")}</td>
+                          <td className="p-2.5 text-slate-600">{isMulti ? "-" : (item.grossWeight ? item.grossWeight + "g" : "-")}</td>
+                          <td className="p-2.5 text-slate-600">{isMulti ? "-" : (item.netWeight ? item.netWeight + "g" : "-")}</td>
+                          <td className="p-2.5 text-slate-900 font-semibold">{isMulti ? "-" : (item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-")}</td>
+                          <td className="p-2.5 text-slate-500 font-normal">{item.remarks || "-"}</td>
+                        </tr>
+                      );
+                    })}
+                    {/* Total summary row if multiple items */}
+                    {((selectedLoanTxn.loanDetails?.items?.length || 0) > 1) && (() => {
+                      const firstItem = selectedLoanTxn.loanDetails?.items?.[0];
+                      const totalQty = selectedLoanTxn.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 0;
+                      return (
+                        <tr className="bg-[#FAFBFD] font-bold border-t border-slate-200 text-slate-800">
+                          <td className="p-2.5">{totalQty}</td>
+                          <td className="p-2.5 text-slate-500">Total (Combined)</td>
+                          <td className="p-2.5">{firstItem?.yield || "-"}</td>
+                          <td className="p-2.5 text-slate-900">{firstItem?.grossWeight ? firstItem.grossWeight + "g" : "-"}</td>
+                          <td className="p-2.5 text-slate-900">{firstItem?.netWeight ? firstItem.netWeight + "g" : "-"}</td>
+                          <td className="p-2.5 text-slate-900">{firstItem?.value ? "₹" + Number(firstItem.value).toLocaleString('en-IN') : "-"}</td>
+                          <td className="p-2.5">-</td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
 
-              <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mb-4">
-                <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3">Financial Details</h4>
-                <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600 mb-4">
-                  <div>Interest Rate: <strong className="text-slate-800">{selectedLoanTxn.loanDetails?.interestRate} per month</strong></div>
-                  <div>Interest Generated: <strong className="text-rose-600">₹{getLoanInterest(selectedLoanTxn).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
-                  <div>Taken Date: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}</strong></div>
-                  <div>Period End: <strong className="text-slate-800">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.endDate)}</strong></div>
+              <div className="bg-[#FAFBFD] border border-slate-100 rounded-2xl p-4 sm:p-5 mb-4">
+                <h4 className="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-3">Financial Details</h4>
+                <div className="grid grid-cols-2 gap-3 text-xs text-slate-600 mb-4">
+                  <div>Interest Rate: <strong className="text-slate-900">{selectedLoanTxn.loanDetails?.interestRate} per month</strong></div>
+                  <div>Interest Generated: <strong className="text-[#E11D48]">₹{getLoanInterest(selectedLoanTxn).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
+                  <div>Taken Date: <strong className="text-slate-900">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.takenDate || selectedLoanTxn.date)}</strong></div>
+                  <div>Period End: <strong className="text-slate-900">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails?.endDate)}</strong></div>
                   
                   {selectedLoanTxn.status === "Cleared" && (
-                    <div className="col-span-2 text-slate-600 bg-emerald-50 border border-emerald-100 p-1.5 rounded font-bold">
-                      Cleared On: <span className="font-technical text-emerald-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || selectedLoanTxn.date)}</span>
+                    <div className="col-span-2 text-slate-700 bg-[#EDFDF2] border border-[#DCFCE7] p-2 rounded-xl font-bold">
+                      Cleared On: <span className="font-technical text-[#15803D] ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || selectedLoanTxn.date)}</span>
                     </div>
                   )}
 
                   {selectedLoanTxn.loanDetails?.interestPaidUpto && 
                    selectedLoanTxn.loanDetails.interestPaidUpto !== (selectedLoanTxn.loanDetails.takenDate || selectedLoanTxn.date) && (
-                    <div className="col-span-2 text-slate-600 bg-slate-100 p-1.5 rounded font-bold">
-                      Last Cleared Upto: <span className="font-technical text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
+                    <div className="col-span-2 text-slate-700 bg-slate-100 p-2 rounded-xl font-bold">
+                      Last Cleared Upto: <span className="font-technical text-slate-900 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.loanDetails.interestPaidUpto)}</span>
                     </div>
                   )}
 
                   {selectedLoanTxn.loanDetails?.note && (
-                    <div className="col-span-2 bg-rose-50 border-2 border-rose-400 text-rose-900 p-3 rounded-lg text-xs font-bold shadow-xs">
+                    <div className="col-span-2 bg-rose-50 border border-rose-200 text-rose-900 p-3 rounded-xl text-xs shadow-xs">
                       <div className="flex items-center gap-1.5 mb-1">
-                        <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] uppercase font-extrabold tracking-wider">
-                          ⚠️ SPECIAL NOTE
+                        <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                          Special Note
                         </span>
                       </div>
                       <p className="font-semibold text-rose-900">{selectedLoanTxn.loanDetails.note}</p>
@@ -5337,11 +5463,11 @@ export default function Dashboard() {
                 <div className="border-t border-slate-200/60 pt-3 flex justify-between items-center">
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Principal Amount</span>
-                    <span className="text-lg font-extrabold text-slate-800">₹{selectedLoanTxn.amount.toLocaleString('en-IN')}</span>
+                    <span className="text-lg font-bold text-slate-900">₹{selectedLoanTxn.amount.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-blue-400 uppercase tracking-wider block font-bold">Total Due</span>
-                    <span className="text-lg font-extrabold text-blue-600">
+                    <span className="text-[10px] text-[#B8860B] uppercase tracking-wider block font-bold">Total Due</span>
+                    <span className="text-lg font-bold text-slate-900">
                       {selectedLoanTxn.status === "Cleared" 
                         ? "₹0 (Cleared)" 
                         : `₹${(selectedLoanTxn.amount + getLoanInterest(selectedLoanTxn)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`}
@@ -5353,22 +5479,22 @@ export default function Dashboard() {
               {/* Top-up History Ledger */}
               {selectedLoanTxn.loanDetails?.topups?.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Principal Adjustments (Top-up / Repayment) History</h4>
-                  <div className="max-h-24 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
+                  <h4 className="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-2">Principal Adjustments Ledger</h4>
+                  <div className="max-h-24 overflow-y-auto border border-slate-200/80 rounded-xl shadow-xs">
                     <table className="w-full text-left text-[10px] divide-y divide-slate-100">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-400 font-bold">
+                        <tr className="bg-[#FAFBFD] text-slate-400 font-bold uppercase tracking-wider">
                           <th className="p-2">Date</th>
-                          <th className="p-2">Adjustment Amount</th>
+                          <th className="p-2">Adjustment</th>
                           <th className="p-2">Principal Shift</th>
                           <th className="p-2">Remarks</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
+                      <tbody className="divide-y divide-slate-50 font-medium text-slate-600 bg-white">
                         {selectedLoanTxn.loanDetails.topups.map((top: any, tIdx: number) => {
                           const isRepay = top.extraAmount < 0 || top.type === "repayment";
                           const displayAmt = isRepay ? `-₹${Math.abs(top.extraAmount).toLocaleString('en-IN')}` : `+₹${top.extraAmount.toLocaleString('en-IN')}`;
-                          const colorClass = isRepay ? "text-emerald-600 font-bold" : "text-blue-600";
+                          const colorClass = isRepay ? "text-[#15803D] font-bold" : "text-[#B8860B] font-bold";
                           return (
                             <tr key={tIdx} className="hover:bg-slate-50/50">
                               <td className="p-2 font-technical">{formatDateToDDMMYYYY(top.date)}</td>
@@ -5386,7 +5512,7 @@ export default function Dashboard() {
 
               {/* Extra Principal Additions (Top-up) Panel */}
               {selectedLoanTxn.status !== "Cleared" && (
-                <div className="mb-4 bg-blue-50/30 border border-blue-100 rounded-lg p-3">
+                <div className="mb-4 bg-[#FAFBFD] border border-slate-200/80 rounded-xl p-3">
                   {!showTopUpForm ? (
                     <button 
                       type="button" 
@@ -5394,14 +5520,14 @@ export default function Dashboard() {
                         setShowTopUpForm(true);
                         setTopUpDate(new Date().toISOString().split('T')[0]);
                       }}
-                      className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      className="text-xs font-semibold text-[#0B1320] hover:text-[#B8860B] flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <PlusCircle size={14} /> Take Extra Money (Principal Top-up)
+                      <span className="text-[#B8860B] font-bold">+</span> Take Extra Money (Principal Top-up)
                     </button>
                   ) : (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-700">Add Extra Money</span>
+                        <span className="text-xs font-bold text-slate-800">Add Extra Money</span>
                         <button type="button" onClick={() => setShowTopUpForm(false)} className="text-slate-400 hover:text-slate-600 text-xs">Cancel</button>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
@@ -5410,7 +5536,7 @@ export default function Dashboard() {
                           <input 
                             type="number" 
                             placeholder="e.g. 1000"
-                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            className="w-full border border-slate-200 rounded-xl p-2 font-semibold bg-white outline-none focus:border-[#C5A880]"
                             value={topUpAmount}
                             onChange={(e) => setTopUpAmount(e.target.value)}
                           />
@@ -5419,7 +5545,7 @@ export default function Dashboard() {
                           <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Taken Date</label>
                           <input 
                             type="date" 
-                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            className="w-full border border-slate-200 rounded-xl p-2 font-semibold bg-white outline-none focus:border-[#C5A880]"
                             value={topUpDate}
                             onChange={(e) => setTopUpDate(e.target.value)}
                           />
@@ -5429,7 +5555,7 @@ export default function Dashboard() {
                           <input 
                             type="text" 
                             placeholder="Remarks..."
-                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            className="w-full border border-slate-200 rounded-xl p-2 font-semibold bg-white outline-none focus:border-[#C5A880]"
                             value={topUpRemarks}
                             onChange={(e) => setTopUpRemarks(e.target.value)}
                           />
@@ -5439,14 +5565,14 @@ export default function Dashboard() {
                         <button 
                           type="button" 
                           onClick={() => setShowTopUpForm(false)}
-                          className="px-2.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white"
+                          className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 bg-white"
                         >
                           Cancel
                         </button>
                         <button 
                           type="button" 
                           onClick={handleSaveTopUp}
-                          className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-bold"
+                          className="px-3 py-1.5 bg-[#0B1320] hover:bg-[#152238] text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer"
                         >
                           Save Top-up
                         </button>
@@ -5458,7 +5584,7 @@ export default function Dashboard() {
 
               {/* Principal Repayment Panel */}
               {selectedLoanTxn.status !== "Cleared" && (
-                <div className="mb-4 bg-emerald-50/30 border border-emerald-100 rounded-lg p-3">
+                <div className="mb-4 bg-[#EDFDF2]/40 border border-[#DCFCE7] rounded-xl p-3">
                   {!showRepaymentForm ? (
                     <button 
                       type="button" 
@@ -5466,14 +5592,14 @@ export default function Dashboard() {
                         setShowRepaymentForm(true);
                         setRepaymentDate(new Date().toISOString().split('T')[0]);
                       }}
-                      className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+                      className="text-xs font-semibold text-[#15803D] hover:text-[#166534] flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
-                      <PlusCircle size={14} className="text-emerald-600" /> Pay/Reduce Principal Amount (Part Payment)
+                      <span className="font-bold">+</span> Pay/Reduce Principal Amount (Part Payment)
                     </button>
                   ) : (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-700">Pay Principal Amount</span>
+                        <span className="text-xs font-bold text-slate-800">Pay Principal Amount</span>
                         <button type="button" onClick={() => setShowRepaymentForm(false)} className="text-slate-400 hover:text-slate-600 text-xs">Cancel</button>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
@@ -5482,7 +5608,7 @@ export default function Dashboard() {
                           <input 
                             type="number" 
                             placeholder="e.g. 2000"
-                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            className="w-full border border-slate-200 rounded-xl p-2 font-semibold bg-white outline-none focus:border-[#C5A880]"
                             value={repaymentAmount}
                             onChange={(e) => setRepaymentAmount(e.target.value)}
                           />
@@ -5491,7 +5617,7 @@ export default function Dashboard() {
                           <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Date</label>
                           <input 
                             type="date" 
-                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            className="w-full border border-slate-200 rounded-xl p-2 font-semibold bg-white outline-none focus:border-[#C5A880]"
                             value={repaymentDate}
                             onChange={(e) => setRepaymentDate(e.target.value)}
                           />
@@ -5501,7 +5627,7 @@ export default function Dashboard() {
                           <input 
                             type="text" 
                             placeholder="Remarks..."
-                            className="w-full border border-slate-200 rounded p-1.5 font-semibold bg-white"
+                            className="w-full border border-slate-200 rounded-xl p-2 font-semibold bg-white outline-none focus:border-[#C5A880]"
                             value={repaymentRemarks}
                             onChange={(e) => setRepaymentRemarks(e.target.value)}
                           />
@@ -5511,14 +5637,14 @@ export default function Dashboard() {
                         <button 
                           type="button" 
                           onClick={() => setShowRepaymentForm(false)}
-                          className="px-2.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white"
+                          className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 bg-white"
                         >
                           Cancel
                         </button>
                         <button 
                           type="button" 
                           onClick={handleSaveRepayment}
-                          className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold"
+                          className="px-3 py-1.5 bg-[#15803D] hover:bg-[#166534] text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer"
                         >
                           Save Repayment
                         </button>
@@ -5531,23 +5657,23 @@ export default function Dashboard() {
               {/* Interest Payment History Ledger */}
               {selectedLoanTxn.loanDetails?.interestPayments?.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">Interest Payment History</h4>
-                  <div className="max-h-28 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
+                  <h4 className="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-2">Interest Payment History</h4>
+                  <div className="max-h-28 overflow-y-auto border border-slate-200/80 rounded-xl shadow-xs">
                     <table className="w-full text-left text-[10px] divide-y divide-slate-100">
                       <thead>
-                        <tr className="bg-slate-50 text-slate-400 font-bold">
+                        <tr className="bg-[#FAFBFD] text-slate-400 font-bold uppercase tracking-wider">
                           <th className="p-2">Paid Date</th>
                           <th className="p-2">Upto Date</th>
                           <th className="p-2">Amount Paid</th>
                           <th className="p-2">Remarks</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-600 bg-white">
+                      <tbody className="divide-y divide-slate-50 font-medium text-slate-600 bg-white">
                         {selectedLoanTxn.loanDetails.interestPayments.map((pay: any, pIdx: number) => (
                           <tr key={pIdx} className="hover:bg-slate-50/50">
                             <td className="p-2 font-technical">{formatDateToDDMMYYYY(pay.date)}</td>
                             <td className="p-2 font-technical">{formatDateToDDMMYYYY(pay.paidUpto)}</td>
-                            <td className="p-2 font-technical text-emerald-600">₹{pay.amountPaid.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                            <td className="p-2 font-technical text-[#15803D] font-bold">₹{pay.amountPaid.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                             <td className="p-2 text-slate-500">{pay.remarks}</td>
                           </tr>
                         ))}
@@ -5559,24 +5685,23 @@ export default function Dashboard() {
 
               {/* Record Interest Payment Section */}
               {selectedLoanTxn.status !== "Cleared" && (
-                <div className="border border-blue-100 rounded-lg p-3 bg-blue-50/30 mb-4">
-                  <h5 className="font-bold text-xs text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    Clear Interest Till Date
+                <div className="border border-slate-200/80 rounded-2xl p-4 bg-[#FAFBFD] mb-4">
+                  <h5 className="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <CheckCircle size={14} className="text-[#15803D]" /> Clear Interest Till Date
                   </h5>
-                  <div className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <label className="text-[9px] font-bold text-slate-500 block mb-1">Paid Upto Date</label>
+                  <div className="flex flex-col sm:flex-row gap-3 items-end">
+                    <div className="flex-1 w-full">
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Paid Upto Date</label>
                       <input 
                         type="date" 
-                        className="w-full border border-slate-200 rounded-lg p-1.5 text-xs outline-none bg-white font-semibold"
+                        className="w-full border border-slate-200 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={interestPaidUptoDate}
                         onChange={(e) => setInterestPaidUptoDate(e.target.value)}
                       />
                     </div>
-                    <div className="flex-1">
-                      <label className="text-[9px] font-bold text-slate-500 block mb-1">Calculated Interest</label>
-                      <div className="p-1.5 text-xs font-bold font-technical text-rose-600 bg-white border border-slate-200 rounded-lg">
+                    <div className="flex-1 w-full">
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Calculated Interest</label>
+                      <div className="p-2 text-xs font-bold font-technical text-[#E11D48] bg-white border border-slate-200 rounded-xl">
                         ₹{calculateInterestForRange(
                           selectedLoanTxn.amount,
                           parseFloat(selectedLoanTxn.loanDetails?.interestRate) || 0,
@@ -5587,11 +5712,11 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2.5 flex gap-2">
                     <input 
                       type="text" 
                       placeholder="Remarks (e.g. Paid cash)..."
-                      className="flex-1 border border-slate-200 rounded-lg p-1.5 text-xs outline-none bg-white font-semibold"
+                      className="flex-1 border border-slate-200 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                       value={interestRemarks}
                       onChange={(e) => setInterestRemarks(e.target.value)}
                     />
@@ -5607,7 +5732,7 @@ export default function Dashboard() {
                         );
                         handlePayInterest(selectedLoanTxn.id, interestPaidUptoDate, amt, interestRemarks);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs"
+                      className="bg-[#0B1320] hover:bg-[#152238] text-white font-semibold px-4 py-2 rounded-xl text-xs shadow-xs cursor-pointer"
                     >
                       Clear Interest
                     </button>
@@ -5616,9 +5741,9 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="flex flex-col-reverse sm:flex-row gap-2 justify-between items-stretch sm:items-center pt-3 sm:pt-4 border-t border-slate-100">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 justify-between items-stretch sm:items-center pt-4 border-t border-slate-100">
               <div className="grid grid-cols-3 sm:flex gap-1.5 sm:gap-2">
-                <button onClick={() => setSelectedLoanTxn(null)} className="px-2.5 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white text-center">Close</button>
+                <button onClick={() => setSelectedLoanTxn(null)} className="px-3 sm:px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 bg-white text-center cursor-pointer shadow-xs">Close</button>
                 <button 
                   onClick={() => {
                     const cust = customers.find(c => c.id === selectedLoanTxn.customerId);
@@ -5673,13 +5798,13 @@ export default function Dashboard() {
                     setSelectedLoanTxn(null);
                     setShowOfflineLoanModal(true);
                   }}
-                  className="px-2.5 sm:px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 bg-white flex items-center justify-center gap-1 cursor-pointer"
+                  className="px-3 sm:px-4 py-2 border border-slate-200/90 text-slate-800 rounded-xl text-xs font-semibold hover:bg-slate-50 bg-white flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                 >
                   Edit Loan
                 </button>
                 <button 
                   onClick={() => handleDeleteLoan(selectedLoanTxn.id)}
-                  className="px-2.5 sm:px-4 py-2 border border-rose-200 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-50 bg-white flex items-center justify-center gap-1 cursor-pointer"
+                  className="px-3 sm:px-4 py-2 border border-rose-200 text-rose-600 rounded-xl text-xs font-semibold hover:bg-rose-50 bg-white flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                 >
                   Delete
                 </button>
@@ -5687,7 +5812,7 @@ export default function Dashboard() {
               {selectedLoanTxn.status !== "Cleared" && (
                 <button 
                   onClick={() => handleMarkAsCleared(selectedLoanTxn.id)} 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center justify-center gap-1 cursor-pointer w-full sm:w-auto"
+                  className="bg-[#15803D] hover:bg-[#166534] text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-1 cursor-pointer w-full sm:w-auto shadow-xs"
                 >
                   <CheckCircle size={14} /> Mark as Cleared
                 </button>
@@ -5696,55 +5821,58 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-         {/* ADD CUSTOM OFFLINE LOAN MODAL */}
+
+      {/* ADD CUSTOM OFFLINE LOAN MODAL */}
       {showOfflineLoanModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center p-4 overflow-y-auto items-start">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-2xl p-6 flex flex-col my-8">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                <PlusCircle className="text-emerald-600" size={20} /> Add Custom Offline Loan
-              </h3>
-              <button type="button" onClick={() => setShowOfflineLoanModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 flex flex-col my-8">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <div className="flex items-center gap-2.5">
+                <h3 className="font-serif font-bold text-xl text-slate-900">
+                  {editingTxnId ? "Edit Loan Record" : "Add Custom Offline Loan"}
+                </h3>
+              </div>
+              <button type="button" onClick={() => setShowOfflineLoanModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"><X size={20} /></button>
             </div>
             
-            <form onSubmit={handleSaveOfflineLoan} onKeyDown={handleFormKeyDown} className="space-y-4 text-sm font-semibold">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSaveOfflineLoan} onKeyDown={handleFormKeyDown} className="space-y-5 text-xs font-medium">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Row 1: Custom Bill No & Taken Date */}
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Bill No. Series & Number</label>
-                  <div className="flex items-center gap-3 mb-1.5">
-                    <label className={`flex items-center gap-1 text-xs font-bold cursor-pointer px-2.5 py-1 rounded-lg border transition-all ${!offlineLoanForm.starSeries ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Bill No. Series & Number</label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label className={`flex items-center gap-1 text-xs font-semibold cursor-pointer px-3 py-1.5 rounded-xl border transition-all ${!offlineLoanForm.starSeries ? 'bg-[#0B1320] text-[#E5C378] border-[#0B1320]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                       <input type="radio" name="billSeries" className="hidden" checked={!offlineLoanForm.starSeries} onChange={() => {
                         setOfflineLoanForm(prev => ({ ...prev, starSeries: false }));
                       }} />
                       Normal
                     </label>
-                    <label className={`flex items-center gap-1 text-xs font-bold cursor-pointer px-2.5 py-1 rounded-lg border transition-all ${offlineLoanForm.starSeries ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                    <label className={`flex items-center gap-1 text-xs font-semibold cursor-pointer px-3 py-1.5 rounded-xl border transition-all ${offlineLoanForm.starSeries ? 'bg-[#DFB76C] text-[#5C3F08] border-[#DFB76C] font-bold' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                       <input type="radio" name="billSeries" className="hidden" checked={offlineLoanForm.starSeries} onChange={() => {
                         setOfflineLoanForm(prev => ({ ...prev, starSeries: true }));
                       }} />
                       ★ Star (Above ₹10K)
                     </label>
                   </div>
-                  <div className={`flex items-center border rounded-lg overflow-hidden ${offlineLoanForm.starSeries ? 'border-amber-400' : 'border-slate-200'}`}>
+                  <div className={`flex items-center border rounded-xl overflow-hidden ${offlineLoanForm.starSeries ? 'border-amber-400' : 'border-slate-200/90'}`}>
                     {offlineLoanForm.starSeries && (
-                      <span className="px-2.5 py-2 bg-amber-400 text-white font-black text-sm select-none">★</span>
+                      <span className="px-3 py-2 bg-amber-400 text-white font-bold text-xs select-none">★</span>
                     )}
                     <input 
                       type="text" 
                       placeholder="Enter Bill No..."
-                      className={`flex-1 p-2 text-sm outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'text-amber-700' : 'text-slate-800 border-0'}`}
+                      className={`flex-1 p-2.5 text-xs outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'text-amber-800' : 'text-slate-800'}`}
                       value={offlineLoanForm.billNo}
                       onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
                     />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Taken Date *</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Taken Date *</label>
                   <input 
                     type="date" 
                     required 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.takenDate}
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, takenDate: e.target.value }))}
                   />
@@ -5752,12 +5880,12 @@ export default function Dashboard() {
 
                 {/* Row 2: Customer Name (with suggestions) */}
                 <div className="form-group relative">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Customer Name *</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Customer Name *</label>
                   <input 
                     type="text" 
                     required 
                     placeholder="Enter customer name..."
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.custName}
                     onChange={(e) => {
                       handleAutocompleteInputChange(e, "custName", customers.map(c => c.name));
@@ -5767,7 +5895,7 @@ export default function Dashboard() {
                     onBlur={() => setTimeout(() => setShowCustSuggestions(false), 200)}
                   />
                   {showCustSuggestions && offlineLoanForm.custName.trim() && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-50">
                       {customers.filter(c => 
                         c.name.toLowerCase().includes(offlineLoanForm.custName.toLowerCase())
                       ).slice(0, 8).map((c, index) => (
@@ -5786,10 +5914,10 @@ export default function Dashboard() {
                             }));
                             setShowCustSuggestions(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                          className={`w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
                             activeSuggestIndex === index 
-                              ? 'bg-blue-600 text-white' 
-                              : 'hover:bg-blue-50 text-slate-700'
+                              ? 'bg-[#0B1320] text-[#E5C378]' 
+                              : 'hover:bg-slate-50 text-slate-700'
                           }`}
                         >
                           {c.name} ({c.phone} - {c.address})
@@ -5801,33 +5929,33 @@ export default function Dashboard() {
 
                 {/* Row 3: Father's/Husband's Name */}
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Father's/Husband's Name</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Father's / Husband's Name</label>
                   <input 
                     type="text" 
-                    placeholder="Father's/Husband's Name..."
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    placeholder="Father's / Husband's Name..."
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.father}
                     onChange={(e) => handleAutocompleteInputChange(e, "father", customers.map(c => c.father).filter(Boolean))}
                   />
                 </div>
 
-                {/* Row 4: Ration/Aadhar ID Proof & Phone Number (side-by-side) */}
+                {/* Row 4: Ration/Aadhar ID Proof & Phone Number */}
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Ration/Aadhar ID Proof</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Ration / Aadhar ID Proof</label>
                   <input 
                     type="text" 
                     placeholder="ID Proof..."
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.idProof}
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, idProof: e.target.value }))}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Phone Number</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Phone Number</label>
                   <input 
                     type="tel" 
                     placeholder="Enter phone number (optional)..."
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium font-technical focus:border-[#C5A880]"
                     value={offlineLoanForm.phone}
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, phone: e.target.value }))}
                   />
@@ -5835,11 +5963,11 @@ export default function Dashboard() {
 
                 {/* Row 5: Address (with suggestions) */}
                 <div className="form-group relative">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Address</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Address</label>
                   <input 
                     type="text" 
                     placeholder="Enter address..."
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.address}
                     onChange={(e) => {
                       handleAutocompleteInputChange(e, "address", uniqueAddresses);
@@ -5849,7 +5977,7 @@ export default function Dashboard() {
                     onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
                   />
                   {showAddressSuggestions && offlineLoanForm.address.trim() && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-50">
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-50">
                       {uniqueAddresses.filter(a => 
                         a.toLowerCase().includes(offlineLoanForm.address.toLowerCase())
                       ).slice(0, 5).map((addr, index) => (
@@ -5867,10 +5995,10 @@ export default function Dashboard() {
                             });
                             setShowAddressSuggestions(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                          className={`w-full text-left px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
                             activeSuggestIndex === index 
-                              ? 'bg-blue-600 text-white' 
-                              : 'hover:bg-blue-50 text-slate-700'
+                              ? 'bg-[#0B1320] text-[#E5C378]' 
+                              : 'hover:bg-slate-50 text-slate-700'
                           }`}
                         >
                           {addr}
@@ -5882,11 +6010,11 @@ export default function Dashboard() {
 
                 {/* Row 6: Mandal (with suggestions) */}
                 <div className="form-group relative">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Mandal</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Mandal</label>
                   <input 
                     type="text" 
                     placeholder="Enter mandal..."
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.mandal}
                     onChange={(e) => {
                       handleAutocompleteInputChange(e, "mandal", uniqueMandals);
@@ -5896,7 +6024,7 @@ export default function Dashboard() {
                     onBlur={() => setTimeout(() => setShowMandalSuggestions(false), 200)}
                   />
                   {showMandalSuggestions && offlineLoanForm.mandal.trim() && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-50">
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-50">
                       {uniqueMandals.filter(m => 
                         m.toLowerCase().includes(offlineLoanForm.mandal.toLowerCase())
                       ).slice(0, 5).map((mnd, index) => (
@@ -5907,10 +6035,10 @@ export default function Dashboard() {
                             setOfflineLoanForm(prev => ({ ...prev, mandal: mnd }));
                             setShowMandalSuggestions(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                          className={`w-full text-left px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
                             activeSuggestIndex === index 
-                              ? 'bg-blue-600 text-white' 
-                              : 'hover:bg-blue-50 text-slate-700'
+                              ? 'bg-[#0B1320] text-[#E5C378]' 
+                              : 'hover:bg-slate-50 text-slate-700'
                           }`}
                         >
                           {mnd}
@@ -5922,41 +6050,40 @@ export default function Dashboard() {
 
                 {/* Amount and Metal Type side-by-side */}
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Loan Finance Amount * (₹)</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Loan Amount * (₹)</label>
                   <input 
                     type="text" 
                     required 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-rose-600 animate-pulse"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-bold text-slate-900 focus:border-[#C5A880]"
                     value={offlineLoanForm.amount}
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, amount: e.target.value }))}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Metal Type</label>
-                  <div className="flex items-center gap-4 h-[38px] border border-slate-200 rounded-lg px-3 bg-white">
-                    <label className="flex items-center gap-1.5 text-sm font-semibold cursor-pointer text-slate-700">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Metal Type</label>
+                  <div className="flex items-center gap-4 h-[38px] border border-slate-200/90 rounded-xl px-3 bg-white">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-700">
                       <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Gold"} onChange={() => setOfflineLoanMetalType("Gold")} /> Gold
                     </label>
-                    <label className="flex items-center gap-1.5 text-sm font-semibold cursor-pointer text-slate-700">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-700">
                       <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Silver"} onChange={() => setOfflineLoanMetalType("Silver")} /> Silver
                     </label>
                   </div>
                 </div>
 
                 {/* Dynamic Pledged Items Block */}
-                <div className="col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3">
-                  <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-2">Pledged Items Block</h4>
+                <div className="col-span-1 sm:col-span-2 border border-slate-100 rounded-2xl p-4 bg-[#FAFBFD] space-y-3">
+                  <h4 className="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-2">Pledged Items Block</h4>
                   
                   <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                     {offlineLoanPledgedItems.map((item, idx) => (
                       <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
-                        {/* Item Name (with autocomplete) */}
                         <div className="col-span-9 relative">
                           <input 
                             type="text" 
                             required
                             placeholder={`Item ${idx + 1}...`}
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                            className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                             value={item.name}
                             onChange={(e) => handlePledgedItemRowChange(idx, "name", e.target.value, e)}
                             onFocus={() => {
@@ -5970,7 +6097,7 @@ export default function Dashboard() {
                             }, 200)}
                           />
                           {showItemSuggestions && focusedItemIndex === idx && item.name.trim() && (
-                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto z-50">
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-50">
                               {uniqueItemNames.filter(name => 
                                 name.toLowerCase().includes(item.name.toLowerCase())
                               ).slice(0, 5).map((suggestedName, sIdx) => (
@@ -5978,10 +6105,10 @@ export default function Dashboard() {
                                   key={suggestedName}
                                   type="button"
                                   onMouseDown={() => handleSelectPledgedItemRowSuggestion(idx, suggestedName)}
-                                  className={`w-full text-left px-3 py-2 text-xs font-bold border-b border-slate-100 last:border-0 transition-colors ${
+                                  className={`w-full text-left px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
                                     activeSuggestIndex === sIdx 
-                                      ? 'bg-blue-600 text-white' 
-                                      : 'hover:bg-blue-50 text-slate-700'
+                                      ? 'bg-[#0B1320] text-[#E5C378]' 
+                                      : 'hover:bg-slate-50 text-slate-700'
                                   }`}
                                 >
                                   {suggestedName}
@@ -5990,26 +6117,24 @@ export default function Dashboard() {
                             </div>
                           )}
                         </div>
-                        {/* Qty */}
                         <div className="col-span-2">
                           <input 
                             type="number" 
                             required
                             placeholder="Qty"
-                            className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-center"
+                            className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-semibold text-center focus:border-[#C5A880]"
                             value={item.qty || ""}
                             onChange={(e) => handlePledgedItemRowChange(idx, "qty", parseInt(e.target.value) || 0)}
                           />
                         </div>
-                        {/* Delete row button */}
                         <div className="col-span-1 flex justify-center">
                           {offlineLoanPledgedItems.length > 1 && (
                             <button 
                               type="button" 
                               onClick={() => removeOfflineLoanRow(item.id)}
-                              className="text-rose-500 hover:text-rose-700"
+                              className="text-rose-500 hover:text-rose-700 cursor-pointer"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={15} />
                             </button>
                           )}
                         </div>
@@ -6020,74 +6145,71 @@ export default function Dashboard() {
                   <button 
                     type="button" 
                     onClick={addOfflineLoanRow}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1"
+                    className="text-xs font-semibold text-[#0B1320] hover:text-[#B8860B] flex items-center gap-1 mt-1 cursor-pointer transition-colors"
                   >
-                    <PlusCircle size={14} /> + Add Item
+                    <span className="text-[#B8860B] font-bold">+</span> Add Item Row
                   </button>
 
                   {/* Weights & Worth details */}
-                  <div className="grid grid-cols-5 gap-3 mt-4 pt-3 border-t border-slate-200">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-slate-200/70">
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Total Qty</label>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Total Qty</label>
                       <input 
                         type="text" 
                         readOnly
-                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-slate-100 font-bold text-center text-slate-600"
+                        className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-slate-50 font-bold text-center text-slate-700"
                         value={offlineLoanPledgedItems.reduce((sum, item) => sum + (item.qty || 0), 0)}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Yield/KDM</label>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Yield / KDM</label>
                       <input 
                         type="text" 
                         placeholder="60%"
-                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                        className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.yield}
                         onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, yield: e.target.value }))}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Gross Weight (g)</label>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Gross Weight (g)</label>
                       <input 
                         type="text" 
                         placeholder="0.00"
-                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                        className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.grossWeight}
                         onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, grossWeight: e.target.value }))}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Net Wt. (g)</label>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Net Wt. (g)</label>
                       <input 
                         type="text" 
                         placeholder="0.00"
-                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                        className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.netWeight}
                         onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, netWeight: e.target.value }))}
                       />
                     </div>
-                    <div className="form-group col-span-1">
-                      {/* Empty cell or spacer */}
-                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Worth (₹)</label>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Worth (₹)</label>
                       <input 
                         type="text" 
-                        placeholder="Worth/Value in Rupees..."
-                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                        placeholder="Worth in Rupees..."
+                        className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.worth}
                         onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, worth: e.target.value }))}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="text-xs font-bold text-slate-400 block mb-1">Remarks</label>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">Remarks</label>
                       <input 
                         type="text" 
                         placeholder="Remarks..."
-                        className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                        className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.remarks}
                         onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, remarks: e.target.value }))}
                       />
@@ -6095,133 +6217,32 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Adjustments Form inside Offline Loan Modal (only when editing) */}
-                {editingTxnId && (
-                  <div className="col-span-2 border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3">
-                    <h4 className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                      <PlusCircle size={14} className="text-blue-600" /> Principal Adjustments (Top-up / Repayment)
-                    </h4>
-                    {/* List existing adjustments */}
-                    {offlineLoanForm.topups && offlineLoanForm.topups.length > 0 && (
-                      <div className="space-y-1.5 text-xs max-h-28 overflow-y-auto pr-1">
-                        {offlineLoanForm.topups.map((top: any, tIdx: number) => {
-                          const isRepay = top.extraAmount < 0 || top.type === "repayment";
-                          return (
-                            <div key={tIdx} className="flex justify-between bg-white border border-slate-200 p-2 rounded-lg font-semibold text-slate-700 shadow-sm">
-                              <span>
-                                {formatDateToDDMMYYYY(top.date)}:{" "}
-                                {isRepay ? (
-                                  <strong className="text-emerald-600">Repayment -₹{Math.abs(top.extraAmount).toLocaleString('en-IN')}</strong>
-                                ) : (
-                                  <strong className="text-blue-600">Top-up +₹{top.extraAmount.toLocaleString('en-IN')}</strong>
-                                )}
-                              </span>
-                              {top.interestAccrued > 0 && <span className="text-rose-600 font-bold ml-2">(Accrued Interest: ₹{top.interestAccrued.toLocaleString('en-IN')})</span>}
-                              <span className="text-slate-400 font-normal ml-auto">{top.remarks}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                    {/* Add Top-up inputs */}
-                    <div className="border-t border-slate-200/60 pt-2 grid grid-cols-3 gap-2">
-                      <div className="col-span-3 text-[10px] font-bold text-blue-600 mb-0.5 uppercase tracking-wider">Option 1: Add Extra Amount (Top-up)</div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Amount (₹)</label>
-                        <input 
-                          type="number" 
-                          placeholder="e.g. 1000"
-                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-blue-500"
-                          value={offlineLoanForm.newTopUpAmount || ""}
-                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newTopUpAmount: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Date Taken</label>
-                        <input 
-                          type="date" 
-                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-blue-500"
-                          value={offlineLoanForm.newTopUpDate || new Date().toISOString().split('T')[0]}
-                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newTopUpDate: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks</label>
-                        <input 
-                          type="text" 
-                          placeholder="Remarks..."
-                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-blue-500"
-                          value={offlineLoanForm.newTopUpRemarks || ""}
-                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newTopUpRemarks: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                    {/* Add Repayment inputs */}
-                    <div className="border-t border-slate-200/60 pt-2 grid grid-cols-3 gap-2">
-                      <div className="col-span-3 text-[10px] font-bold text-emerald-600 mb-0.5 uppercase tracking-wider">Option 2: Pay/Clear Principal (Repayment)</div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Amount (₹)</label>
-                        <input 
-                          type="number" 
-                          placeholder="e.g. 2000"
-                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-emerald-500"
-                          value={offlineLoanForm.newRepaymentAmount || ""}
-                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newRepaymentAmount: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Repayment Date</label>
-                        <input 
-                          type="date" 
-                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-emerald-500"
-                          value={offlineLoanForm.newRepaymentDate || new Date().toISOString().split('T')[0]}
-                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newRepaymentDate: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Remarks</label>
-                        <input 
-                          type="text" 
-                          placeholder="Remarks..."
-                          className="w-full border border-slate-200 rounded-lg p-1.5 font-semibold bg-white text-xs outline-none focus:border-emerald-500"
-                          value={offlineLoanForm.newRepaymentRemarks || ""}
-                          onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, newRepaymentRemarks: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-
-
-
-
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Interest Rate (Auto per month)</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Interest Rate (Monthly)</label>
                   <input 
                     type="number" 
                     step="any"
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold text-blue-600"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-bold text-[#B8860B] focus:border-[#C5A880]"
                     value={offlineLoanForm.interestRate.replace("%", "")}
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestRate: e.target.value + "%" }))}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">To be released Date *</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Period End Date *</label>
                   <input 
                     type="date" 
                     required
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.endDate}
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, endDate: e.target.value }))}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Loan Status</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Loan Status</label>
                   <select 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white cursor-pointer font-semibold"
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white cursor-pointer font-semibold text-slate-800"
                     value={offlineLoanForm.status}
                     onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, status: e.target.value }))}
                   >
@@ -6231,62 +6252,41 @@ export default function Dashboard() {
                 </div>
                 {offlineLoanForm.status === "Cleared" && (
                   <div className="form-group">
-                    <label className="text-xs font-bold text-slate-400 block mb-1">Cleared Date *</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Cleared Date *</label>
                     <input 
                       type="date" 
                       required
-                      className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
+                      className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                       value={offlineLoanForm.clearedDate || ""}
                       onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, clearedDate: e.target.value }))}
                     />
                   </div>
                 )}
-                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Interest Paid Upto Date</label>
-                  <input 
-                    type="date" 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                    value={offlineLoanForm.interestPaidUpto}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestPaidUpto: e.target.value }))}
-                  />
-                </div>
-                {offlineLoanForm.interestPaidUpto && offlineLoanForm.interestPaidUpto !== offlineLoanForm.takenDate && (
-                  <div className="form-group">
-                    <label className="text-xs font-bold text-slate-400 block mb-1">Interest Amount Cleared (₹)</label>
-                    <input 
-                      type="number" 
-                      placeholder="Enter amount cleared..."
-                      className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold"
-                      value={offlineLoanForm.interestAmountPaid}
-                      onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, interestAmountPaid: e.target.value }))}
-                    />
-                  </div>
-                )}
               </div>
 
-              <div className="form-group mt-4">
-                <label className="text-xs font-bold text-slate-400 block mb-1">Note</label>
+              <div className="form-group">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Internal Note</label>
                 <textarea 
                   placeholder="Add any internal notes or remarks..."
-                  className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none bg-white font-semibold min-h-[60px]"
+                  className="w-full border border-slate-200/90 rounded-xl p-3 text-xs outline-none bg-white font-medium min-h-[60px] focus:border-[#C5A880]"
                   value={offlineLoanForm.note}
                   onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, note: e.target.value }))}
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 mt-6">
                 <button 
                   type="button" 
                   onClick={() => setShowOfflineLoanModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-lg text-slate-500 font-bold hover:bg-slate-50 bg-white"
+                  className="px-4 py-2.5 border border-slate-200/90 rounded-xl text-slate-700 font-semibold hover:bg-slate-50 bg-white text-xs cursor-pointer shadow-xs"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold"
+                  className="px-5 py-2.5 bg-[#0B1320] hover:bg-[#152238] text-white rounded-xl font-semibold text-xs shadow-sm cursor-pointer"
                 >
-                  Save Loan
+                  Save Loan Record
                 </button>
               </div>
             </form>
@@ -6297,69 +6297,68 @@ export default function Dashboard() {
       {/* BULK IMPORT OFFLINE LOANS MODAL */}
       {showBulkImportModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-2xl p-6 flex flex-col my-8">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-bold text-lg text-slate-800">📤 Bulk Import Offline Loans</h3>
-              <button type="button" onClick={() => setShowBulkImportModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 flex flex-col my-8">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <h3 className="font-serif font-bold text-xl text-slate-900">Bulk Import Offline Loans</h3>
+              <button type="button" onClick={() => setShowBulkImportModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"><X size={20} /></button>
             </div>
             
             <div className="space-y-4">
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 font-medium">
-                <div className="font-bold text-slate-800 mb-1">CSV Field Header Order (Make sure the first line matches this header exactly):</div>
-                <code className="block bg-slate-800 text-slate-200 p-2 rounded select-all font-mono font-bold leading-normal break-all">
+              <div className="bg-[#FAFBFD] border border-slate-100 rounded-2xl p-4 text-xs text-slate-600 font-medium">
+                <div className="font-serif font-bold text-slate-900 mb-1.5 uppercase tracking-wider text-[11px]">CSV Field Header Order</div>
+                <code className="block bg-[#0B1320] text-[#E5C378] p-3 rounded-xl select-all font-technical text-xs font-semibold leading-normal break-all">
                   BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal,ClearedDate
                 </code>
-                <div className="mt-2 text-[10px] text-slate-500 leading-relaxed space-y-1">
-                  <div>* Note: Use semicolons (<code className="font-mono bg-slate-200 p-0.5 rounded font-bold">;</code>) to separate items inside the <code className="font-bold">PledgedItems</code> field to avoid breaking the CSV columns. Dates must be formatted as <code className="font-bold">YYYY-MM-DD</code>.</div>
-                  <div>* <strong>Items Quantity</strong>: To specify item quantities, prefix the name with the quantity, e.g. <code className="font-mono bg-slate-200 p-0.5 rounded font-bold">2x Gold Ring; 1x Gold Chain</code>. It will automatically detect the number!</div>
-                  <div>* <strong>Missing values / Optional fields</strong>: If a field has no value (like phone number, father's name, ID proof, mandal, or cleared date), <strong>leave it completely empty between the commas</strong> (for example: <code className="font-mono bg-slate-200 p-0.5 rounded font-bold">101,Rajesh,,15000,...</code>). Do not add spaces or dashes, just keep the column empty.</div>
-                  <div>* <strong>Cleared Loans</strong>: If a loan is already cleared/closed, set the <code className="font-bold">Status</code> column to <code className="font-mono bg-slate-200 p-0.5 rounded font-bold">Cleared</code> and put the date it was cleared in the <code className="font-bold">ClearedDate</code> column.</div>
+                <div className="mt-3 text-[11px] text-slate-500 leading-relaxed space-y-1.5">
+                  <div>* Use semicolons (<code className="bg-slate-200 px-1 py-0.5 rounded font-bold">;</code>) to separate items inside <code className="font-bold">PledgedItems</code>. Dates: <code className="font-bold">YYYY-MM-DD</code>.</div>
+                  <div>* Prefix quantities with <code className="bg-slate-200 px-1 py-0.5 rounded font-bold">2x Gold Ring; 1x Gold Chain</code>.</div>
+                  <div>* Missing optional fields: Leave empty between commas (e.g. <code className="bg-slate-200 px-1 py-0.5 rounded font-bold">101,Rajesh,,15000,...</code>).</div>
                 </div>
               </div>
 
               <div className="form-group">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Paste CSV Data</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Paste CSV Data</label>
                 <textarea 
                   rows={8}
                   placeholder={`BillNo,CustomerName,Phone,Amount,InterestRate,TakenDate,EndDate,PledgedItems,Status,InterestPaidUpto,Father,IdProof,Address,Mandal,ClearedDate\n101,Rajesh,9876543210,15000,1.5%,2025-01-10,2026-01-10,2x Gold Ring;1x Gold Chain,Cleared,2025-04-10,,,Chennai,,2025-04-10`}
-                  className="w-full border border-slate-200 rounded-lg p-2.5 text-xs outline-none bg-white font-mono font-bold"
+                  className="w-full border border-slate-200/90 rounded-xl p-3 text-xs outline-none bg-white font-technical focus:border-[#C5A880]"
                   value={bulkCsvText}
                   onChange={(e) => setBulkCsvText(e.target.value)}
                 />
               </div>
 
               {bulkImportProgress && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-                  <div className="flex justify-between items-center mb-1 text-xs font-bold text-blue-700">
+                <div className="bg-[#FAFBFD] border border-slate-200 rounded-xl p-4 text-xs">
+                  <div className="flex justify-between items-center mb-1.5 font-semibold text-slate-800">
                     <span>Importing Rows...</span>
                     <span>{bulkImportProgress.current} / {bulkImportProgress.total}</span>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden mb-2">
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mb-2">
                     <div 
-                      className="bg-blue-600 h-2.5 transition-all duration-300" 
+                      className="bg-[#0B1320] h-2 transition-all duration-300" 
                       style={{ width: `${(bulkImportProgress.current / bulkImportProgress.total) * 100}%` }}
                     ></div>
                   </div>
-                  <div className="text-[10px] font-semibold text-slate-500 font-mono truncate">{bulkImportProgress.status}</div>
+                  <div className="text-[10px] text-slate-400 font-technical truncate">{bulkImportProgress.status}</div>
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 mt-6">
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 mt-6">
                 <button 
                   type="button" 
                   disabled={bulkImportProgress !== null}
                   onClick={() => setShowBulkImportModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-lg text-slate-500 font-bold hover:bg-slate-50 disabled:opacity-50"
+                  className="px-4 py-2.5 border border-slate-200/90 rounded-xl text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-50 text-xs shadow-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
-                  type="button"
+                  type="button" 
                   disabled={bulkImportProgress !== null || !bulkCsvText.trim()}
                   onClick={handleBulkImport}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-5 py-2.5 bg-[#0B1320] hover:bg-[#152238] text-white rounded-xl font-semibold disabled:opacity-50 flex items-center gap-1.5 text-xs shadow-sm cursor-pointer"
                 >
-                  <Upload size={14} /> Start Import
+                  <Upload size={14} className="text-[#E5C378]" /> Start Import
                 </button>
               </div>
             </div>
@@ -6370,13 +6369,13 @@ export default function Dashboard() {
       {/* MARK LOAN AS CLEARED MODAL */}
       {showClearLoanModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-bold text-base text-slate-800 flex items-center gap-2">
-                <CheckCircle size={18} className="text-emerald-600" />
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-7">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
+              <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
+                <CheckCircle size={18} className="text-[#15803D]" />
                 Mark Loan as Cleared
               </h3>
-              <button type="button" onClick={() => setShowClearLoanModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button type="button" onClick={() => setShowClearLoanModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer p-1">
                 <X size={18} />
               </button>
             </div>
@@ -6386,10 +6385,10 @@ export default function Dashboard() {
               const noteText = clearingTxn?.loanDetails?.note;
               if (!noteText) return null;
               return (
-                <div className="mb-4 bg-rose-50 border-2 border-rose-400 text-rose-900 p-3 rounded-lg text-xs font-bold shadow-xs">
+                <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-900 p-3 rounded-xl text-xs shadow-xs">
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] uppercase font-extrabold tracking-wider">
-                      ⚠️ LOAN NOTE
+                    <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
+                      Loan Note
                     </span>
                   </div>
                   <p className="font-semibold text-rose-900">{noteText}</p>
@@ -6399,25 +6398,25 @@ export default function Dashboard() {
 
             <form onSubmit={handleConfirmClearLoan} className="space-y-4">
               <div className="form-group">
-                <label className="text-xs font-bold text-slate-400 block mb-1">4-Digit Passcode *</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">4-Digit Passcode *</label>
                 <input 
                   type="password" 
                   maxLength={4}
                   required
                   placeholder="Enter passcode (1004)"
-                  className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none font-semibold text-slate-800 bg-white"
+                  className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none font-semibold text-slate-800 bg-white focus:border-[#C5A880]"
                   value={clearPasscode}
                   onChange={(e) => setClearPasscode(e.target.value)}
                 />
               </div>
 
-              <div className="form-group bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-2">
-                <label className="text-xs font-bold text-slate-500 block mb-1">Cleared Date Selection</label>
+              <div className="form-group bg-[#FAFBFD] border border-slate-100 rounded-2xl p-3.5 space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Cleared Date Selection</label>
                 
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer select-none">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    className="w-4 h-4 rounded text-[#0B1320] focus:ring-[#C5A880] cursor-pointer"
                     checked={clearIsToday}
                     onChange={(e) => {
                       const checked = e.target.checked;
@@ -6436,7 +6435,7 @@ export default function Dashboard() {
                     <input 
                       type="date" 
                       required
-                      className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none font-semibold bg-white text-slate-800"
+                      className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none font-semibold bg-white text-slate-800 focus:border-[#C5A880]"
                       value={clearDate}
                       onChange={(e) => setClearDate(e.target.value)}
                     />
@@ -6444,17 +6443,17 @@ export default function Dashboard() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button 
                   type="button" 
                   onClick={() => setShowClearLoanModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-slate-50 text-xs"
+                  className="px-4 py-2 border border-slate-200/90 rounded-xl text-slate-700 font-semibold hover:bg-slate-50 text-xs shadow-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
-                  type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5"
+                  type="submit" 
+                  className="px-4 py-2 bg-[#15803D] hover:bg-[#166534] text-white rounded-xl font-semibold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <CheckCircle size={14} /> Confirm & Mark Cleared
                 </button>
@@ -6467,67 +6466,67 @@ export default function Dashboard() {
       {/* ADD / EDIT CUSTOMER MODAL */}
       {showCustomerModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveCustomer} className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-lg p-6 flex flex-col justify-between">
+          <form onSubmit={handleSaveCustomer} className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-lg p-6 sm:p-8 flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-                <h3 className="font-bold text-lg text-slate-800">{customerForm.id ? "Edit Customer Profile" : "Register New Customer"}</h3>
-                <button type="button" onClick={() => setShowCustomerModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+              <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+                <h3 className="font-serif font-bold text-xl text-slate-900">{customerForm.id ? "Edit Customer Profile" : "Register New Customer"}</h3>
+                <button type="button" onClick={() => setShowCustomerModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"><X size={20} /></button>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 text-sm font-semibold">
-                <div className="form-group col-span-2">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Customer Name *</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-medium">
+                <div className="form-group sm:col-span-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Customer Name *</label>
                   <input 
                     type="text" 
                     required 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]" 
                     value={customerForm.name}
                     onChange={(e) => setCustomerForm(prev => ({ ...prev, name: e.target.value }))}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Phone Number *</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Phone Number *</label>
                   <input 
                     type="tel" 
                     required 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium font-technical focus:border-[#C5A880]" 
                     value={customerForm.phone}
                     onChange={(e) => setCustomerForm(prev => ({ ...prev, phone: e.target.value }))}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Father's / Husband's Name</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Father's / Husband's Name</label>
                   <input 
                     type="text" 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]" 
                     value={customerForm.father}
                     onChange={(e) => setCustomerForm(prev => ({ ...prev, father: e.target.value }))}
                   />
                 </div>
-                <div className="form-group col-span-2">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Full Address *</label>
+                <div className="form-group sm:col-span-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Full Address *</label>
                   <input 
                     type="text" 
                     required 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]" 
                     value={customerForm.address}
                     onChange={(e) => setCustomerForm(prev => ({ ...prev, address: e.target.value }))}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Ration / Aadhar ID Proof</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Ration / Aadhar ID Proof</label>
                   <input 
                     type="text" 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium font-technical focus:border-[#C5A880]" 
                     value={customerForm.idproof}
                     onChange={(e) => setCustomerForm(prev => ({ ...prev, idproof: e.target.value }))}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Mandal</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Mandal</label>
                   <input 
                     type="text" 
-                    className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none" 
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]" 
                     value={customerForm.mandal}
                     onChange={(e) => setCustomerForm(prev => ({ ...prev, mandal: e.target.value }))}
                   />
@@ -6535,9 +6534,9 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
-              <button type="button" onClick={() => setShowCustomerModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50">Cancel</button>
-              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs">Save Profile</button>
+            <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 mt-6">
+              <button type="button" onClick={() => setShowCustomerModal(false)} className="px-4 py-2.5 border border-slate-200/90 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs">Cancel</button>
+              <button type="submit" className="bg-[#0B1320] hover:bg-[#152238] text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-sm cursor-pointer">Save Profile</button>
             </div>
           </form>
         </div>
@@ -6546,10 +6545,10 @@ export default function Dashboard() {
       {/* ADD/EDIT ITEM MODAL */}
       {showItemModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl w-full max-w-sm p-6">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-bold text-lg text-slate-800">{itemForm.id ? "Edit Item Name" : "Add New Item to Catalog"}</h3>
-              <button type="button" onClick={() => setShowItemModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-sm p-6 sm:p-7">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <h3 className="font-serif font-bold text-lg text-slate-900">{itemForm.id ? "Edit Item Name" : "Add New Item to Catalog"}</h3>
+              <button type="button" onClick={() => setShowItemModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"><X size={20} /></button>
             </div>
             
             <form onSubmit={(e) => {
@@ -6567,21 +6566,21 @@ export default function Dashboard() {
                 setShowItemModal(false);
                 refreshData();
               });
-            }} className="space-y-4 text-sm font-semibold">
+            }} className="space-y-4 text-xs font-medium">
               <div className="form-group">
-                <label className="text-xs font-bold text-slate-400 block mb-1">Item Name *</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Item Name *</label>
                 <input 
                   type="text" 
                   required 
-                  className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500" 
+                  className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]" 
                   value={itemForm.name}
                   onChange={(e) => setItemForm(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
               <div className="form-group">
-                <label className="text-xs font-bold text-slate-400 block mb-1">Category *</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Category *</label>
                 <select 
-                  className="w-full border border-slate-200 rounded-lg p-2 text-sm outline-none focus:border-blue-500"
+                  className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880] cursor-pointer"
                   value={itemForm.category}
                   onChange={(e) => setItemForm(prev => ({ ...prev, category: e.target.value }))}
                 >
@@ -6589,9 +6588,9 @@ export default function Dashboard() {
                   <option value="Furniture">Furniture</option>
                 </select>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
-                <button type="button" onClick={() => setShowItemModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50">Cancel</button>
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs">Save Item</button>
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 mt-6">
+                <button type="button" onClick={() => setShowItemModal(false)} className="px-4 py-2 border border-slate-200/90 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs">Cancel</button>
+                <button type="submit" className="bg-[#0B1320] hover:bg-[#152238] text-white font-semibold px-4 py-2 rounded-xl text-xs shadow-sm cursor-pointer">Save Item</button>
               </div>
             </form>
           </div>
