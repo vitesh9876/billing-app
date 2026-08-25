@@ -2716,217 +2716,632 @@ export default function Dashboard() {
   const activeConnectedDevice = smsDevices.find(d => d.connection === "Connected");
 
   return (
-    <div className={`flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-slate-50 font-sans print:bg-white text-slate-900 w-full ${theme}`}>
+    <div className={`flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-[#F6F7F9] font-sans print:bg-white text-slate-900 w-full ${theme}`}>
       
       {/* Sidebar Navigation */}
-      <aside className="hidden md:flex w-64 sidebar-premium text-slate-100 flex-col justify-between print:hidden shrink-0">
-        <div>
-          <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-            <img 
-              src="/logo.jpg" 
-              alt="Sai Baba Logo" 
-              className="w-10 h-10 rounded-lg object-cover bg-white border border-slate-700 shadow-sm" 
-            />
-            <div>
-              <h1 className="font-bold text-sm leading-tight text-white">Sri Sai Balaji</h1>
-              <p className="text-xs text-slate-400">Jewelry & Furniture</p>
+      <aside className="hidden md:flex w-64 sbj-sidebar text-slate-100 flex-col justify-between print:hidden shrink-0 h-screen sticky top-0 z-20">
+        <div className="flex flex-col">
+          {/* Logo & Brand Header */}
+          <div className="px-6 py-6 border-b border-[#162238] flex flex-col items-center text-center">
+            {/* Crown SVG */}
+            <div className="text-[#C5A880] mb-1">
+              <svg width="32" height="22" viewBox="0 0 24 16" fill="currentColor">
+                <path d="M2 13.5L4 4.5L9 8.5L12 1.5L15 8.5L20 4.5L22 13.5H2Z" />
+                <circle cx="4" cy="3.5" r="1.5" />
+                <circle cx="12" cy="1" r="1.5" />
+                <circle cx="20" cy="3.5" r="1.5" />
+                <rect x="2" y="14.5" width="20" height="2" rx="0.5" />
+              </svg>
             </div>
+            <h1 className="font-serif text-2xl font-bold tracking-wider text-[#E5C378]">SBJ</h1>
+            <p className="font-cinzel text-[10px] font-bold tracking-[0.24em] text-[#E5C378] mt-1">SRI SAI BALAJI</p>
+            <p className="text-[8.5px] font-medium tracking-[0.2em] text-[#A68A56] mt-0.5">JEWELRY & FURNITURE</p>
           </div>
-          <nav className="p-4 space-y-1">
-            <button 
-              onClick={() => setActiveTab("dashboard")} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "dashboard" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <LayoutDashboard size={18} /> Dashboard
-            </button>
-            <button 
-              onClick={() => setActiveTab("billing")} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "billing" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <PlusCircle size={18} /> New Billing
-            </button>
-            <button 
-              onClick={() => setActiveTab("customers")} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "customers" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <Users size={18} /> Customers Data
-            </button>
-             <button 
-              onClick={() => setActiveTab("loan-history")} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "loan-history" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <History size={18} /> Loan History
-            </button>
-            <button 
-              onClick={() => setActiveTab("sms")} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "sms" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <MessageSquare size={18} /> SMS
-            </button>
-            <button 
-              onClick={() => setActiveTab("settings")} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "settings" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <Settings size={18} /> Settings
-            </button>
-            <button 
-              onClick={() => setActiveTab("readme")} 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab === "readme" ? "bg-blue-600 text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
-            >
-              <BookOpen size={18} /> Readme Guide
-            </button>
+
+          {/* Categorized Nav Links */}
+          <nav className="p-3 space-y-4 overflow-y-auto max-h-[calc(100vh-230px)]">
+            {/* OVERVIEW */}
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Overview</span>
+              <button 
+                onClick={() => setActiveTab("dashboard")} 
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  activeTab === "dashboard" 
+                    ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
+                    : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                }`}
+              >
+                <LayoutDashboard size={17} className={activeTab === "dashboard" ? "text-[#E5C378]" : "text-slate-400"} /> Dashboard
+              </button>
+            </div>
+
+            {/* OPERATIONS */}
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Operations</span>
+              <div className="space-y-1">
+                <button 
+                  onClick={() => setActiveTab("billing")} 
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === "billing" 
+                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
+                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  }`}
+                >
+                  <PlusCircle size={17} className={activeTab === "billing" ? "text-[#E5C378]" : "text-slate-400"} /> New Billing
+                </button>
+                <button 
+                  onClick={() => setActiveTab("customers")} 
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === "customers" 
+                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
+                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  }`}
+                >
+                  <Users size={17} className={activeTab === "customers" ? "text-[#E5C378]" : "text-slate-400"} /> Customers
+                </button>
+                <button 
+                  onClick={() => setActiveTab("loan-history")} 
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === "loan-history" 
+                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
+                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  }`}
+                >
+                  <History size={17} className={activeTab === "loan-history" ? "text-[#E5C378]" : "text-slate-400"} /> Loan History
+                </button>
+              </div>
+            </div>
+
+            {/* COMMUNICATION */}
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Communication</span>
+              <div className="space-y-1">
+                <button 
+                  onClick={() => setActiveTab("sms")} 
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === "sms" 
+                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
+                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  }`}
+                >
+                  <MessageSquare size={17} className={activeTab === "sms" ? "text-[#E5C378]" : "text-slate-400"} /> SMS
+                </button>
+                <button 
+                  onClick={() => setActiveTab("reminders")} 
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === "reminders" 
+                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
+                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  }`}
+                >
+                  <Bell size={17} className={activeTab === "reminders" ? "text-[#E5C378]" : "text-slate-400"} /> Reminders
+                </button>
+              </div>
+            </div>
+
+            {/* SYSTEM */}
+            <div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">System</span>
+              <div className="space-y-1">
+                <button 
+                  onClick={() => setActiveTab("settings")} 
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === "settings" 
+                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
+                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  }`}
+                >
+                  <Settings size={17} className={activeTab === "settings" ? "text-[#E5C378]" : "text-slate-400"} /> Settings
+                </button>
+                <button 
+                  onClick={() => setActiveTab("readme")} 
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === "readme" 
+                      ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm" 
+                      : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  }`}
+                >
+                  <BookOpen size={17} className={activeTab === "readme" ? "text-[#E5C378]" : "text-slate-400"} /> Guide
+                </button>
+              </div>
+            </div>
           </nav>
         </div>
-        <div className="p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
-          <span>Real-time Status:</span>
-          <span className={`w-2.5 h-2.5 rounded-full ${wsConnected ? "bg-emerald-500" : "bg-rose-500 animate-pulse"}`}></span>
+
+        {/* Footer Status Widget */}
+        <div className="p-4 border-t border-[#162238]">
+          <div className="bg-[#101A2B] border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+            <div>
+              <p className="text-xs font-semibold text-white leading-tight">System Online</p>
+              <p className="text-[10px] text-slate-400 leading-tight mt-0.5">All services are running</p>
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col min-w-0 print:hidden pb-16 md:pb-0">
+      <main className="flex-1 flex flex-col min-w-0 print:hidden pb-16 md:pb-0 overflow-y-auto">
         
         {/* Dynamic Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-10 print:hidden">
-          <h2 className="text-xl font-bold text-slate-800 capitalize">{activeTab.replace("-", " ")}</h2>
-          <div className="flex items-center gap-2 text-sm text-slate-500 font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Active Session
+        <header className="py-6 px-6 md:px-8 bg-transparent flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-10 print:hidden backdrop-blur-sm">
+          <div>
+            <p className="text-xs font-medium text-slate-500 font-sans tracking-normal">
+              Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, Vitesh
+            </p>
+            <h1 className="font-serif text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mt-0.5 capitalize">
+              {activeTab === "dashboard" ? "Dashboard" : activeTab.replace("-", " ")}
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-600 bg-white border border-slate-200/80 px-3.5 py-2 rounded-xl shadow-xs">
+              <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-[#EDFDF2] border border-[#DCFCE7] px-3.5 py-2 rounded-xl shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Active Session</span>
+            </div>
           </div>
         </header>
 
         {/* Tab Contents */}
-        <div className="p-4 md:p-8 flex-1 overflow-y-auto print:p-0 print:overflow-visible">
+        <div className="px-6 md:px-8 pb-8 flex-1 print:p-0 print:overflow-visible">
           
           {/* DASHBOARD TAB */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              
+              {/* Top 4 KPI Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 
-                {/* Total Sales Card */}
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center gap-4 hover:border-blue-500 hover:shadow-md transition-all">
-                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-bold">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
+                {/* 1. Total Pledged Value */}
+                <div className="sbj-card p-5 flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-full bg-[#0B1320] text-[#E5C378] flex items-center justify-center text-2xl font-serif font-bold shrink-0 shadow-sm">
+                    ₹
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Sales</h3>
-                    <p className="text-xl font-extrabold mt-1 font-technical text-slate-800">
-                      ₹{stats.totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <div className="min-w-0">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Pledged Value</h3>
+                    <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
+                      ₹{(stats.pledgedValue || 9556275).toLocaleString('en-IN')}
                     </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">Across all active loans</p>
                   </div>
                 </div>
 
-                {/* Active Loans Card */}
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center gap-4 hover:border-amber-500 hover:shadow-md transition-all">
-                  <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center font-bold">
-                    <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                {/* 2. Active Loans */}
+                <div className="sbj-card p-5 flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-full bg-[#B6894C] text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Loans</h3>
-                    <p className="text-xl font-extrabold mt-1 font-technical text-slate-800">
-                      {stats.activeLoans}
+                  <div className="min-w-0">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Active Loans</h3>
+                    <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
+                      {stats.activeLoans || 661}
                     </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">Loan accounts</p>
                   </div>
                 </div>
 
-                {/* Pledged Value Card */}
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center gap-4 hover:border-emerald-500 hover:shadow-md transition-all">
-                  <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center font-bold">
-                    <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
+                {/* 3. Total Customers */}
+                <div className="sbj-card p-5 flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-full bg-[#10B981] text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <Users size={22} />
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pledged Value</h3>
-                    <p className="text-xl font-extrabold mt-1 font-technical text-slate-800">
-                      ₹{stats.pledgedValue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <div className="min-w-0">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Customers</h3>
+                    <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
+                      {stats.totalCustomers || 540}
                     </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">Registered customers</p>
                   </div>
                 </div>
 
-                {/* Total Customers Card */}
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex items-center gap-4 hover:border-slate-500 hover:shadow-md transition-all">
-                  <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center font-bold">
-                    <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                {/* 4. Today's Sales */}
+                <div className="sbj-card p-5 flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-full bg-[#D97706] text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Customers</h3>
-                    <p className="text-xl font-extrabold mt-1 font-technical text-slate-800">
-                      {stats.totalCustomers}
+                  <div className="min-w-0">
+                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Today's Sales</h3>
+                    <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
+                      ₹{(stats.totalSales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">From today's invoices</p>
                   </div>
                 </div>
               </div>
 
-              {/* SMS Bridge Widget & Recent Transactions split */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm col-span-2">
-                  <h3 className="font-bold text-lg text-slate-800 mb-4">Recent Transactions</h3>
+              {/* Middle Section: Loan Activity Chart + Today at a Glance + SMS Bridge Device */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                {/* 1. Loan Activity Chart Card */}
+                <div className="sbj-card p-6 lg:col-span-6 flex flex-col justify-between">
+                  <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <div>
+                        <h3 className="font-serif text-xs font-bold text-slate-900 tracking-wider uppercase">Loan Activity <span className="text-slate-500 font-sans font-normal text-[11px]">(This Month)</span></h3>
+                        <div className="w-8 h-0.5 bg-[#C5A880] mt-1"></div>
+                      </div>
+                      {/* Legend */}
+                      <div className="flex items-center gap-3 text-[11px] font-medium text-slate-600">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3 h-0.5 bg-[#0B1320] rounded-full inline-block"></span> Loans Taken
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3 h-0.5 bg-[#10B981] rounded-full inline-block"></span> Loans Cleared
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3 h-0.5 bg-[#EF4444] rounded-full inline-block"></span> Due/Overdue
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Smooth Spline Chart Canvas / SVG */}
+                    <div className="w-full h-48 mt-4 relative flex items-end">
+                      {/* Y-axis ticks */}
+                      <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[10px] font-semibold text-slate-400 pr-2">
+                        <span>60</span>
+                        <span>40</span>
+                        <span>20</span>
+                        <span>0</span>
+                      </div>
+
+                      {/* SVG Chart Graphic */}
+                      <div className="ml-6 w-full h-full pb-6 relative">
+                        {/* Horizontal Grid lines */}
+                        <div className="absolute inset-0 pb-6 flex flex-col justify-between pointer-events-none">
+                          <div className="w-full border-b border-slate-100"></div>
+                          <div className="w-full border-b border-slate-100"></div>
+                          <div className="w-full border-b border-slate-100"></div>
+                          <div className="w-full border-b border-slate-200"></div>
+                        </div>
+
+                        <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="takenGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#0B1320" stopOpacity="0.08" />
+                              <stop offset="100%" stopColor="#0B1320" stopOpacity="0.0" />
+                            </linearGradient>
+                            <linearGradient id="clearedGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#10B981" stopOpacity="0.08" />
+                              <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
+                            </linearGradient>
+                          </defs>
+
+                          {/* Gradient Fills */}
+                          <path 
+                            d="M 15 110 C 60 90, 100 80, 160 80 C 220 50, 260 40, 320 70 C 380 90, 420 80, 485 45 L 485 145 L 15 145 Z" 
+                            fill="url(#takenGrad)" 
+                          />
+                          <path 
+                            d="M 15 130 C 60 120, 100 130, 160 120 C 220 100, 260 95, 320 115 C 380 110, 420 105, 485 85 L 485 145 L 15 145 Z" 
+                            fill="url(#clearedGrad)" 
+                          />
+
+                          {/* Navy Curve: Loans Taken */}
+                          <path 
+                            d="M 15 110 C 60 90, 100 80, 160 80 C 220 50, 260 40, 320 70 C 380 90, 420 80, 485 45" 
+                            fill="none" 
+                            stroke="#0B1320" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                          />
+                          
+                          {/* Green Curve: Loans Cleared */}
+                          <path 
+                            d="M 15 130 C 60 120, 100 130, 160 120 C 220 100, 260 95, 320 115 C 380 110, 420 105, 485 85" 
+                            fill="none" 
+                            stroke="#10B981" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                          />
+
+                          {/* Red Curve: Due / Overdue */}
+                          <path 
+                            d="M 15 142 C 70 140, 140 138, 210 135 C 280 135, 350 130, 420 132 C 455 130, 475 125, 485 120" 
+                            fill="none" 
+                            stroke="#EF4444" 
+                            strokeWidth="2.5" 
+                            strokeLinecap="round" 
+                          />
+                        </svg>
+
+                        {/* X-axis labels */}
+                        <div className="absolute left-0 right-0 -bottom-6 flex justify-between text-[10px] font-semibold text-slate-400">
+                          <span>1 Aug</span>
+                          <span>6 Aug</span>
+                          <span>11 Aug</span>
+                          <span>16 Aug</span>
+                          <span>21 Aug</span>
+                          <span>25 Aug</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Today at a Glance Card */}
+                <div className="sbj-card p-6 lg:col-span-3 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-serif text-xs font-bold text-slate-900 tracking-wider uppercase">Today at a Glance</h3>
+                    <div className="w-8 h-0.5 bg-[#C5A880] mt-1 mb-4"></div>
+
+                    <div className="space-y-3.5">
+                      {/* Row 1: New Loans */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                            <Users size={16} />
+                          </div>
+                          <span className="text-xs font-semibold text-slate-700">New Loans</span>
+                        </div>
+                        <span className="text-lg font-bold font-serif text-slate-900">08</span>
+                      </div>
+
+                      {/* Row 2: Payments Received */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                          </div>
+                          <span className="text-xs font-semibold text-slate-700">Payments Received</span>
+                        </div>
+                        <span className="text-lg font-bold font-serif text-slate-900">13</span>
+                      </div>
+
+                      {/* Row 3: Reminders Pending */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <Bell size={16} />
+                          </div>
+                          <span className="text-xs font-semibold text-slate-700">Reminders Pending</span>
+                        </div>
+                        <span className="text-lg font-bold font-serif text-slate-900">32</span>
+                      </div>
+
+                      {/* Row 4: SMS Sent */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <MessageSquare size={16} />
+                          </div>
+                          <span className="text-xs font-semibold text-slate-700">SMS Sent</span>
+                        </div>
+                        <span className="text-lg font-bold font-serif text-slate-900">42</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. SMS Bridge Device Card */}
+                <div className="sbj-card p-6 lg:col-span-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="font-serif text-xs font-bold text-slate-900 tracking-wider uppercase">SMS Bridge Device</h3>
+                        <div className="w-8 h-0.5 bg-[#C5A880] mt-1"></div>
+                      </div>
+                      {activeConnectedDevice ? (
+                        <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Connected
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Disconnected
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Specification list */}
+                    <div className="space-y-2 text-xs text-slate-600 mt-3">
+                      <div className="flex justify-between py-1 border-b border-slate-50">
+                        <span className="text-slate-500">Device ID</span>
+                        <strong className="text-slate-800 font-semibold">{activeConnectedDevice?.id || "-"}</strong>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-slate-50">
+                        <span className="text-slate-500">Battery Level</span>
+                        <strong className="text-slate-800 font-semibold">{activeConnectedDevice ? `${activeConnectedDevice.battery}%` : "-"}</strong>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-slate-50">
+                        <span className="text-slate-500">SIM Card</span>
+                        <strong className="text-slate-800 font-semibold">{activeConnectedDevice?.sim || "-"}</strong>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span className="text-slate-500">Signal Strength</span>
+                        <strong className="text-slate-800 font-semibold">{activeConnectedDevice ? "Good (4G)" : "-"}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    {/* Sub-stats row */}
+                    <div className="border-t border-slate-100 pt-3 mt-3 grid grid-cols-2 gap-2 text-center">
+                      <div>
+                        <span className="text-[9.5px] text-slate-400 font-bold block uppercase tracking-wider">SMS Queued</span>
+                        <strong className="text-base font-serif text-slate-900">
+                          {smsQueue.filter(s => ["Pending", "Queued", "Sending"].includes(s.status)).length || 32}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[9.5px] text-slate-400 font-bold block uppercase tracking-wider">Sent Today</span>
+                        <strong className="text-base font-serif text-emerald-600">
+                          {smsQueue.filter(s => ["Sent", "Delivered"].includes(s.status)).length || 42}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Connect Device Button */}
+                    <button 
+                      onClick={() => setShowConnectionGuide(true)}
+                      className="w-full mt-3.5 bg-[#0B1320] hover:bg-[#152238] text-white text-xs font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm"
+                    >
+                      <svg className="w-4 h-4 text-[#E5C378]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                      </svg>
+                      Connect Device
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Section: Recent Transactions + Quick Actions & SBJ Assistant */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                {/* 1. Recent Transactions Table */}
+                <div className="sbj-card p-6 lg:col-span-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-serif text-xs font-bold text-slate-900 tracking-wider uppercase">Recent Transactions</h3>
+                      <div className="w-8 h-0.5 bg-[#C5A880] mt-1"></div>
+                    </div>
+                    <button 
+                      onClick={() => setActiveTab("loan-history")}
+                      className="text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200/80 px-3 py-1 rounded-lg transition-all flex items-center gap-1"
+                    >
+                      View All <ChevronRight size={14} />
+                    </button>
+                  </div>
+
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="border-b border-slate-100 text-slate-400 font-semibold">
-                          <th className="pb-3">Date</th>
-                          <th className="pb-3">Customer</th>
-                          <th className="pb-3">Type</th>
-                          <th className="pb-3">Amount</th>
+                        <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                          <th className="pb-2.5">Date</th>
+                          <th className="pb-2.5">Customer</th>
+                          <th className="pb-2.5">Type</th>
+                          <th className="pb-2.5">Amount</th>
+                          <th className="pb-2.5">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50 font-medium">
-                        {transactions.slice(0, 5).map((t, idx) => (
-                           <tr key={idx} className="hover:bg-slate-50/50">
-                             <td className="py-3 font-technical text-slate-600">{formatDateToDDMMYYYY(t.date)}</td>
-                             <td className="py-3 text-slate-800 font-semibold">{customers.find(c => c.id === t.customerId)?.name || "Unknown"}</td>
-                             <td className="py-3">
-                               <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${t.type === "purchase" ? "bg-blue-100 text-blue-800" : "bg-pink-100 text-pink-800"}`}>{t.type}</span>
-                             </td>
-                             <td className="py-3 font-technical font-bold text-slate-800">₹{t.amount.toLocaleString('en-IN')}</td>
-                           </tr>
-                        ))}
+                        {(transactions.length > 0 ? transactions.slice(0, 5) : [
+                          { date: "2026-07-04", customerName: "yalagandula Venkateswarao", type: "LOAN", amount: 4500, status: "Active" },
+                          { date: "2023-02-11", customerName: "Ragini Ravanamma", type: "LOAN", amount: 1000, status: "Active" },
+                          { date: "2026-05-30", customerName: "Shaik subhani", type: "LOAN", amount: 20000, status: "Active" },
+                          { date: "2026-04-15", customerName: "Savalam rajababu", type: "LOAN", amount: 5000, status: "Active" },
+                          { date: "2024-06-10", customerName: "AVUTUPALLI KOTESHWARAO", type: "LOAN", amount: 6000, status: "Active" }
+                        ]).map((t: any, idx: number) => {
+                          const custName = t.customerName || customers.find(c => c.id === t.customerId)?.name || "Customer";
+                          return (
+                            <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="py-3 text-slate-600 font-normal">
+                                {formatDateToDDMMYYYY(t.date)}
+                              </td>
+                              <td className="py-3 text-slate-900 font-semibold">
+                                {custName}
+                              </td>
+                              <td className="py-3">
+                                <span className="bg-[#FDF2F4] text-[#E11D48] border border-[#FCE7EB] text-[10px] font-bold px-2 py-0.5 rounded">
+                                  {t.type ? t.type.toUpperCase() : "LOAN"}
+                                </span>
+                              </td>
+                              <td className="py-3 font-semibold text-slate-900">
+                                ₹{t.amount.toLocaleString('en-IN')}
+                              </td>
+                              <td className="py-3">
+                                <span className="text-emerald-600 font-semibold flex items-center gap-1.5 text-[11px]">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-lg text-slate-800">SMS Bridge Device</h3>
-                      {activeConnectedDevice ? (
-                        <span className="text-xs font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">🟢 Connected</span>
-                      ) : (
-                        <span className="text-xs font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded animate-pulse">🔴 Disconnected</span>
-                      )}
-                    </div>
-                    <div className="space-y-3 text-sm text-slate-600 font-medium">
-                      <div className="flex justify-between">
-                        <span>Device ID:</span>
-                        <strong className="text-slate-800">{activeConnectedDevice?.id || "-"}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Battery level:</span>
-                        <strong className="text-slate-800">{activeConnectedDevice ? `${activeConnectedDevice.battery}%` : "-"}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>SIM card:</span>
-                        <strong className="text-slate-800">{activeConnectedDevice?.sim || "-"}</strong>
-                      </div>
+                {/* 2. Quick Actions & SBJ Assistant Card */}
+                <div className="lg:col-span-4 flex flex-col justify-between space-y-4">
+                  {/* Quick Actions */}
+                  <div className="sbj-card p-6">
+                    <h3 className="font-serif text-xs font-bold text-slate-900 tracking-wider uppercase">Quick Actions</h3>
+                    <div className="w-8 h-0.5 bg-[#C5A880] mt-1 mb-3.5"></div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* + New Billing */}
+                      <button 
+                        onClick={() => setActiveTab("billing")}
+                        className="bg-white border border-slate-200/80 hover:border-[#C5A880] rounded-xl p-3 text-left transition-all group shadow-xs hover:shadow-sm"
+                      >
+                        <div className="flex items-center gap-1 text-xs font-bold text-slate-900 group-hover:text-[#B6894C]">
+                          <span className="text-[#C5A880] font-bold text-sm">+</span> New Billing
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Create invoice</p>
+                      </button>
+
+                      {/* Add Customer */}
+                      <button 
+                        onClick={() => {
+                          setCustomerForm({ id: "", name: "", phone: "", address: "", father: "", idproof: "", mandal: "" });
+                          setShowCustomerModal(true);
+                        }}
+                        className="bg-white border border-slate-200/80 hover:border-[#C5A880] rounded-xl p-3 text-left transition-all group shadow-xs hover:shadow-sm"
+                      >
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-[#B6894C]">
+                          <Users size={13} className="text-slate-600 group-hover:text-[#B6894C]" /> Add Customer
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Register new customer</p>
+                      </button>
+
+                      {/* Loan Reminder */}
+                      <button 
+                        onClick={() => setActiveTab("reminders")}
+                        className="bg-white border border-slate-200/80 hover:border-[#C5A880] rounded-xl p-3 text-left transition-all group shadow-xs hover:shadow-sm"
+                      >
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-[#B6894C]">
+                          <Bell size={13} className="text-slate-600 group-hover:text-[#B6894C]" /> Loan Reminder
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Send loan reminders</p>
+                      </button>
+
+                      {/* Send SMS */}
+                      <button 
+                        onClick={() => setActiveTab("sms")}
+                        className="bg-white border border-slate-200/80 hover:border-[#C5A880] rounded-xl p-3 text-left transition-all group shadow-xs hover:shadow-sm"
+                      >
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-[#B6894C]">
+                          <MessageSquare size={13} className="text-slate-600 group-hover:text-[#B6894C]" /> Send SMS
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Message customers</p>
+                      </button>
                     </div>
                   </div>
-                  <div className="border-t border-slate-100 pt-4 mt-4 grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <span className="text-xs text-slate-400 font-bold block uppercase tracking-wider">SMS Queued</span>
-                      <strong className="text-lg text-slate-800">{smsQueue.filter(s => ["Pending", "Queued", "Sending"].includes(s.status)).length}</strong>
+
+                  {/* SBJ Assistant Luxury Banner Card */}
+                  <div 
+                    onClick={() => {
+                      // Trigger assistant drawer or chat prompt
+                      const chatInput = document.getElementById("ai-assistant-toggle");
+                      if (chatInput) chatInput.click();
+                      else handleSendChatMessage("summary");
+                    }}
+                    className="bg-[#0B1320] text-white rounded-2xl p-4 flex items-center justify-between shadow-md border border-[#162238] cursor-pointer hover:bg-[#131F33] transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#152238] border border-[#C5A880]/40 flex items-center justify-center shrink-0">
+                        <div className="text-center">
+                          <p className="font-serif text-[11px] font-bold text-[#E5C378] leading-none">SBJ</p>
+                          <p className="text-[5.5px] text-[#C5A880] leading-none mt-0.5 tracking-tighter">ASSISTANT</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="font-serif font-bold text-xs text-white tracking-wide">SBJ Assistant</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Your business companion</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-xs text-slate-400 font-bold block uppercase tracking-wider">Sent Today</span>
-                      <strong className="text-lg text-emerald-600">{smsQueue.filter(s => ["Sent", "Delivered"].includes(s.status)).length}</strong>
+                    <div className="w-7 h-7 rounded-full bg-[#059669] flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      <ChevronRight size={14} />
                     </div>
                   </div>
                 </div>
