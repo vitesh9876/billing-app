@@ -7726,28 +7726,28 @@ export default function Dashboard() {
       </nav>
 
       {/* FLOATING SBJ AI COPILOT LAUNCHER BUTTON */}
-      <div className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40 print:hidden flex flex-col items-end gap-2">
+      <div className="fixed bottom-[88px] sm:bottom-[84px] md:bottom-6 right-4 sm:right-6 z-40 print:hidden flex flex-col items-end gap-2">
         {!showAiAssistantModal && (
           <button
             type="button"
             onClick={() => setShowAiAssistantModal(true)}
-            className="bg-[#0B1320] hover:bg-[#152238] text-white py-3 px-4 rounded-full shadow-2xl flex items-center gap-2.5 transition-all hover:scale-105 border border-[#C5A880]/50 cursor-pointer group"
+            className="bg-[#0B1320] hover:bg-[#152238] text-white p-2.5 sm:py-2.5 sm:px-4 rounded-full shadow-2xl flex items-center gap-2.5 transition-all hover:scale-105 border-2 border-[#E5C378]/80 cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-full bg-[#152238] border border-[#E5C378] flex items-center justify-center text-[#E5C378] shadow-inner group-hover:rotate-12 transition-transform">
+            <div className="w-8 h-8 rounded-full bg-[#152238] border border-[#E5C378] flex items-center justify-center text-[#E5C378] shadow-inner group-hover:rotate-12 transition-transform shrink-0">
               <Sparkles size={16} />
             </div>
-            <div className="text-left">
+            <div className="text-left hidden sm:block">
               <span className="font-serif font-bold text-xs text-white block leading-tight">SBJ AI Copilot</span>
               <span className="text-[9px] text-[#C5A880] block font-semibold">Live Business Assistant</span>
             </div>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ml-1"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse ml-0.5"></span>
           </button>
         )}
       </div>
 
       {/* ADVANCED SBJ AI COPILOT MODAL & DRAWER */}
       {showAiAssistantModal && (
-        <div className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[440px] bg-white border border-[#C5A880]/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[85vh] sm:max-h-[620px] print:hidden transition-all animate-in fade-in slide-in-from-bottom-6 duration-200">
+        <div className="fixed bottom-[76px] sm:bottom-[80px] md:bottom-6 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[440px] bg-white border border-[#C5A880]/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[75vh] sm:max-h-[620px] print:hidden transition-all animate-in fade-in slide-in-from-bottom-6 duration-200">
           
           {/* AI Header */}
           <div className="bg-[#0B1320] text-white p-3.5 flex justify-between items-center border-b border-[#162238]">
