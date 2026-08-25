@@ -44,6 +44,24 @@ body {
   border-right: 1px solid #162238;
 }
 
+/* Hide scrollbars universally for clean luxury appearance */
+.no-scrollbar::-webkit-scrollbar,
+.sbj-sidebar::-webkit-scrollbar,
+.sbj-sidebar *::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+}
+
+.no-scrollbar,
+.sbj-sidebar,
+.sbj-sidebar * {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+
 /* Custom premium transitions and focus rings */
 button, select, input, textarea {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

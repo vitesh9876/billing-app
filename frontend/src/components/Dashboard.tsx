@@ -2719,7 +2719,7 @@ export default function Dashboard() {
     <div className={`flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-[#F6F7F9] font-sans print:bg-white text-slate-900 w-full ${theme}`}>
       
       {/* Sidebar Navigation */}
-      <aside className="hidden md:flex w-64 sbj-sidebar text-slate-100 flex-col justify-between print:hidden shrink-0 h-screen sticky top-0 z-20">
+      <aside className="hidden md:flex w-64 sbj-sidebar text-slate-100 flex-col justify-between print:hidden shrink-0 h-screen sticky top-0 z-20 no-scrollbar">
         <div className="flex flex-col">
           {/* Logo & Brand Header */}
           <div className="px-6 py-6 border-b border-[#162238] flex flex-col items-center text-center">
@@ -2739,7 +2739,7 @@ export default function Dashboard() {
           </div>
 
           {/* Categorized Nav Links */}
-          <nav className="p-3 space-y-4 overflow-y-auto max-h-[calc(100vh-230px)]">
+          <nav className="p-3 space-y-4 overflow-y-auto no-scrollbar max-h-[calc(100vh-230px)]">
             {/* OVERVIEW */}
             <div>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 block mb-1.5">Overview</span>
@@ -2851,7 +2851,7 @@ export default function Dashboard() {
       </aside>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col min-w-0 print:hidden pb-16 md:pb-0 overflow-y-auto">
+      <main className="flex-1 flex flex-col min-w-0 print:hidden pb-16 md:pb-0 overflow-y-auto no-scrollbar">
         
         {/* Dynamic Top Header */}
         <header className="py-6 px-6 md:px-8 bg-transparent flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-10 print:hidden backdrop-blur-sm">
