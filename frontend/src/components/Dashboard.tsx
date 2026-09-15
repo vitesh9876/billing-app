@@ -4059,34 +4059,6 @@ export default function Dashboard() {
                       </button>
                     </div>
                   </div>
-
-                  {/* SBJ Assistant Luxury Banner Card */}
-                  <div 
-                    onClick={() => {
-                      setShowAiAssistantModal(true);
-                      setAiCopilotTab("chat");
-                    }}
-                    className="bg-[#0B1320] text-white rounded-2xl p-4 flex items-center justify-between shadow-md border border-[#162238] cursor-pointer hover:bg-[#131F33] transition-all group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#152238] border border-[#C5A880]/40 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <div className="text-center">
-                          <p className="font-serif text-[11px] font-bold text-[#E5C378] leading-none">SBJ</p>
-                          <p className="text-[5.5px] text-[#C5A880] leading-none mt-0.5 tracking-tighter">AI COPILOT</p>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <p className="font-serif font-bold text-xs text-white tracking-wide">SBJ AI Copilot</p>
-                          <span className="text-[8.5px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded-full font-bold">Active</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Loan analytics, Telugu SMS, & Risk Forecaster</p>
-                      </div>
-                    </div>
-                    <div className="w-7 h-7 rounded-full bg-[#059669] flex items-center justify-center text-white text-xs font-bold shadow-sm group-hover:bg-[#047857] transition-colors">
-                      <ChevronRight size={14} />
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
