@@ -199,7 +199,9 @@ function MaskedMoney({
               </div>
             </form>
           </div>
-  );
+        </div>
+      );
+    }
 }
 
 export default function Dashboard() {
