@@ -28,19 +28,14 @@ import {
   Menu,
   MoreHorizontal,
   Sparkles,
-  Bot,
   TrendingUp,
   BarChart2,
-  MessageCircle,
   Copy,
   SendHorizontal,
-  Calculator,
   AlertTriangle,
-  Zap,
   RotateCcw,
   Check,
   ExternalLink,
-  ShieldAlert,
   Eye,
   EyeOff
 } from "lucide-react";
@@ -204,9 +199,6 @@ function MaskedMoney({
               </div>
             </form>
           </div>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -229,34 +221,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
    
    // Dynamic Loan Activity Graph States
   const [chartTimeframe, setChartTimeframe] = useState<"7d" | "month" | "6m" | "year">("month");
-  const [chartMetricMode, setChartMetricMode] = useState<"count" | "amount">("amount");
-  const [hoveredChartIndex, setHoveredChartIndex] = useState<number | null>(null);
-
-  // Advanced SBJ AI Copilot / Business Chatbot States
-  const [showAiAssistantModal, setShowAiAssistantModal] = useState(false);
-  const [aiInputText, setAiInputText] = useState("");
-  const [aiIsTyping, setAiIsTyping] = useState(false);
-  const [aiCopilotTab, setAiCopilotTab] = useState<"chat" | "risk" | "calculator" | "sms_drafter">("chat");
-  const [calcPrincipal, setCalcPrincipal] = useState(25000);
-  const [calcRate, setCalcRate] = useState(1.5);
-  const [calcMonths, setCalcMonths] = useState(6);
-  const [calcDays, setCalcDays] = useState(0);
-  const [aiChatMessages, setAiChatMessages] = useState<Array<{
-    id: string;
-    sender: "user" | "assistant";
-    text: string;
-    timestamp: string;
-    cardType?: "summary" | "loans" | "risk" | "sms" | "calculator" | "geo";
-    cardData?: any;
-  }>>([
-    {
-      id: "welcome-msg",
-      sender: "assistant",
-      text: "Namaste Vitesh! I am your SBJ AI Business Copilot. How can I assist you with real-time portfolio analytics, loan risk audits, interest calculations, or drafting Telugu SMS today?",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      cardType: "summary"
-    }
-  ]);
 
   const isDeleteKey = useRef(false);
 
@@ -541,24 +505,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   // Printing state
   const [activePrintTicket, setActivePrintTicket] = useState<any>(null);
   const [activePrintLoanReport, setActivePrintLoanReport] = useState<any>(null);
-
-  // Smart Assistant Chatbot States
-  const [showChatbot, setShowChatbot] = useState(false);
-  const [chatInputText, setChatInputText] = useState("");
-  const [chatMessages, setChatMessages] = useState<Array<{
-    id: string;
-    sender: "user" | "bot";
-    text: string;
-    timestamp: string;
-    actions?: Array<{ label: string; onClick: () => void }>;
-  }>>([
-    {
-      id: "welcome",
-      sender: "bot",
-      text: "నమస్కారం! 🙏 Welcome to Sri Sai Balaji Assistant. How can I help you today?",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
 
   // Active loans list respecting current filters for Next / Prev navigation inside Loan Summary Details modal
   const activeLoanList = transactions
@@ -1814,209 +1760,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       starSeries: false
     });
     setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
-    setShowOfflineLoanModal(true);
-  };
-
-  const handleSendChatMessage = (textToSend?: string) => {
-    const text = (textToSend || chatInputText).trim();
-    if (!text) return;
-
-    const userMsgId = Date.now().toString();
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    const userMessage = {
-      id: userMsgId,
-      sender: "user" as const,
-      text: text,
-      timestamp: timeStr
-    };
-
-    setChatMessages(prev => [...prev, userMessage]);
-    if (!textToSend) setChatInputText("");
-
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let botText = "";
-      let botActions: Array<{ label: string; onClick: () => void }> | undefined = undefined;
-
-      // 1. Navigation Intents
-      if (lower.includes("loan history") || lower.includes("all loans") || lower.includes("history")) {
-        setActiveTab("loan-history");
-        botText = "Navigated to 📜 **Loan History** page.";
-        botActions = [
-          { label: "★ Filter Star Loans", onClick: () => setLoanSeriesFilter("star") },
-          { label: "📋 Filter Pending", onClick: () => setLoanHistoryFilter("pending") },
-          { label: "🖨️ Print Report", onClick: () => handlePrintLoanHistoryReport() }
-        ];
-      } else if (lower.includes("reminder") || lower.includes("reminders") || lower.includes("due")) {
-        setActiveTab("loan-reminders");
-        botText = "Navigated to 🔔 **Loan Reminders** page.";
-      } else if (lower.includes("customer") || lower.includes("parties") || lower.includes("party")) {
-        setActiveTab("customers");
-        botText = "Navigated to 👥 **Customers** list.";
-        botActions = [
-          { label: "➕ Add Customer", onClick: () => setShowCustomerModal(true) }
-        ];
-      } else if (lower.includes("dashboard") || lower.includes("home")) {
-        setActiveTab("dashboard");
-        botText = "Navigated to 📊 **Dashboard** overview.";
-      } else if (lower.includes("setting") || lower.includes("settings")) {
-        setActiveTab("settings");
-        botText = "Navigated to ⚙️ **Settings**.";
-      } else if (lower.includes("billing") || lower.includes("new sale") || lower.includes("pos")) {
-        setActiveTab("billing");
-        botText = "Navigated to 🛒 **New Sale / Billing**.";
-
-      // 2. Action & Modal Intents
-      } else if (lower.includes("add offline loan") || lower.includes("new loan") || lower.includes("add loan") || lower.includes("create loan")) {
-        handleOpenAddLoanModal();
-        botText = "Opened ➕ **Add Offline Loan Form**.";
-      } else if (lower.includes("add customer") || lower.includes("new customer") || lower.includes("create customer")) {
-        setShowCustomerModal(true);
-        botText = "Opened 👤 **Add Customer Form**.";
-      } else if (lower.includes("bulk import") || lower.includes("csv import") || lower.includes("import loan")) {
-        setShowBulkImportModal(true);
-        botText = "Opened 📤 **Bulk CSV Import Modal**.";
-
-      // 3. Search or Edit/Clear specific Loan Number (e.g. #220, 220, bill 220, star 219)
-      } else if (/\b(#?★?\*?\d+)\b/.test(lower)) {
-        const match = lower.match(/\b(#?★?\*?\d+)\b/);
-        const searchNum = match ? match[1].replace("#", "").toLowerCase() : "";
-        
-        const foundTxn = transactions.find(t => {
-          const formatted = formatBillNoForDisplay(t.id).toLowerCase();
-          const raw = t.id.toLowerCase();
-          return formatted === searchNum || formatted === `★${searchNum}` || raw.includes(searchNum);
-        });
-
-        if (foundTxn) {
-          const cust = customers.find(c => c.id === foundTxn.customerId);
-          const displayBill = formatBillNoForDisplay(foundTxn.id);
-          const itemsStr = foundTxn.loanDetails?.items?.map((i: any) => i.name).join(', ') || "N/A";
-          const interestAmt = getLoanInterest(foundTxn);
-
-          if (lower.includes("edit") || lower.includes("change") || lower.includes("update")) {
-            setSelectedLoanTxn(foundTxn);
-            setOfflineLoanForm({
-              billNo: displayBill,
-              custName: cust?.name || "",
-              phone: cust?.phone || "",
-              father: cust?.father || "",
-              idProof: cust?.idproof || "",
-              address: cust?.address || "",
-              mandal: cust?.mandal || "",
-              amount: String(foundTxn.amount),
-              interestRate: foundTxn.loanDetails?.interestRate || "3.0%",
-              takenDate: foundTxn.loanDetails?.takenDate || foundTxn.date || new Date().toISOString().split('T')[0],
-              endDate: foundTxn.loanDetails?.endDate || new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
-              status: foundTxn.status || "Pending",
-              interestPaidUpto: foundTxn.loanDetails?.interestPaidUpto || "",
-              clearedDate: foundTxn.clearedDate || "",
-              pledgedItemsStr: itemsStr,
-              qty: "1",
-              yield: "60%",
-              grossWeight: "",
-              netWeight: "",
-              worth: "",
-              remarks: "",
-              interestAmountPaid: "",
-              note: foundTxn.loanDetails?.note || "",
-              topups: foundTxn.loanDetails?.topups || [],
-              newTopUpAmount: "",
-              newTopUpDate: new Date().toISOString().split('T')[0],
-              newTopUpRemarks: "",
-              newRepaymentAmount: "",
-              newRepaymentDate: new Date().toISOString().split('T')[0],
-              newRepaymentRemarks: "",
-              starSeries: displayBill.startsWith("★") || displayBill.startsWith("*")
-            });
-            setEditingTxnId(foundTxn.id);
-            setShowOfflineLoanModal(true);
-            botText = `Opened Edit Form for Bill **#${displayBill}** (${cust?.name || "Customer"}).`;
-          } else if (lower.includes("clear") || lower.includes("pay") || lower.includes("close")) {
-            handleMarkAsCleared(foundTxn.id);
-            botText = `Opened Passcode Clear Form for Bill **#${displayBill}**.`;
-          } else {
-            botText = `Found Loan **#${displayBill}**:\n` +
-                      `• Customer: **${cust?.name || "Unknown"}** (${cust?.phone || "No Phone"})\n` +
-                      `• Amount: **₹${foundTxn.amount.toLocaleString('en-IN')}**\n` +
-                      `• Items: ${itemsStr}\n` +
-                      `• Taken Date: ${formatDateToDDMMYYYY(foundTxn.loanDetails?.takenDate || foundTxn.date)}\n` +
-                      `• Current Interest: **₹${interestAmt.toLocaleString('en-IN')}**\n` +
-                      `• Status: **${foundTxn.status || "Pending"}**`;
-            
-            botActions = [
-              { label: "👁️ View Details Modal", onClick: () => setSelectedLoanTxn(foundTxn) },
-              { label: "✅ Clear Loan", onClick: () => handleMarkAsCleared(foundTxn.id) }
-            ];
-          }
-        } else {
-          botText = `Could not find any loan matching **"${searchNum}"**. Please check the bill number.`;
-        }
-
-      // 4. Financial Summaries / Stats
-      } else if (lower.includes("summary") || lower.includes("stat") || lower.includes("total") || lower.includes("report")) {
-        const loanTxns = transactions.filter(t => t.type === "loan");
-        const pendingLoans = loanTxns.filter(t => (t.status || "Pending") === "Pending");
-        const totalActivePrincipal = pendingLoans.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-        const totalInterestAccrued = pendingLoans.reduce((sum, t) => sum + getLoanInterest(t), 0);
-
-        botText = `📊 **Shop Loan Financial Summary**:\n` +
-                  `• Total Loans Recorded: **${loanTxns.length}**\n` +
-                  `• Active Pending Loans: **${pendingLoans.length}**\n` +
-                  `• Active Principal Amount: **₹${totalActivePrincipal.toLocaleString('en-IN')}**\n` +
-                  `• Total Accumulated Interest: **₹${Math.round(totalInterestAccrued).toLocaleString('en-IN')}**`;
-        
-        botActions = [
-          { label: "📜 View Loan History", onClick: () => setActiveTab("loan-history") },
-          { label: "🖨️ Print Full Report", onClick: () => handlePrintLoanHistoryReport() }
-        ];
-
-      // 5. Interest Calculations
-      } else if (lower.includes("calculate") || lower.includes("interest")) {
-        const numbers = text.match(/\d+(\.\d+)?/g);
-        if (numbers && numbers.length >= 2) {
-          const principal = parseFloat(numbers[0]);
-          const rate = parseFloat(numbers[1]);
-          const months = numbers[2] ? parseFloat(numbers[2]) : 1;
-
-          const monthlyInterest = Math.round(principal * (rate / 100));
-          const totalInterest = Math.round(monthlyInterest * months);
-          const totalDue = principal + totalInterest;
-
-          botText = `🧮 **Interest Calculation**:\n` +
-                    `• Principal: **₹${principal.toLocaleString('en-IN')}**\n` +
-                    `• Rate: **${rate}% / month**\n` +
-                    `• Period: **${months} month(s)**\n` +
-                    `• Monthly Interest: **₹${monthlyInterest.toLocaleString('en-IN')}**\n` +
-                    `• Total Accrued Interest: **₹${totalInterest.toLocaleString('en-IN')}**\n` +
-                    `• Total Due Amount: **₹${totalDue.toLocaleString('en-IN')}**`;
-        } else {
-          botText = "To calculate interest, enter principal, rate, and months e.g. *calculate 20000 3% 5 months*.";
-        }
-
-      // 6. Default Fallback & Help
-      } else {
-        botText = "I didn't quite catch that. Here are some things you can ask me:";
-        botActions = [
-          { label: "📜 Go to Loan History", onClick: () => setActiveTab("loan-history") },
-          { label: "📊 Today's Loan Summary", onClick: () => handleSendChatMessage("summary") },
-          { label: "➕ Add Offline Loan", onClick: () => handleOpenAddLoanModal() },
-          { label: "👥 View Customer List", onClick: () => setActiveTab("customers") }
-        ];
-      }
-
-      setChatMessages(prev => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          sender: "bot",
-          text: botText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          actions: botActions
-        }
-      ]);
-    }, 250);
+setShowOfflineLoanModal(true);
   };
 
   // Auto-calculated interest and release date inside loan finance inputs
@@ -3147,149 +2891,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       recoveryRate
     };
   }, [chartTimeframe, chartMetricMode, transactions]);
-
-  // AI Copilot Handler
-  const handleSendAiCopilotMessage = (customQuery?: string) => {
-    const query = (customQuery || aiInputText).trim();
-    if (!query) return;
-
-    const userMsgId = "msg-" + Date.now();
-    const userMsg = {
-      id: userMsgId,
-      sender: "user" as const,
-      text: query,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setAiChatMessages(prev => [...prev, userMsg]);
-    if (!customQuery) setAiInputText("");
-    setAiIsTyping(true);
-
-    setTimeout(() => {
-      const qLower = query.toLowerCase();
-      let responseText = "";
-      let cardType: "summary" | "loans" | "risk" | "sms" | "calculator" | "geo" | undefined = undefined;
-      let cardData: any = undefined;
-
-      // 1. Business Overview / Executive Summary
-      if (qLower.includes("summary") || qLower.includes("overview") || qLower.includes("kpi") || qLower.includes("report") || qLower.includes("business")) {
-        responseText = `Here is your live executive business summary for Sri Sai Balaji Jewelry & Furniture:\n\n• Total Pledged Portfolio: ₹${(stats.pledgedValue || 9556275).toLocaleString('en-IN')}\n• Active Loan Accounts: ${stats.activeLoans || 661}\n• Total Registered Customers: ${stats.totalCustomers || 540}\n• Today's New Invoices: ₹${(stats.totalSales || 0).toLocaleString('en-IN')}\n• Active SMS Devices: ${smsDevices.filter(d => d.connection === 'Connected').length} connected`;
-        cardType = "summary";
-        cardData = {
-          pledgedValue: stats.pledgedValue || 9556275,
-          activeLoans: stats.activeLoans || 661,
-          totalCustomers: stats.totalCustomers || 540,
-          todaySales: stats.totalSales || 0,
-          overdueLoans: remindersStatus.filter(r => r.daysLeft <= 0).length || 32,
-          recoveryRate: 84
-        };
-      }
-      // 2. Risk / Overdue Loan Audit
-      else if (qLower.includes("risk") || qLower.includes("overdue") || qLower.includes("due") || qLower.includes("warning") || qLower.includes("default")) {
-        const overdueList = remindersStatus.filter(r => r.daysLeft <= 0).slice(0, 4);
-        responseText = `⚠️ **Loan Risk & Overdue Audit**\nFound ${remindersStatus.filter(r => r.daysLeft <= 0).length || 32} loans requiring immediate follow-up. Here are the highest priority accounts:`;
-        cardType = "risk";
-        cardData = {
-          overdueItems: overdueList.length > 0 ? overdueList : [
-            { loanId: "BILL-240", customerName: "K. Venkateswara Rao", phone: "9848022334", amount: 45000, daysLeft: -14 },
-            { loanId: "BILL-198", customerName: "Shaik Subhani", phone: "9963653730", amount: 20000, daysLeft: -8 },
-            { loanId: "BILL-212", customerName: "P. Nagamani", phone: "9440123456", amount: 12000, daysLeft: -4 }
-          ]
-        };
-      }
-      // 3. Customer or Loan Search
-      else if (qLower.includes("find") || qLower.includes("search") || qLower.includes("loan") || qLower.includes("customer") || qLower.includes("who")) {
-        const matchedCusts = customers.filter(c => c.name.toLowerCase().includes(qLower) || c.phone.includes(qLower) || c.id.toLowerCase().includes(qLower));
-        const matchedTxns = transactions.filter(t => t.id.toLowerCase().includes(qLower) || (t.customerName && t.customerName.toLowerCase().includes(qLower)));
-
-        if (matchedCusts.length > 0 || matchedTxns.length > 0) {
-          responseText = `Found matching records in your Sri Sai Balaji database:`;
-          cardType = "loans";
-          cardData = {
-            customers: matchedCusts.slice(0, 3),
-            loans: matchedTxns.slice(0, 3)
-          };
-        } else {
-          responseText = `Here are the top high-value active loans from your catalog:`;
-          cardType = "loans";
-          cardData = {
-            loans: (transactions.length > 0 ? transactions.slice(0, 3) : [
-              { id: "BILL-★265", customerName: "Bai Subramanyam", amount: 23000, date: "2026-08-18", status: "Pending" },
-              { id: "BILL-295", customerName: "Pothuraju Nagamani", amount: 12000, date: "2026-08-19", status: "Pending" },
-              { id: "BILL-296", customerName: "Pothuraju Nagamani", amount: 8000, date: "2026-08-19", status: "Pending" }
-            ])
-          };
-        }
-      }
-      // 4. SMS Drafting in Telugu / English
-      else if (qLower.includes("sms") || qLower.includes("draft") || qLower.includes("message") || qLower.includes("telugu") || qLower.includes("notice")) {
-        const isFestival = qLower.includes("festival") || qLower.includes("offer") || qLower.includes("diwali") || qLower.includes("sankranti");
-        const teluguMsg = isFestival
-          ? `శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్, గన్నవరం వారి పండుగ శుభాకాంక్షలు! బంగారం & వెండి ఆభరణాల కొనుగోలుపై ప్రత్యేక ఆఫర్లు కలవు. విచ్చేయండి!`
-          : `ప్రియమైన {CustomerName} గారు, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ (లోన్: #{LoanId}). మీ లోన్ గడువు ముగియబోవుచున్నది. దయచేసి వడ్డీ చెల్లించి రెన్యూవల్ చేసుకోగలరు. సెల్: 99636 53730`;
-
-        responseText = `✨ I have drafted a business SMS for you ready for 1-click dispatch to your Android Bridge queue:`;
-        cardType = "sms";
-        cardData = {
-          language: "Telugu / English",
-          content: teluguMsg,
-          previewRecipient: "Customer"
-        };
-      }
-      // 5. Interest & Principal Calculator
-      else if (qLower.includes("interest") || qLower.includes("calc") || qLower.includes("calculate") || qLower.includes("%") || qLower.includes("rate")) {
-        const pMatch = query.match(/\d+[\d,]*/);
-        const p = pMatch ? parseInt(pMatch[0].replace(/,/g, ''), 10) : calcPrincipal;
-        const r = 1.5;
-        const m = 6;
-        const interest = (p * (r / 100) * m);
-        const total = p + interest;
-
-        responseText = `🧮 **Gold Loan Interest Calculation Breakdown**:\n\n• Principal: ₹${p.toLocaleString('en-IN')}\n• Monthly Rate: ${r}% / month\n• Period: ${m} months\n• Total Interest: ₹${interest.toLocaleString('en-IN', { maximumFractionDigits: 2 })}\n• Net Maturity Payable: ₹${total.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
-        cardType = "calculator";
-        cardData = { principal: p, rate: r, months: m, interest, total };
-      }
-      // 6. Demographics & Geography
-      else if (qLower.includes("mandal") || qLower.includes("area") || qLower.includes("location") || qLower.includes("address") || qLower.includes("where")) {
-        responseText = `📍 **Geographical Borrower Distribution**:\n\n• Gannavaram: 48% of active accounts\n• Bhuthumallipadu: 22% of active accounts\n• Purushothapatnam: 18% of active accounts\n• Chikkavaram & Others: 12% of active accounts`;
-        cardType = "geo";
-        cardData = {
-          locations: [
-            { name: "Gannavaram", percentage: 48, count: 259 },
-            { name: "Bhuthumallipadu", percentage: 22, count: 119 },
-            { name: "Purushothapatnam", percentage: 18, count: 97 },
-            { name: "Chikkavaram & Others", percentage: 12, count: 65 }
-          ]
-        };
-      }
-      // 7. General fallback
-      else {
-        responseText = `I can help you analyze your jewelry & loan business, find transactions, compute pawn interest, audit overdue accounts, or generate Telugu SMS reminders. Choose an option below or type any question!`;
-        cardType = "summary";
-        cardData = {
-          pledgedValue: stats.pledgedValue || 9556275,
-          activeLoans: stats.activeLoans || 661,
-          totalCustomers: stats.totalCustomers || 540,
-          todaySales: stats.totalSales || 0,
-          overdueLoans: 32,
-          recoveryRate: 84
-        };
-      }
-
-      setAiChatMessages(prev => [
-        ...prev,
-        {
-          id: "bot-" + Date.now(),
-          sender: "assistant",
-          text: responseText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          cardType,
-          cardData
-        }
-      ]);
-      setAiIsTyping(false);
-    }, 450);
-  };
 
   return (
     <div className={`flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-[#F6F7F9] font-sans print:bg-white text-slate-900 w-full ${theme}`}>
@@ -5574,32 +5175,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
                     <button className="w-7 h-7 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs transition-all">
                       &gt;
                     </button>
-                  </div>
-                </div>
-
-                {/* Floating SBJ Assistant Badge */}
-                <div 
-                  onClick={() => {
-                    const chatInput = document.getElementById("ai-assistant-toggle");
-                    if (chatInput) chatInput.click();
-                    else handleSendChatMessage("summary");
-                  }}
-                  className="fixed bottom-6 right-6 bg-[#0B1320] text-white rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl border border-[#162238] cursor-pointer hover:bg-[#131F33] transition-all z-30"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#152238] border border-[#C5A880]/40 flex items-center justify-center shrink-0">
-                    <p className="font-serif text-[10px] font-bold text-[#E5C378] leading-none">SBJ</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-serif font-bold text-xs text-white">SBJ Assistant</p>
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    </div>
-                    <p className="text-[9.5px] text-slate-400">Your business companion</p>
-                  </div>
-                  <div className="w-6 h-6 rounded-full bg-[#059669] flex items-center justify-center text-white text-xs font-bold shadow-sm ml-1">
-                    <ChevronRight size={13} />
-                  </div>
-                </div>
+</div>
               </div>
             );
           })()}
