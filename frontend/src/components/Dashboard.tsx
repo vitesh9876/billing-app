@@ -40,7 +40,9 @@ import {
   RotateCcw,
   Check,
   ExternalLink,
-  ShieldAlert
+  ShieldAlert,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 function formatBillNoForDisplay(id: string) {
@@ -79,6 +81,135 @@ function generateSmoothPath(points: { x: number; y: number }[]): string {
   return path;
 }
 
+interface MaskedMoneyProps {
+  amount: number;
+  key: string;
+  showCurrency?: boolean;
+  currencySymbol?: string;
+  decimals?: number;
+  className?: string;
+  title?: string;
+}
+
+function MaskedMoney({ 
+  amount, 
+  key, 
+  showCurrency = true, 
+  currencySymbol = "₹", 
+  decimals = 0,
+  className = "",
+  title 
+}: MaskedMoneyProps) {
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+  const [passcodeInput, setPasscodeInput] = useState("");
+  const [passcodeError, setPasscodeError] = useState(false);
+  const isDeleteKeyRef = useRef(false);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      isDeleteKeyRef.current = e.key === "Backspace" || e.key === "Delete";
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
+
+  const handleToggleReveal = () => {
+    if (isRevealed) {
+      setIsRevealed(false);
+    } else {
+      setShowPasscodeModal(true);
+      setPasscodeInput("");
+      setPasscodeError(false);
+    }
+  };
+
+  const handlePasscodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passcodeInput.trim() === "1004") {
+      setIsRevealed(true);
+      setShowPasscodeModal(false);
+      setPasscodeInput("");
+      setPasscodeError(false);
+    } else {
+      setPasscodeError(true);
+    }
+  };
+
+  const formattedAmount = (currencySymbol || "") + Number(amount).toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const maskedAmount = (currencySymbol || "") + " * * * * *";
+
+  return (
+    <div className={`inline-flex items-center gap-1 ${className}`}>
+      <span className="font-serif font-bold text-slate-900">
+        {isRevealed ? formattedAmount : maskedAmount}
+      </span>
+      <button
+        type="button"
+        onClick={handleToggleReveal}
+        className="text-slate-400 hover:text-[#C5A880] transition-colors p-0.5 rounded hover:bg-slate-100 cursor-pointer"
+        title={isRevealed ? "Hide amount" : "Reveal amount (Passcode: 1004)"}
+      >
+        {isRevealed ? <EyeOff size={13} /> : <Eye size={13} />}
+      </button>
+      
+      {showPasscodeModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <ShieldAlert size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h4 className="font-serif font-bold text-lg text-slate-900">Verify Passcode</h4>
+                <p className="text-xs text-slate-500">Enter 4-digit passcode to reveal sensitive amount</p>
+              </div>
+            </div>
+            <form onSubmit={handlePasscodeSubmit} className="space-y-3">
+              <div className="relative">
+                <input
+                  type="password"
+                  autoFocus
+                  maxLength={4}
+                  placeholder="Enter passcode"
+                  className={`w-full border border-slate-200 rounded-xl p-3 text-center text-lg font-bold tracking-widest outline-none focus:border-[#C5A880] ${passcodeError ? "border-red-500" : ""}`}
+                  value={passcodeInput}
+                  onChange={(e) => {
+                    setPasscodeInput(e.target.value);
+                    if (passcodeError) setPasscodeError(false);
+                  }}
+                />
+              </div>
+              {passcodeError && (
+                <p className="text-red-600 text-xs text-center">Incorrect passcode. Try again.</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasscodeModal(false);
+                    setPasscodeInput("");
+                    setPasscodeError(false);
+                  }}
+                  className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2.5 bg-[#0B1320] hover:bg-[#152238] text-white rounded-xl text-xs font-semibold shadow-xs"
+                >
+                  Reveal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -91,9 +222,12 @@ export default function Dashboard() {
   const [customerViewMode, setCustomerViewMode] = useState<"grid" | "table" | "compact">("grid");
   const [remindersStatus, setRemindersStatus] = useState<any[]>([]);
   const [showConnectionGuide, setShowConnectionGuide] = useState(false);
-  const [readmeSubTab, setReadmeSubTab] = useState("Overview");
-  
-  // Dynamic Loan Activity Graph States
+const [readmeSubTab, setReadmeSubTab] = useState("Overview");
+   
+   // Loan History masking state
+   const [loanHistoryRevealed, setLoanHistoryRevealed] = useState(false);
+   
+   // Dynamic Loan Activity Graph States
   const [chartTimeframe, setChartTimeframe] = useState<"7d" | "month" | "6m" | "year">("month");
   const [chartMetricMode, setChartMetricMode] = useState<"count" | "amount">("amount");
   const [hoveredChartIndex, setHoveredChartIndex] = useState<number | null>(null);
@@ -133,6 +267,41 @@ export default function Dashboard() {
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, []);
+
+  // Sensitive Financial Privacy Masking (Passcode: 1004)
+  const [revealedSensitiveKeys, setRevealedSensitiveKeys] = useState<{ [key: string]: boolean }>({});
+  const [showSensitivePasscodeModal, setShowSensitivePasscodeModal] = useState(false);
+  const [sensitiveTargetKey, setSensitiveTargetKey] = useState<string | null>(null);
+  const [sensitivePasscodeInput, setSensitivePasscodeInput] = useState("");
+  const [sensitivePasscodeError, setSensitivePasscodeError] = useState(false);
+
+  const handleRequestReveal = (key: string) => {
+    if (revealedSensitiveKeys[key]) {
+      // If already revealed, clicking eye re-masks it immediately without passcode
+      setRevealedSensitiveKeys(prev => ({ ...prev, [key]: false }));
+    } else {
+      // Prompt for passcode modal
+      setSensitiveTargetKey(key);
+      setSensitivePasscodeInput("");
+      setSensitivePasscodeError(false);
+      setShowSensitivePasscodeModal(true);
+    }
+  };
+
+  const handleConfirmSensitivePasscode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (sensitivePasscodeInput.trim() === "1004") {
+      if (sensitiveTargetKey) {
+        setRevealedSensitiveKeys(prev => ({ ...prev, [sensitiveTargetKey]: true }));
+      }
+      setShowSensitivePasscodeModal(false);
+      setSensitiveTargetKey(null);
+      setSensitivePasscodeInput("");
+      setSensitivePasscodeError(false);
+    } else {
+      setSensitivePasscodeError(true);
+    }
+  };
   
   // Theme state
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -3440,14 +3609,26 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 
                 {/* 1. Total Pledged Value */}
-                <div className="sbj-card p-5 flex items-center gap-4">
+                <div className="sbj-card p-5 flex items-center gap-4 relative group">
                   <div className="w-13 h-13 rounded-full bg-[#0B1320] text-[#E5C378] flex items-center justify-center text-2xl font-serif font-bold shrink-0 shadow-sm">
                     ₹
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Pledged Value</h3>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Pledged Value</h3>
+                      <button
+                        type="button"
+                        onClick={() => handleRequestReveal("kpi-pledged")}
+                        className="text-slate-400 hover:text-[#C5A880] transition-colors p-1 rounded-md hover:bg-slate-100 cursor-pointer shrink-0"
+                        title={revealedSensitiveKeys["kpi-pledged"] ? "Hide amount" : "Reveal amount (Requires Passcode)"}
+                      >
+                        {revealedSensitiveKeys["kpi-pledged"] ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
                     <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
-                      ₹{(stats.pledgedValue || 9556275).toLocaleString('en-IN')}
+                      {revealedSensitiveKeys["kpi-pledged"]
+                        ? `₹${(stats.pledgedValue || 9556275).toLocaleString('en-IN')}`
+                        : "₹ * * * * *"}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">Across all active loans</p>
                   </div>
@@ -3484,16 +3665,28 @@ export default function Dashboard() {
                 </div>
 
                 {/* 4. Today's Sales */}
-                <div className="sbj-card p-5 flex items-center gap-4">
+                <div className="sbj-card p-5 flex items-center gap-4 relative group">
                   <div className="w-13 h-13 rounded-full bg-[#D97706] text-white flex items-center justify-center shrink-0 shadow-sm">
                     <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Today's Sales</h3>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Today's Sales</h3>
+                      <button
+                        type="button"
+                        onClick={() => handleRequestReveal("kpi-sales")}
+                        className="text-slate-400 hover:text-[#C5A880] transition-colors p-1 rounded-md hover:bg-slate-100 cursor-pointer shrink-0"
+                        title={revealedSensitiveKeys["kpi-sales"] ? "Hide amount" : "Reveal amount (Requires Passcode)"}
+                      >
+                        {revealedSensitiveKeys["kpi-sales"] ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
                     <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
-                      ₹{(stats.totalSales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      {revealedSensitiveKeys["kpi-sales"]
+                        ? `₹${(stats.totalSales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                        : "₹ * * * *"}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">From today's invoices</p>
                   </div>
@@ -3514,6 +3707,14 @@ export default function Dashboard() {
                           <span className="text-[10px] font-bold text-[#8C6404] bg-[#F4EFE6] px-2 py-0.5 rounded-full border border-[#E7DCB9]">
                             Live
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRequestReveal("chart-activity")}
+                            className="text-slate-400 hover:text-[#C5A880] transition-colors p-1 rounded-md hover:bg-slate-100 cursor-pointer"
+                            title={revealedSensitiveKeys["chart-activity"] ? "Hide amounts" : "Reveal amounts (Requires Passcode)"}
+                          >
+                            {revealedSensitiveKeys["chart-activity"] ? <EyeOff size={13} /> : <Eye size={13} />}
+                          </button>
                         </div>
                         <div className="w-8 h-0.5 bg-[#C5A880] mt-1"></div>
                       </div>
@@ -3651,7 +3852,9 @@ export default function Dashboard() {
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#E5C378]"></span> Taken:
                                 </span>
                                 <strong className="font-technical text-white">
-                                  ₹{activityChartData.points[hoveredChartIndex].takenAmount.toLocaleString('en-IN')} ({activityChartData.points[hoveredChartIndex].takenCount})
+                                  {revealedSensitiveKeys["chart-activity"]
+                                    ? `₹${activityChartData.points[hoveredChartIndex].takenAmount.toLocaleString('en-IN')}`
+                                    : "₹ * * * *"} ({activityChartData.points[hoveredChartIndex].takenCount})
                                 </strong>
                               </div>
                               <div className="flex items-center justify-between gap-3 text-slate-200">
@@ -3659,7 +3862,9 @@ export default function Dashboard() {
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span> Cleared:
                                 </span>
                                 <strong className="font-technical text-emerald-400">
-                                  ₹{activityChartData.points[hoveredChartIndex].clearedAmount.toLocaleString('en-IN')} ({activityChartData.points[hoveredChartIndex].clearedCount})
+                                  {revealedSensitiveKeys["chart-activity"]
+                                    ? `₹${activityChartData.points[hoveredChartIndex].clearedAmount.toLocaleString('en-IN')}`
+                                    : "₹ * * * *"} ({activityChartData.points[hoveredChartIndex].clearedCount})
                                 </strong>
                               </div>
                               <div className="flex items-center justify-between gap-3 text-slate-200">
@@ -3667,7 +3872,9 @@ export default function Dashboard() {
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444]"></span> Due/Overdue:
                                 </span>
                                 <strong className="font-technical text-rose-400">
-                                  ₹{activityChartData.points[hoveredChartIndex].dueAmount.toLocaleString('en-IN')} ({activityChartData.points[hoveredChartIndex].dueCount})
+                                  {revealedSensitiveKeys["chart-activity"]
+                                    ? `₹${activityChartData.points[hoveredChartIndex].dueAmount.toLocaleString('en-IN')}`
+                                    : "₹ * * * *"} ({activityChartData.points[hoveredChartIndex].dueCount})
                                 </strong>
                               </div>
                             </div>
@@ -3967,13 +4174,15 @@ export default function Dashboard() {
                       </thead>
                       <tbody className="divide-y divide-slate-50 font-medium">
                         {(transactions.length > 0 ? transactions.slice(0, 5) : [
-                          { date: "2026-07-04", customerName: "yalagandula Venkateswarao", type: "LOAN", amount: 4500, status: "Active" },
-                          { date: "2023-02-11", customerName: "Ragini Ravanamma", type: "LOAN", amount: 1000, status: "Active" },
-                          { date: "2026-05-30", customerName: "Shaik subhani", type: "LOAN", amount: 20000, status: "Active" },
-                          { date: "2026-04-15", customerName: "Savalam rajababu", type: "LOAN", amount: 5000, status: "Active" },
-                          { date: "2024-06-10", customerName: "AVUTUPALLI KOTESHWARAO", type: "LOAN", amount: 6000, status: "Active" }
+                          { id: "sample-1", date: "2026-07-04", customerName: "yalagandula Venkateswarao", type: "LOAN", amount: 4500, status: "Active" },
+                          { id: "sample-2", date: "2023-02-11", customerName: "Ragini Ravanamma", type: "LOAN", amount: 1000, status: "Active" },
+                          { id: "sample-3", date: "2026-05-30", customerName: "Shaik subhani", type: "LOAN", amount: 20000, status: "Active" },
+                          { id: "sample-4", date: "2026-04-15", customerName: "Savalam rajababu", type: "LOAN", amount: 5000, status: "Active" },
+                          { id: "sample-5", date: "2024-06-10", customerName: "AVUTUPALLI KOTESHWARAO", type: "LOAN", amount: 6000, status: "Active" }
                         ]).map((t: any, idx: number) => {
                           const custName = t.customerName || customers.find(c => c.id === t.customerId)?.name || "Customer";
+                          const rowKey = `recent-txn-${t.id || idx}`;
+                          const isRevealed = !!revealedSensitiveKeys[rowKey];
                           return (
                             <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
                               <td className="py-3 text-slate-600 font-normal">
@@ -3988,7 +4197,17 @@ export default function Dashboard() {
                                 </span>
                               </td>
                               <td className="py-3 font-semibold text-slate-900">
-                                ₹{t.amount.toLocaleString('en-IN')}
+                                <div className="flex items-center gap-1.5">
+                                  <span>{isRevealed ? `₹${t.amount.toLocaleString('en-IN')}` : "₹ * * * *"}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRequestReveal(rowKey)}
+                                    className="text-slate-400 hover:text-[#C5A880] transition-colors p-0.5 rounded hover:bg-slate-100 cursor-pointer"
+                                    title={isRevealed ? "Hide amount" : "Reveal amount (Requires Passcode)"}
+                                  >
+                                    {isRevealed ? <EyeOff size={13} /> : <Eye size={13} />}
+                                  </button>
+                                </div>
                               </td>
                               <td className="py-3">
                                 <span className="text-emerald-600 font-semibold flex items-center gap-1.5 text-[11px]">
@@ -5251,7 +5470,28 @@ export default function Dashboard() {
                         <th className="pb-3 pr-3 font-semibold">PLEDGED ITEMS</th>
                         <th className="pb-3 pr-3 font-semibold">QTY</th>
                         <th className="pb-3 pr-3 font-semibold">LOAN TAKEN DATE</th>
-                        <th className="pb-3 pr-3 font-semibold">AMOUNT</th>
+                        <th className="pb-3 pr-3 font-semibold flex items-center gap-1">
+                          AMOUNT
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (loanHistoryRevealed) {
+                                setLoanHistoryRevealed(false);
+                              } else {
+                                const passcode = prompt("Enter passcode to reveal all amounts:");
+                                if (passcode === "1004") {
+                                  setLoanHistoryRevealed(true);
+                                } else if (passcode !== null) {
+                                  alert("Incorrect passcode!");
+                                }
+                              }
+                            }}
+                            className="text-slate-400 hover:text-[#C5A880] p-0.5 rounded hover:bg-slate-100 cursor-pointer"
+                            title={loanHistoryRevealed ? "Hide all amounts" : "Reveal all amounts (Passcode: 1004)"}
+                          >
+                            {loanHistoryRevealed ? <EyeOff size={13} /> : <Eye size={13} />}
+                          </button>
+                        </th>
                         <th className="pb-3 pr-3 font-semibold">GROSS WT. (g)</th>
                         <th className="pb-3 pr-3 font-semibold">ADDRESS</th>
                         <th className="pb-3 pr-3 font-semibold">INTEREST GENERATED</th>
@@ -5292,7 +5532,7 @@ export default function Dashboard() {
                               {takenDateFormatted}
                             </td>
                             <td className="py-3.5 pr-3 font-bold text-slate-900">
-                              ₹{Number(t.amount).toLocaleString('en-IN')}
+                              {loanHistoryRevealed ? `₹${Number(t.amount).toLocaleString('en-IN')}` : "₹ * * * * *"}
                             </td>
                             <td className="py-3.5 pr-3 text-slate-600">
                               {grossWeight && grossWeight !== "-" ? (grossWeight.toString().includes("g") ? grossWeight : `${grossWeight} g`) : "-"}
@@ -5301,7 +5541,7 @@ export default function Dashboard() {
                               {address}
                             </td>
                             <td className="py-3.5 pr-3 text-[#E11D48] font-medium">
-                              ₹{Math.round(interestAmt).toLocaleString('en-IN')}
+                              {loanHistoryRevealed ? `₹${Math.round(interestAmt).toLocaleString('en-IN')}` : "₹ * * * * *"}
                             </td>
                             <td className="py-3.5">
                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
@@ -6123,7 +6363,9 @@ export default function Dashboard() {
                           <td className="p-2.5 text-slate-600">{isMulti ? "-" : (item.yield || "-")}</td>
                           <td className="p-2.5 text-slate-600">{isMulti ? "-" : (item.grossWeight ? item.grossWeight + "g" : "-")}</td>
                           <td className="p-2.5 text-slate-600">{isMulti ? "-" : (item.netWeight ? item.netWeight + "g" : "-")}</td>
-                          <td className="p-2.5 text-slate-900 font-semibold">{isMulti ? "-" : (item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-")}</td>
+                          <td className="p-2.5 text-slate-900 font-semibold">
+                              {isMulti ? "-" : (item.value ? "₹" + Number(item.value).toLocaleString('en-IN') : "-")}
+                            </td>
                           <td className="p-2.5 text-slate-500 font-normal">{item.remarks || "-"}</td>
                         </tr>
                       );
@@ -7177,6 +7419,88 @@ export default function Dashboard() {
                   className="px-4 py-2 bg-[#15803D] hover:bg-[#166534] text-white rounded-xl font-semibold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
                 >
                   <CheckCircle size={14} /> Confirm & Mark Cleared
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* SENSITIVE INFO PASSCODE MODAL */}
+      {showSensitivePasscodeModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl w-full max-w-sm p-6 sm:p-7 relative animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-[#FAF5EC] border border-[#E7DCB9] text-[#8C6404] flex items-center justify-center">
+                  <ShieldAlert size={16} />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base text-slate-900 leading-tight">Security Passcode</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Verify credentials to reveal this data</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => {
+                  setShowSensitivePasscodeModal(false);
+                  setSensitiveTargetKey(null);
+                  setSensitivePasscodeInput("");
+                  setSensitivePasscodeError(false);
+                }} 
+                className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmSensitivePasscode} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  Enter 4-Digit Passcode
+                </label>
+                <input 
+                  type="password"
+                  maxLength={4}
+                  autoFocus
+                  required
+                  placeholder="Enter passcode (e.g. 1004)"
+                  value={sensitivePasscodeInput}
+                  onChange={(e) => {
+                    setSensitivePasscodeInput(e.target.value);
+                    if (sensitivePasscodeError) setSensitivePasscodeError(false);
+                  }}
+                  className={`w-full border rounded-xl p-3 text-center text-lg font-mono tracking-widest outline-none transition-all ${
+                    sensitivePasscodeError 
+                      ? "border-rose-400 bg-rose-50 text-rose-800 focus:border-rose-500 ring-2 ring-rose-200" 
+                      : "border-slate-200/90 bg-white text-slate-900 focus:border-[#C5A880] focus:ring-2 focus:ring-[#C5A880]/20"
+                  }`}
+                />
+                {sensitivePasscodeError && (
+                  <p className="text-[11px] text-rose-600 font-semibold mt-1.5 flex items-center gap-1">
+                    <span>⚠️</span> Incorrect passcode! Access denied.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSensitivePasscodeModal(false);
+                    setSensitiveTargetKey(null);
+                    setSensitivePasscodeInput("");
+                    setSensitivePasscodeError(false);
+                  }}
+                  className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 bg-white cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-[#0B1320] hover:bg-[#152238] text-[#E5C378] font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Eye size={13} /> Reveal
                 </button>
               </div>
             </form>
