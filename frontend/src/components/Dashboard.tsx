@@ -200,8 +200,10 @@ function MaskedMoney({
             </form>
           </div>
         </div>
-      );
-    }
+      )}
+    </div>
+  );
+}
 }
 
 export default function Dashboard() {
