@@ -204,7 +204,6 @@ function MaskedMoney({
     </div>
   );
 }
-}
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
