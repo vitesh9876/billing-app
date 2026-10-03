@@ -5296,6 +5296,17 @@ setShowOfflineLoanModal(true);
                   </div>
                 </div>
               </div>
+
+              <div className="pt-6 mt-6 border-t border-slate-100">
+                <h4 className="font-serif text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Account &amp; Data</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <a href="/activity" className="rounded-xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-700 hover:border-amber-300 hover:bg-amber-50 transition-colors">Activity history</a>
+                  <a href="/documents" className="rounded-xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-700 hover:border-amber-300 hover:bg-amber-50 transition-colors">Private documents</a>
+                  <a href="/bridge" className="rounded-xl border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-700 hover:border-amber-300 hover:bg-amber-50 transition-colors">SMS phone pairing</a>
+                  <button type="button" onClick={()=>window.dispatchEvent(new Event("sbj:change-password"))} className="rounded-xl border border-slate-200 bg-white p-4 text-left text-sm font-semibold text-slate-700 hover:border-amber-300 hover:bg-amber-50 transition-colors">Change password</button>
+                  <button type="button" onClick={()=>window.dispatchEvent(new Event("sbj:sign-out"))} className="rounded-xl border border-slate-200 bg-white p-4 text-left text-sm font-semibold text-slate-700 hover:border-rose-300 hover:bg-rose-50 transition-colors">Sign out</button>
+                </div>
+              </div>
             </div>
           )}
 

@@ -53,6 +53,17 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
     await billingSupabase().auth.signOut();
   };
 
+  useEffect(()=> {
+    const openPasswordSettings=()=>{setPasswordMessage("");setShowPasswordForm(true);};
+    const signOutFromSettings=()=>{void signOut();};
+    window.addEventListener("sbj:change-password",openPasswordSettings);
+    window.addEventListener("sbj:sign-out",signOutFromSettings);
+    return ()=>{
+      window.removeEventListener("sbj:change-password",openPasswordSettings);
+      window.removeEventListener("sbj:sign-out",signOutFromSettings);
+    };
+  },[]);
+
   const submitAccount = async (event:FormEvent<HTMLFormElement>)=> {
     event.preventDefault(); if (busy) return; setBusy(true); setError("");
     try {
@@ -102,13 +113,6 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
 
   if (authorized) return <>
     {readOnly && <p role="status" className="fixed top-3 left-1/2 z-40 -translate-x-1/2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">Preview: changes are disabled.</p>}
-    <div className="fixed right-5 bottom-5 z-40 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm">
-      <a href="/activity" className="text-slate-700 underline">Activity</a>
-      <a href="/documents" className="text-slate-700 underline">Documents</a>
-      <a href="/bridge" className="text-slate-700 underline">SMS phone</a>
-      <button onClick={()=>{setPasswordMessage("");setShowPasswordForm(true);}} className="text-slate-700 underline">Change password</button>
-      <button onClick={signOut} className="text-slate-700">Sign out</button>
-    </div>
     {showPasswordForm && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
       <form onSubmit={submitPasswordChange} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
         <h2 className="text-xl font-semibold text-slate-900">Change password</h2>
