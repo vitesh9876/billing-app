@@ -550,6 +550,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   const [smsDispatchPaused, setSmsDispatchPaused] = useState<boolean | null>(null);
   const [smsDispatchBusy, setSmsDispatchBusy] = useState(false);
   const [smsDispatchError, setSmsDispatchError] = useState("");
+  const [smsDispatchRetry, setSmsDispatchRetry] = useState(0);
 
   // Printing state
   const [activePrintTicket, setActivePrintTicket] = useState<any>(null);
@@ -747,7 +748,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       if (!cancelled) setSmsDispatchError(error.message || "Could not load SMS pause status.");
     });
     return () => { cancelled = true; };
-  }, [activeTab]);
+  }, [activeTab, smsDispatchRetry]);
 
   const toggleSMSDispatch = async () => {
     if (smsDispatchPaused === null || smsDispatchBusy) return;
@@ -3165,8 +3166,8 @@ setShowOfflineLoanModal(true);
                 
                 {/* 1. Total Pledged Value */}
                 <div className="sbj-card p-5 flex items-center gap-4 relative group">
-                  <div className="w-13 h-13 rounded-full bg-[#0B1320] text-[#E5C378] flex items-center justify-center text-2xl font-serif font-bold shrink-0 shadow-sm">
-                    ₹
+                  <div className="w-13 h-13 rounded-full bg-[#0B1320] flex items-center justify-center text-2xl font-serif font-bold shrink-0 shadow-sm">
+                    <span aria-hidden="true" style={{ color: "#E5C378" }}>₹</span>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
@@ -4039,9 +4040,10 @@ setShowOfflineLoanModal(true);
                   {smsDispatchError && <p role="alert" className="mt-2 text-xs font-medium text-rose-700">{smsDispatchError}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <span className={`text-xs font-semibold ${smsDispatchPaused ? "text-amber-800" : "text-emerald-700"}`}>
-                    {smsDispatchPaused === null ? "Checking…" : smsDispatchPaused ? "Paused" : "Active"}
+                  <span className={`text-xs font-semibold ${smsDispatchPaused ? "text-amber-800" : smsDispatchError ? "text-rose-700" : "text-emerald-700"}`}>
+                    {smsDispatchPaused === null ? smsDispatchError ? "Unavailable" : "Checking…" : smsDispatchPaused ? "Paused" : "Active"}
                   </span>
+                  {smsDispatchError && <button type="button" className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100" onClick={() => setSmsDispatchRetry(value => value + 1)}>Retry</button>}
                   <button
                     type="button"
                     role="switch"
@@ -6815,7 +6817,7 @@ setShowOfflineLoanModal(true);
                   type="password" 
                   maxLength={4}
                   required
-                  placeholder="Enter passcode (1004)"
+                  placeholder="Enter passcode"
                   className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none font-semibold text-slate-800 bg-white focus:border-[#C5A880]"
                   value={clearPasscode}
                   onChange={(e) => setClearPasscode(e.target.value)}
@@ -6913,7 +6915,7 @@ setShowOfflineLoanModal(true);
                   maxLength={4}
                   autoFocus
                   required
-                  placeholder="Enter passcode (e.g. 1004)"
+                  placeholder="Enter passcode"
                   value={sensitivePasscodeInput}
                   onChange={(e) => {
                     setSensitivePasscodeInput(e.target.value);

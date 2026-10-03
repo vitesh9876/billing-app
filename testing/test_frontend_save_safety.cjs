@@ -225,5 +225,9 @@ async function checkOlderReloadCannotUndoSave() {
   assert.equal((source.match(/Active Session/g) || []).length, 1, 'only one active-session status is shown');
   assert.doesNotMatch(source, /System Online|>Online</, 'redundant online statuses stay removed');
   assert.match(source, /shop-logo-horizontal\.png.*alt="Sri Sai Balaji Jewelry and Furniture"/s, 'mobile header uses the full shop logo');
+  assert.match(source, /smsDispatchError \? "Unavailable"/, 'SMS pause status stops showing a loading state after a failed request');
+  assert.match(source, /setSmsDispatchRetry.*>Retry</s, 'SMS pause status can be retried');
+  assert.match(source, /style=\{\{ color: "#E5C378" \}\}>₹/, 'dashboard currency icon has explicit visible contrast');
+  assert.doesNotMatch(source, /placeholder="Enter passcode[^\"]*(?:1004|e\.g\.)/i, 'passcode placeholders do not expose example values');
   console.log('Passed: save safety, refresh coalescing, accurate totals, and bill edits preserving record identity, payment history, dates and item values.');
 })().catch(err => {console.error(err); process.exitCode = 1});
