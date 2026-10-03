@@ -1,12 +1,11 @@
 "use client";
 import { useState } from "react";
 import SupabaseBillingGate from "@/components/SupabaseBillingGate";
-import { billingFetch, supabaseBillingEnabled } from "@/lib/supabaseBilling";
+import { billingFetch } from "@/lib/supabaseBilling";
 
 function PairBridge() {
   const [device,setDevice]=useState(''),[name,setName]=useState('Shop phone');
   const [key,setKey]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
-  if (!supabaseBillingEnabled) return <main className="p-8">Device pairing will be available after Supabase setup. <a href="/">Back to billing</a></main>;
   return <main className="mx-auto max-w-xl p-8 text-slate-900">
     <a href="/" className="text-sm underline">Back to billing</a>
     <h1 className="mt-5 text-3xl font-semibold">Pair SMS phone</h1>

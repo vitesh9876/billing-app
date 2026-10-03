@@ -82,6 +82,6 @@ dependencies {
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
-  // OkHttp for WebSockets & HTTP requests
+  // OkHttp for authenticated Supabase Edge Function requests
   implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

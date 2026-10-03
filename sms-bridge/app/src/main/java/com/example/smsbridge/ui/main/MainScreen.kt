@@ -187,7 +187,7 @@ fun MainScreen(
               bridgeManager.serverUrl = it
             },
             label = { Text("Server URL") },
-            placeholder = { Text("http://192.168.1.10:8000") },
+            placeholder = { Text("https://…supabase.co/functions/v1/billing-api") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
           )
@@ -327,11 +327,11 @@ fun MainScreen(
           modifier = Modifier.padding(12.dp),
           verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-          Text("How to Connect to Laptop", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-          Text("1. Find your laptop's Local IP address (run 'ipconfig' on Windows).", fontSize = 11.sp)
-          Text("2. Enter Server URL above (e.g. http://192.168.1.15:8000).", fontSize = 11.sp)
-          Text("3. Enter Device Name and click 'Register Device'.", fontSize = 11.sp)
-          Text("4. Once registered, click the green 'Connect' button.", fontSize = 11.sp)
+          Text("Connect to Supabase", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+          Text("1. Keep the Supabase billing URL shown above.", fontSize = 11.sp)
+          Text("2. In the website, open SMS phone and create a pairing key for this device UUID.", fontSize = 11.sp)
+          Text("3. Paste the private key here, then tap Register Device and Connect.", fontSize = 11.sp)
+          Text("The phone keeps its device ID and pairing key when this app is updated.", fontSize = 11.sp)
         }
       }
 

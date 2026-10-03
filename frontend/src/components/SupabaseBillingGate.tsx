@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { billingFetch, billingSupabase, clearBillingSnapshots, supabaseBillingEnabled } from "@/lib/supabaseBilling";
+import { billingFetch, billingSupabase, clearBillingSnapshots } from "@/lib/supabaseBilling";
 
 export default function SupabaseBillingGate({children}:{children:ReactNode}) {
   const [userId,setUserId] = useState<string | null>(null);
@@ -13,7 +13,6 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
   const [busy,setBusy] = useState(false);
   const [readOnly,setReadOnly] = useState(true);
   useEffect(()=> {
-    if (!supabaseBillingEnabled) return;
     try {
       const supabase = billingSupabase();
       const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,session)=> {
@@ -24,7 +23,7 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
     } catch (e) { setError((e as Error).message); setLoading(false); }
   },[]);
   useEffect(()=> {
-    if (!supabaseBillingEnabled || !userId) return;
+    if (!userId) return;
     let cancelled = false;
     setLoading(true);
     billingFetch("/api/v1/session").then(async response=> {
@@ -38,7 +37,6 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
       .finally(()=> {if (!cancelled) setLoading(false);});
     return ()=>{cancelled=true;};
   },[userId]);
-  if (!supabaseBillingEnabled) return <>{children}</>;
   const signOut = async ()=> {
     setAuthorized(false); clearBillingSnapshots();
     await billingSupabase().auth.signOut();

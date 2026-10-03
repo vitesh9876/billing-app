@@ -1,6 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-export const supabaseBillingEnabled = process.env.NEXT_PUBLIC_BILLING_BACKEND === "supabase";
 let client: SupabaseClient | null = null;
 export function billingSupabase(): SupabaseClient {
   if (!client) {
@@ -21,16 +20,7 @@ export function clearBillingSnapshots() {
 }
 
 export async function billingFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  if (!supabaseBillingEnabled || !input.startsWith("/api/v1/")) {
-    // Edit snapshots are only understood by the Supabase customer API.
-    if (!supabaseBillingEnabled && typeof init.body === "string" && ["/api/v1/customers","/api/v1/records/save"].includes(input)) {
-      const payload = JSON.parse(init.body);
-      delete payload.expectedCustomer;
-      if (payload.customer) delete payload.customer.expectedCustomer;
-      return fetch(input,{...init,body:JSON.stringify(payload)});
-    }
-    return fetch(input,init);
-  }
+  if (!input.startsWith("/api/v1/")) return Response.json({detail:"Unsupported billing request."},{status:400});
   const supabase = billingSupabase();
   const { data:{session},error } = await supabase.auth.getSession();
   if (error || !session) return Response.json({detail:"Sign in again."},{status:401});

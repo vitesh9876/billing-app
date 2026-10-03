@@ -33,7 +33,7 @@ class SmsBridgeService : Service() {
         val notification = createNotification()
         startForeground(NOTIFICATION_ID, notification)
 
-        // Start the WebSocket connection using the Singleton manager
+        // Start the Supabase queue poller using the singleton manager.
         val manager = SmsBridgeManager.getInstance(applicationContext)
         manager.connect()
 

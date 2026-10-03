@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SupabaseBillingGate from "@/components/SupabaseBillingGate";
-import { billingSupabase, supabaseBillingEnabled } from "@/lib/supabaseBilling";
+import { billingSupabase } from "@/lib/supabaseBilling";
 
 function Documents() {
   const [files,setFiles] = useState<{name:string}[]>([]);
@@ -15,8 +15,7 @@ function Documents() {
     const {data,error} = await supabase.storage.from("billing-documents").list(session.user.id,{limit:1000,sortBy:{column:"created_at",order:"desc"}});
     if (error) setMessage("Documents could not be loaded."); else setFiles(data || []);
   };
-  useEffect(()=> {if (supabaseBillingEnabled) void load();},[]);
-  if (!supabaseBillingEnabled) return <main className="p-8">Documents will be available after Supabase setup. <a href="/">Back to billing</a></main>;
+  useEffect(()=> {void load();},[]);
   return <main className="mx-auto max-w-3xl p-8 text-slate-900">
     <a href="/" className="text-sm underline">Back to billing</a>
     <h1 className="mt-5 text-3xl font-semibold">Private documents</h1>

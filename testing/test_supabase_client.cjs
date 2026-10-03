@@ -4,7 +4,7 @@ const vm = require('node:vm');
 const ts = require('typescript');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname,'../frontend/src/lib/supabaseBilling.ts'),'utf8');
-function client(enabled=true) {
+function client() {
   const calls=[];
   let session={access_token:'test-access-token',user:{id:'owner'}};
   let connected=false,updates=0,removed=0;
@@ -16,7 +16,7 @@ function client(enabled=true) {
   const exports={};
   vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{
     exports,require:name=>{assert.equal(name,'@supabase/supabase-js');return {createClient:()=>sdk};},
-    process:{env:{NEXT_PUBLIC_BILLING_BACKEND:enabled?'supabase':'render',NEXT_PUBLIC_SUPABASE_URL:'https://test.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'test-public-key'}},
+    process:{env:{NEXT_PUBLIC_SUPABASE_URL:'https://test.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'test-public-key'}},
     Headers,Response,Map,Set,JSON,Error,Number,
     window:{sessionStorage:{},setInterval:()=>1,clearInterval(){},addEventListener(){},removeEventListener(){}},
     document:{visibilityState:'visible'},
@@ -46,10 +46,8 @@ function client(enabled=true) {
   assert.equal((await c.api.billingFetch('/api/v1/customers')).status,401);
   assert.equal(c.calls.length,4,'Signed-out requests must not reach the database API');
   const stop=c.subscribe();assert.equal(c.connected,true);c.channel.update();assert.equal(c.updates,1);stop();assert.equal(c.removed,1);
-  const legacy=client(false);
-  await legacy.api.billingFetch('/api/v1/records/save',{method:'POST',body:JSON.stringify({transaction:{id:'test'},customer:{id:'C',expectedCustomer:{id:'C'}}})});
-  assert.equal(legacy.calls[0].url,'/api/v1/records/save');
-  assert.equal(JSON.parse(legacy.calls[0].init.body).customer.expectedCustomer,undefined);
-  assert.equal(legacy.calls[0].init.headers,undefined,'Disabled mode must not add Supabase credentials');
-  console.log('Passed: Supabase request routing, Mumbai region, authenticated access, edit/delete snapshots, create-only imports, Realtime cleanup and legacy compatibility.');
+  const unsupported=await c.api.billingFetch('/legacy/api');
+  assert.equal(unsupported.status,400,'unsupported paths must fail closed instead of falling back to another API');
+  assert.equal(c.calls.length,4,'unsupported paths must not reach a fallback server');
+  console.log('Passed: Supabase-only request routing, Mumbai region, authenticated access, edit/delete snapshots, create-only imports, Realtime cleanup and fail-closed routing.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

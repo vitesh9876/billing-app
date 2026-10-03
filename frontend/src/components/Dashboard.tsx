@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { billingFetch as fetch, subscribeBillingChanges, supabaseBillingEnabled } from "@/lib/supabaseBilling";
+import { billingFetch as fetch, subscribeBillingChanges } from "@/lib/supabaseBilling";
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -359,7 +359,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     return { newLoans, paymentsReceived, remindersPending, smsSentToday, smsQueued };
   }, [transactions, remindersStatus, smsQueue]);
   
-  // Real-time WebSocket connection status
+  // Supabase Realtime connection status
   const [wsConnected, setWsConnected] = useState(false);
 
   // Billing Tab States
@@ -639,54 +639,11 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedLoanTxn, activeLoanList, currentModalLoanIndex]);
 
-  // Establish persistent WebSocket to server for real-time state sync
+  // Supabase Realtime invalidates the local view; confirmed saves apply immediately.
   useEffect(() => {
-    if (supabaseBillingEnabled) {
-      const unsubscribe = subscribeBillingChanges(refreshData,setWsConnected);
-      refreshData();
-      return unsubscribe;
-    }
-    let socket: WebSocket;
-    const connectWS = () => {
-      let backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      let wsUrl = "";
-      
-      if (backendUrl) {
-        // Clean trailing slash
-        backendUrl = backendUrl.replace(/\/$/, "");
-        const wsProtocol = backendUrl.startsWith("https:") ? "wss:" : "ws:";
-        const wsHost = backendUrl.replace(/^https?:\/\//, "");
-        wsUrl = `${wsProtocol}//${wsHost}/ws/v1/browser`;
-      } else {
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        wsUrl = `${protocol}//${window.location.hostname}:8000/ws/v1/browser`;
-      }
-      
-      socket = new WebSocket(wsUrl);
-
-      socket.onopen = () => {
-        setWsConnected(true);
-      };
-
-      socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "update") {
-          refreshData();
-        }
-      };
-
-      socket.onclose = () => {
-        setWsConnected(false);
-        setTimeout(connectWS, 3000);
-      };
-    };
-
-    connectWS();
+    const unsubscribe = subscribeBillingChanges(refreshData,setWsConnected);
     refreshData();
-
-    return () => {
-      if (socket) socket.close();
-    };
+    return unsubscribe;
   }, []);
 
   const refreshInFlight = useRef(false);
@@ -5245,7 +5202,7 @@ setShowOfflineLoanModal(true);
 
               <div className="pb-6 border-b border-slate-100 mb-6">
                 <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900">SMS Device Bridge Configuration</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Manage registered Android Bridge devices. WebSocket connections dynamically route the pending queue automatically.</p>
+                <p className="text-xs text-slate-400 mt-0.5">Manage Android devices paired to Supabase. The phone securely checks the Supabase SMS queue for pending messages.</p>
               </div>
               
               <div className="overflow-x-auto mb-8">
@@ -5319,11 +5276,10 @@ setShowOfflineLoanModal(true);
                 {showConnectionGuide && (
                   <ol className="list-decimal list-inside text-xs text-slate-600 font-medium space-y-2 mt-4 pt-4 border-t border-slate-200/60 leading-relaxed">
                     <li>Install the <strong>SmartShop SMS Bridge</strong> Android app on your phone.</li>
-                    <li>Find your laptop's Local IP address (e.g. on Windows, open Command Prompt, run <code>ipconfig</code>, and copy your <strong>IPv4 Address</strong>, e.g. <code>192.168.1.15</code>).</li>
-                    <li>In the Android app, enter the Server URL as: <code>http://&lt;your-laptop-ip&gt;:8000</code> (example: <code>http://192.168.1.15:8000</code>).</li>
-                    <li>Enter a Device Name for identification, then click <strong>Register Device</strong>.</li>
-                    <li>Refresh this settings page on your browser to see your device in the list above.</li>
-                    <li>In the Android app, click the green <strong>Connect</strong> button. The status badge will change to <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-bold uppercase text-[10px]">CONNECTED</span> and any pending SMS will send immediately!</li>
+                    <li>Install the updated <strong>SmartShop SMS Bridge</strong> Android app. It connects to the production Supabase function by default.</li>
+                    <li>Open the <strong>SMS phone</strong> page in this website, enter the device UUID shown in the app, and create a pairing key.</li>
+                    <li>Paste the private key into the app, then tap <strong>Register Device</strong> and <strong>Connect</strong>.</li>
+                    <li>Confirm this page shows the phone as connected. Test with a safe number before relying on live reminders.</li>
                   </ol>
                 )}
               </div>
@@ -5565,7 +5521,7 @@ setShowOfflineLoanModal(true);
                       </div>
                       <div className="flex items-center justify-between p-2.5 bg-[#FAFBFD] border border-slate-100 rounded-xl">
                         <span className="font-semibold text-slate-800">Backend Server API</span>
-                        <span className="text-[10px] bg-[#0B1320] text-[#E5C378] px-2 py-0.5 rounded font-bold">FastAPI + Python Uvicorn</span>
+                        <span className="text-[10px] bg-[#0B1320] text-[#E5C378] px-2 py-0.5 rounded font-bold">Supabase Edge Functions</span>
                       </div>
                       <div className="flex items-center justify-between p-2.5 bg-[#FAFBFD] border border-slate-100 rounded-xl">
                         <span className="font-semibold text-slate-800">Database Engine</span>
@@ -5573,7 +5529,7 @@ setShowOfflineLoanModal(true);
                       </div>
                       <div className="flex items-center justify-between p-2.5 bg-[#FAFBFD] border border-slate-100 rounded-xl">
                         <span className="font-semibold text-slate-800">Real-time Sync</span>
-                        <span className="text-[10px] bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7] px-2 py-0.5 rounded font-bold">WebSocket Bridge</span>
+                        <span className="text-[10px] bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7] px-2 py-0.5 rounded font-bold">Supabase Realtime</span>
                       </div>
                     </div>
                   </div>
