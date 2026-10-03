@@ -12,11 +12,13 @@ The repository has no Render/Python API deployment path. Deploy the Edge Functio
 
 1. Confirm the application opens and an authorized owner can sign in.
 2. Create a fresh database backup, verify its archive, and retain a second copy on a separate drive.
-3. Review the exact code and migration changes. Migrations are not routine app deploys; apply only a reviewed migration that has been tested against a restored test database.
-4. Deploy the Edge Function and confirm its logs show no errors.
-5. Confirm Vercel's production deployment is Ready and its Supabase URL and publishable key point to the production project.
-6. Smoke-test dashboard totals, loan create/edit/delete, customer changes, and document access with a known safe record. Remove test records only after confirming the cleanup.
-7. Test the Android bridge with a controlled number before enabling it for shop reminders. A phone update can retain its local device UUID and encrypted pairing key, but confirm pairing and queue status after installation.
+3. Review the exact code and migration changes. Test migrations against a restored test database before production.
+4. Apply `202610030002_signup_and_activity.sql` to production before deploying the function that uses it. It adds access-event logging and signup-attempt protection, and adds the actor email to change-audit rows; it does not rewrite loans or customers.
+5. In Supabase Edge Function Secrets, set `BILLING_SIGNUP_CODE` to the private code shared with people allowed to create shop accounts. Do not add it to Git or Vercel frontend variables. Keep writes enabled only for the production function.
+6. Deploy the Edge Function and confirm its logs show no errors.
+7. Confirm Vercel's production deployment is Ready and its Supabase URL and publishable key point to the production project.
+8. Smoke-test invite-code account creation, sign-in, password change, the activity page, dashboard totals, loan create/edit/delete, customer changes, and document access with safe test data. Clean up test accounts and records after confirming the cleanup.
+9. Test the Android bridge with a controlled number before enabling it for shop reminders. A phone update can retain its local device UUID and encrypted pairing key, but confirm pairing and queue status after installation.
 
 ## Recovery
 

@@ -29,16 +29,26 @@ const db: Database = {
 const auth = createClient(required("SUPABASE_URL"),required("SUPABASE_ANON_KEY"),{
   auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
 });
+const secretKeysRaw=Deno.env.get("SUPABASE_SECRET_KEYS");
+let adminKey:string|undefined;
+if (secretKeysRaw) {
+  try { adminKey=JSON.parse(secretKeysRaw).default; }
+  catch { console.error("Supabase admin account creation is unavailable."); }
+}
+adminKey ||= Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const admin = adminKey ? createClient(required("SUPABASE_URL"),adminKey,{
+  auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
+}) : null;
 const handler = createHandler(db,async token => {
   const {data,error} = await auth.auth.getUser(token);
   if (error || !data.user) return null;
   const operator=await db.query('SELECT user_id FROM public.billing_operators WHERE user_id=$1',[data.user.id]);
-  return operator.length ? {id:data.user.id} : null;
+  return operator.length ? {id:data.user.id,email:data.user.email || "Unknown email"} : null;
 },{
   allowedOrigins:set("BILLING_ALLOWED_ORIGINS"),
-  allowedUsers:set("BILLING_ALLOWED_USER_IDS"),
   writesEnabled:Deno.env.get("BILLING_WRITES_ENABLED") === "true",
   region:Deno.env.get("SB_REGION") || "local",
+  signupCode:Deno.env.get("BILLING_SIGNUP_CODE"),
 },async token=> {
   const hash=await tokenHash(token);
   const row=(await db.query('SELECT device_id FROM public.billing_bridge_keys WHERE token_hash=$1 AND enabled=true',[hash]))[0];
@@ -46,5 +56,12 @@ const handler = createHandler(db,async token => {
 },async token=> {
   const configured=Deno.env.get('BILLING_CRON_TOKEN_SHA256');
   return Boolean(configured && await tokenHash(token)===configured);
-});
+},admin ? {
+  createUser:async(email,password)=> {
+    const {data,error}=await admin.auth.admin.createUser({email,password,email_confirm:true});
+    if (error) return null;
+    return data.user?.id || null;
+  },
+  deleteUser:async(userId)=> { await admin.auth.admin.deleteUser(userId); },
+} : undefined);
 Deno.serve(handler);

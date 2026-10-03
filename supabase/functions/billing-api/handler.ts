@@ -4,21 +4,54 @@ import { bridgeRequest, pairDevice, revokeDevice, triggerReminders, catalogWrite
 
 export interface Settings {
   allowedOrigins: Set<string>;
-  allowedUsers: Set<string>;
   writesEnabled: boolean;
   region: string;
+  signupCode?: string;
 }
-export type Authenticate = (token: string) => Promise<{ id: string } | null>;
+export type Authenticate = (token: string) => Promise<{ id: string; email: string } | null>;
 export type AuthenticateBridge = (token:string) => Promise<{deviceId:string,tokenHash:string} | null>;
+export interface AuthAdmin {
+  createUser(email:string,password:string):Promise<string|null>;
+  deleteUser(userId:string):Promise<void>;
+}
 export async function tokenHash(token:string):Promise<string> {
   const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
   return Array.from(new Uint8Array(bytes)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function actorDatabase(db:Database,actor:string):Database {
+function actorDatabase(db:Database,actor:string,email=""):Database {
   return {...db,begin:async(fn,readOnly=false)=>await db.begin(async c=> {
-    if (!readOnly) await c.query("SELECT set_config('billing.actor',$1,true)",[actor]);
+    if (!readOnly) {
+      await c.query("SELECT set_config('billing.actor',$1,true)",[actor]);
+      await c.query("SELECT set_config('billing.actor_email',$1,true)",[email]);
+    }
     return await fn(c);
   },readOnly)};
+}
+
+function sameSecret(a:string,b:string):boolean {
+  const left=new TextEncoder().encode(a),right=new TextEncoder().encode(b);
+  let difference=left.length ^ right.length;
+  for (let i=0;i<Math.max(left.length,right.length);i++) difference |= (left[i] || 0) ^ (right[i] || 0);
+  return difference===0;
+}
+
+async function checkSignupCode(db:Database,code:string,expected:string):Promise<"valid"|"invalid"|"locked"> {
+  return await db.begin(async c=> {
+    await c.query("INSERT INTO public.billing_signup_guard(singleton) VALUES (true) ON CONFLICT (singleton) DO NOTHING");
+    const rows=await c.query("SELECT window_started_at,failed_attempts,locked_until FROM public.billing_signup_guard WHERE singleton=true FOR UPDATE");
+    const state=rows[0];
+    if (state?.locked_until && Date.parse(state.locked_until)>Date.now()) return "locked";
+    const expired=!state || Date.parse(state.window_started_at)<Date.now()-15*60*1000;
+    if (!sameSecret(code,expected)) {
+      const failures=expired?1:Number(state.failed_attempts)+1;
+      await c.query(`UPDATE public.billing_signup_guard SET window_started_at=CASE WHEN $2 THEN now() ELSE window_started_at END,
+        failed_attempts=$1,locked_until=CASE WHEN $3 THEN now()+interval '15 minutes' ELSE NULL END WHERE singleton=true`,
+        [failures,expired,failures>=8]);
+      return failures>=8?"locked":"invalid";
+    }
+    await c.query("UPDATE public.billing_signup_guard SET failed_attempts=0,window_started_at=now(),locked_until=NULL WHERE singleton=true");
+    return "valid";
+  });
 }
 
 async function body(req: Request): Promise<Row> {
@@ -45,7 +78,7 @@ async function body(req: Request): Promise<Row> {
 }
 
 export function createHandler(db: Database, authenticate: Authenticate, settings: Settings, authenticateBridge?:AuthenticateBridge,
-  authenticateCron?:(token:string)=>Promise<boolean>) {
+  authenticateCron?:(token:string)=>Promise<boolean>,authAdmin?:AuthAdmin) {
   return async (req: Request): Promise<Response> => {
     let requestDb=db;
     const started = performance.now();
@@ -72,6 +105,34 @@ export function createHandler(db: Database, authenticate: Authenticate, settings
       if (req.method === "GET" && path === "/health") {
         return response({ status:"ok",region:settings.region,writesEnabled:settings.writesEnabled });
       }
+      if (path === "/auth/register" && req.method === "POST") {
+        if (!settings.writesEnabled) throw new ApiError(503,"Account creation is temporarily unavailable.");
+        if (!settings.signupCode || !authAdmin) throw new ApiError(503,"Account creation is not configured yet.");
+        const input=await body(req);
+        const email=typeof input.email==="string" ? input.email.trim().toLowerCase() : "";
+        const password=typeof input.password==="string" ? input.password : "";
+        const code=typeof input.secretCode==="string" ? input.secretCode.trim() : "";
+        if (!/^\S+@\S+\.\S+$/.test(email) || password.length<10 || password.length>256 || code.length<1 || code.length>128) {
+          throw new ApiError(400,"Enter a valid email and a password with at least 10 characters.");
+        }
+        const codeStatus=await checkSignupCode(db,code,settings.signupCode);
+        if (codeStatus==="locked") throw new ApiError(429,"Account creation is temporarily locked. Try again in 15 minutes.");
+        if (codeStatus==="invalid") throw new ApiError(403,"The secret code is incorrect.");
+        let userId:string|null=null;
+        try { userId=await authAdmin.createUser(email,password); }
+        catch { userId=null; }
+        if (!userId) throw new ApiError(409,"Account could not be created. Check the email or contact the shop owner.");
+        try {
+          await db.begin(async c=> {
+            await c.query("INSERT INTO public.billing_operators(user_id) VALUES ($1)",[userId]);
+            await c.query("INSERT INTO public.billing_access_events(actor,actor_email,event) VALUES ($1,$2,'account_created')",[userId,email]);
+          });
+        } catch {
+          try { await authAdmin.deleteUser(userId); } catch { console.error("signup cleanup failed"); }
+          throw new ApiError(500,"Account setup could not be completed. Contact the shop owner before trying again.");
+        }
+        return response({created:true},201);
+      }
       const bearer = req.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
       if (!bearer) throw new ApiError(401,"Sign in to access billing records.");
       if (path==='/loans/scheduled-reminders') {
@@ -90,12 +151,21 @@ export function createHandler(db: Database, authenticate: Authenticate, settings
       }
       const user = await authenticate(bearer);
       if (!user) throw new ApiError(401,"Session expired. Sign in again.");
-      if (!settings.allowedUsers.has(user.id)) throw new ApiError(403,"This account is not authorized for this shop.");
-      requestDb=actorDatabase(db,user.id);
+      requestDb=actorDatabase(db,user.id,user.email);
       const mutation = !["GET","HEAD"].includes(req.method);
       if (mutation && !settings.writesEnabled) throw new ApiError(503,"Preview is read-only. Your saved data has not been changed.");
       if (req.method === "GET") {
-        if (path === "/session") return response({ userId:user.id,writesEnabled:settings.writesEnabled });
+        if (path === "/session") {
+          await db.query("INSERT INTO public.billing_access_events(actor,actor_email,event) VALUES ($1,$2,'login')",[user.id,user.email]);
+          return response({ userId:user.id,writesEnabled:settings.writesEnabled });
+        }
+        if (path === "/activity") {
+          const [events,changes]=await Promise.all([
+            db.query("SELECT id,occurred_at,actor_email,event FROM public.billing_access_events ORDER BY occurred_at DESC,id DESC LIMIT 250"),
+            db.query("SELECT id,changed_at,actor,actor_email,table_name,operation,before_row,after_row FROM public.billing_audit ORDER BY changed_at DESC,id DESC LIMIT 250"),
+          ]);
+          return response({events,changes});
+        }
         if (path === "/dashboard-data") return response(await dashboard(db));
         if (path === "/customers") return response(await db.query('SELECT * FROM public.customers'));
         if (path === "/transactions") return response((await db.query('SELECT * FROM public.transactions')).map(transaction));
@@ -110,6 +180,10 @@ export function createHandler(db: Database, authenticate: Authenticate, settings
       }
       if (req.method === "POST") {
         const data = await body(req);
+        if (path === "/password-changed") {
+          await db.query("INSERT INTO public.billing_access_events(actor,actor_email,event) VALUES ($1,$2,'password_changed')",[user.id,user.email]);
+          return response({recorded:true});
+        }
         if (path === "/records/save") return response(await saveRecord(requestDb,data));
         if (path === "/transactions") return response((await saveRecord(requestDb,{transaction:data})).transaction);
         if (path === "/customers") return response(await putCustomer(requestDb,data));

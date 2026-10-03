@@ -9,8 +9,11 @@ SmartShop is a single-shop billing and loan application. The production web app 
 - `supabase/migrations/` — versioned database security and application migrations.
 - `sms-bridge/` — Android companion app for queued SMS.
 - `testing/` — synthetic-data backend, frontend-save, and request-routing checks.
+- `supabase/migrations/` — access controls and private login/change audit history.
 
 There is no separate Python API or Render proxy in the current application. Browser mutations go directly to the Supabase Edge Function; database access is protected by server-side authorization and database policies.
+
+People can create an account using the private shop invite code. The code is checked by the Edge Function and is never included in frontend configuration. Accounts are added to the protected shop operator list. A signed-in user can change their password and review sign-in and record-change activity in the app.
 
 ## Run the web app locally
 

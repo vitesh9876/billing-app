@@ -1,10 +1,11 @@
 # Supabase production backend
 
-SmartShop's current application backend runs entirely in Supabase: Auth, PostgreSQL, the `billing-api` Edge Function, Realtime invalidation, and the private `billing-documents` Storage bucket. The Vercel frontend calls the function directly. The Android SMS bridge uses the same function with a device-only pairing key. There is no Python/Render API fallback in the source.
+SmartShop's current application backend runs entirely in Supabase: Auth, PostgreSQL, the `billing-api` Edge Function, Realtime invalidation, and the private `billing-documents` Storage bucket. The Vercel frontend calls the function directly. The Android SMS bridge uses the same function with a device-only pairing key. There is no Python/Render API fallback in the source. Account signup requires a private invite code checked only by the function.
 
 ## Important safety rules
 
 - Keep the existing production project and database. Do not create or restore over production as part of ordinary code deployment.
+- Keep `BILLING_SIGNUP_CODE` in Supabase Edge Function Secrets only. It authorizes a new account to access the shop's shared billing records; share it only with trusted shop users and replace it if disclosed.
 - Before any database change, take a fresh PostgreSQL backup, verify it can be read, and copy it to a separate drive.
 - Test migrations and data changes on the restored test project first. Apply only reviewed migrations, once, with `ON_ERROR_STOP` and a transaction where supported.
 - Keep database passwords, service-role keys, Supabase access tokens, Edge Function secrets, and SMS pairing keys out of the repository, browser variables, screenshots, and chat.
@@ -20,7 +21,7 @@ SmartShop's current application backend runs entirely in Supabase: Auth, Postgre
 4. Confirm Vercel has the production Supabase project URL and publishable key, then wait for the deployment to show Ready.
 5. Sign in and smoke-test a dashboard read plus safe loan create/edit/delete, totals, and document access. Check Edge Function logs and the database afterward.
 
-An ordinary frontend/Edge Function code deployment does not require restoring or migrating the database. If a future release includes `supabase/migrations/`, review its exact effects and rehearse it against the test project and a verified restore first.
+The first deployment of invite signup/activity requires migration `202610030002_signup_and_activity.sql` before the updated Edge Function. An ordinary frontend/Edge Function code deployment after that does not require a database migration. Review each future migration and rehearse it against the test project and a verified restore first.
 
 ## Data and write protections
 
@@ -28,6 +29,8 @@ An ordinary frontend/Edge Function code deployment does not require restoring or
 - Application tables have restricted direct browser grants and row-level protections. Mutations go through the function.
 - Loan/customer writes are atomic. Captured snapshots and transaction locks protect edits from overwriting concurrent changes; imports are create-only.
 - `billing_audit` records financial changes in the same transaction as supported mutations.
+- `billing_access_events` records sign-ins, account creation, and successful password changes. The private `/activity` page combines these events with before/after record changes, tagged with the operator's email.
+- Signup code attempts are rate-limited; signup creates Auth users server-side and adds them to `billing_operators`. Public client keys alone cannot add an operator.
 - `billing_changes` emits content-free invalidations for Realtime refresh. Confirmed saves update the current browser immediately.
 - Documents use private object storage, random names, size/type limits, and short-lived signed URLs.
 - SMS work is claimed atomically. A phone reports that Android accepted the message for submission; this does not confirm carrier delivery. Uncertain in-flight messages require checking before retry.
