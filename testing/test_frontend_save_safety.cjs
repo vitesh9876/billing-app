@@ -3,13 +3,15 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const ts = require('../frontend/node_modules/typescript');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/components/Dashboard.tsx'), 'utf8');
+const css = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/app/globals.css'), 'utf8');
+const auth = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/components/SupabaseBillingGate.tsx'), 'utf8');
 const ast = ts.createSourceFile('Dashboard.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 const extracted = {};
 function visit(node) {
   if (ts.isVariableDeclaration(node) && ['refreshData', 'handleSavePurchase', 'handleSaveLoan', 'handleSaveOfflineLoan', 'saveRecord', 'applySavedTransaction'].includes(node.name.getText(ast))) {
     extracted[node.name.getText(ast)] = ts.transpileModule(`globalThis.handler = ${node.initializer.getText(ast)}`, {compilerOptions: {target: ts.ScriptTarget.ES2022}}).outputText;
   }
-  if (ts.isFunctionDeclaration(node) && ['calculateDashboardStats', 'formatBillNoForDisplay'].includes(node.name?.getText(ast))) {
+  if (ts.isFunctionDeclaration(node) && ['calculateDashboardStats', 'formatBillNoForDisplay', 'normalizePhoneForLoan', 'sanitizeLoanBillNumber'].includes(node.name?.getText(ast))) {
     extracted[node.name.getText(ast)] = ts.transpileModule(`${node.getText(ast)}; globalThis.handler = ${node.name.getText(ast)};`, {compilerOptions: {target: ts.ScriptTarget.ES2022}}).outputText;
   }
   ts.forEachChild(node, visit);
@@ -18,7 +20,7 @@ visit(ast);
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function contextFor(name, values) {
   const ctx = vm.createContext({recordSavesInFlight: {current: new Set()}, mutationRevision: {current: 0}, setSavingRecord() {}, showSaveNotice() {}, crypto: require('node:crypto').webcrypto, ...values, console, Date});
-  for (const helper of ['applySavedTransaction', 'saveRecord']) {
+  for (const helper of ['applySavedTransaction', 'saveRecord', 'normalizePhoneForLoan', 'sanitizeLoanBillNumber']) {
     vm.runInContext(extracted[helper].replace('globalThis.handler', 'globalThis.' + helper), ctx);
   }
   vm.runInContext(extracted[name], ctx);
@@ -105,7 +107,7 @@ async function checkOfflineBillEdit() {
   let payload;
   const alerts = [];
   const form = {
-    custName: 'Test', phone: '1234567890', billNo: '200', starSeries: true, amount: '4000',
+    custName: 'Test', phone: '1234567890', billNo: '200', starSeries: true, amount: '12000',
     father: '', address: '', idProof: '', mandal: '', interestRate: '3%',
     takenDate: details.takenDate, endDate: details.endDate, interestPaidUpto: details.interestPaidUpto,
     status: 'Pending', clearedDate: '', note: '', yield: '60%', grossWeight: '3.5', netWeight: '', worth: '4000', remarks: '',
@@ -113,9 +115,9 @@ async function checkOfflineBillEdit() {
   };
   const ctx = contextFor('handleSaveOfflineLoan', {
     offlineSaveInFlight: {current: false}, offlineLoanForm: form, editingTxnId: 'BILL-100-2026',
-    transactions: [{id: 'BILL-100-2026', customerId: 'CUST-TEST', amount: 4000, date: '2026-09-01', loanDetails: details}],
+    transactions: [{id: 'BILL-100-2026', type: 'loan', category: 'Gold', customerId: 'CUST-TEST', amount: 12000, date: '2026-09-01', loanDetails: details}],
     customers: [{id: 'CUST-TEST', name: 'Test', phone: '1234567890'}],
-    offlineLoanMetalType: 'Jewelry', offlineLoanPledgedItems: details.items, selectedLoanTxn: null,
+    offlineLoanMetalType: 'Gold', offlineLoanPledgedItems: details.items, selectedLoanTxn: null,
     getBillNo: () => '100', alert: msg => alerts.push(msg),
     fetch: async (url, options) => {
       if (url.endsWith('/customers')) return {ok: true};
@@ -136,6 +138,40 @@ async function checkOfflineBillEdit() {
   assert.equal(payload.loanDetails.items[1].id, 20);
   assert.ok(alerts[0].includes('Duplicate bill number'));
   assert.equal(ctx.offlineSaveInFlight.current, false);
+}
+async function checkOfflineLoanValidation() {
+  const alerts = [], calls = [];
+  const validForm = {
+    custName: 'Test', phone: '12345', billNo: '123', starSeries: false, amount: '4000',
+    takenDate: '2026-10-03', topups: [],
+  };
+  const ctx = contextFor('handleSaveOfflineLoan', {
+    offlineSaveInFlight: {current: false}, offlineLoanForm: validForm, editingTxnId: null,
+    transactions: [], customers: [], offlineLoanMetalType: 'Gold',
+    offlineLoanPledgedItems: [{name: 'ring', qty: 1}], getBillNo: () => '',
+    alert: message => alerts.push(message), fetch: async (...args) => {calls.push(args); return {ok: true}},
+  });
+  await ctx.handler({preventDefault() {}});
+  assert.equal(calls.length, 0, 'partial optional phone is rejected before any write');
+  assert.match(alerts[0], /10 phone digits/);
+  assert.equal(ctx.offlineSaveInFlight.current, false);
+
+  const metalAlerts = [];
+  const noMetalContext = contextFor('handleSaveOfflineLoan', {
+    offlineSaveInFlight: {current: false}, offlineLoanForm: {...validForm, phone: ''}, editingTxnId: null,
+    transactions: [], customers: [], offlineLoanMetalType: '',
+    offlineLoanPledgedItems: [{name: 'ring', qty: 1}], getBillNo: () => '',
+    alert: message => metalAlerts.push(message), fetch: async () => {throw new Error('should not write')},
+  });
+  await noMetalContext.handler({preventDefault() {}});
+  assert.equal(metalAlerts[0], 'Choose Gold or Silver before saving the loan.');
+
+  const formatter = contextFor('normalizePhoneForLoan', {}).handler;
+  assert.equal(formatter('+91 98765-43210'), '9876543210');
+  assert.equal(formatter('09876543210'), '9876543210');
+  const billSanitizer = contextFor('sanitizeLoanBillNumber', {}).handler;
+  assert.equal(billSanitizer('12345'), '123', 'bill numbers are capped at 3 digits');
+  assert.equal(billSanitizer('A1B2C'), '12', 'bill numbers discard letters and symbols');
 }
 async function checkConfirmedSaveAppearsImmediately() {
   let rows = [{id: 'EXISTING', amount: 100}], customers = [];
@@ -180,5 +216,14 @@ async function checkOlderReloadCannotUndoSave() {
   await checkOlderReloadCannotUndoSave();
   checkTotals();
   await checkOfflineBillEdit();
+  await checkOfflineLoanValidation();
+  assert.match(css, /\.sbj-app-shell\.dark \.bg-white/, 'dark theme stays scoped to app surfaces');
+  assert.doesNotMatch(css, /(?:^|\n)\.dark body\s*,|(?:^|\n)\.dark \.bg-white\s*,/, 'legacy global dark rules stay removed');
+  assert.match(auth, /autoComplete="on"/, 'login form supports browser credential managers');
+  assert.match(auth, /name="email" type="email" autoComplete="username"/);
+  assert.match(auth, /name="password" type="password" autoComplete=\{accountMode==="signin"\?"current-password"/);
+  assert.equal((source.match(/Active Session/g) || []).length, 1, 'only one active-session status is shown');
+  assert.doesNotMatch(source, /System Online|>Online</, 'redundant online statuses stay removed');
+  assert.match(source, /shop-logo-horizontal\.png.*alt="Sri Sai Balaji Jewelry and Furniture"/s, 'mobile header uses the full shop logo');
   console.log('Passed: save safety, refresh coalescing, accurate totals, and bill edits preserving record identity, payment history, dates and item values.');
 })().catch(err => {console.error(err); process.exitCode = 1});

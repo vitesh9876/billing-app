@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { billingFetch as fetch, subscribeBillingChanges } from "@/lib/supabaseBilling";
 import PwaInstallCard from "@/components/PwaInstallCard";
+import AutocompleteInput, { type AutocompleteOption } from "@/components/AutocompleteInput";
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -52,6 +53,17 @@ function formatBillNoForDisplay(id: string, billNumber?: string) {
     return "★" + cleaned.replace(/^[★*]/, "");
   }
   return cleaned;
+}
+
+function normalizePhoneForLoan(value: unknown) {
+  let digits = String(value ?? "").replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+  return digits;
+}
+
+function sanitizeLoanBillNumber(value: unknown) {
+  return String(value ?? "").replace(/\D/g, "").slice(0, 3);
 }
 
 function calculateDashboardStats(transactions: any[], customers: any[]) {
@@ -437,7 +449,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
   // Custom Offline Loan States
   const [showOfflineLoanModal, setShowOfflineLoanModal] = useState(false);
-  const [offlineLoanMetalType, setOfflineLoanMetalType] = useState("Gold");
+  const [offlineLoanMetalType, setOfflineLoanMetalType] = useState("");
   const [offlineLoanPledgedItems, setOfflineLoanPledgedItems] = useState<any[]>([
     { id: 1, name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", remarks: "" }
   ]);
@@ -458,7 +470,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     status: string;
     interestPaidUpto: string;
     clearedDate: string;
-    pledgedItemsStr: string;
     qty: string;
     yield: string;
     grossWeight: string;
@@ -492,7 +503,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     status: "Pending",
     interestPaidUpto: "",
     clearedDate: "",
-    pledgedItemsStr: "",
     qty: "1",
     yield: "60%",
     grossWeight: "",
@@ -512,12 +522,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   });
 
   // Autocomplete UI states
-  const [showCustSuggestions, setShowCustSuggestions] = useState(false);
-  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
-  const [showMandalSuggestions, setShowMandalSuggestions] = useState(false);
-  const [showItemSuggestions, setShowItemSuggestions] = useState(false);
-  const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
-  const [activeSuggestIndex, setActiveSuggestIndex] = useState(-1);
   const [editingTxnId, setEditingTxnId] = useState<string | null>(null);
 
   // Bulk Import States
@@ -1420,50 +1424,13 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   const handlePledgedItemRowChange = (
     idx: number,
     key: string,
-    val: any,
-    e?: React.ChangeEvent<HTMLInputElement>
+    val: any
   ) => {
     setOfflineLoanPledgedItems(prev => {
       const updated = [...prev];
       updated[idx] = { ...updated[idx], [key]: val };
       return updated;
     });
-
-    if (key === "name" && e) {
-      if (isDeleteKey.current) return;
-      if (!val) return;
-      const typedLower = val.toLowerCase();
-      const match = uniqueItemNames.find(item => item && item.toLowerCase().startsWith(typedLower));
-      if (match) {
-        const typedWords = val.split(/\s+/);
-        const matchWords = match.split(/\s+/);
-        
-        const endsWithSpace = val.endsWith(" ");
-        const targetWordCount = typedWords.filter(Boolean).length + (endsWithSpace ? 1 : 0);
-        
-        if (targetWordCount <= matchWords.length) {
-          const completedWord = matchWords.slice(0, targetWordCount).join(" ");
-          if (completedWord.toLowerCase().startsWith(typedLower)) {
-            const suffix = completedWord.slice(val.length);
-            if (suffix) {
-              const inputEl = e.target;
-              const startSel = val.length;
-              const completedVal = val + suffix;
-              
-              setOfflineLoanPledgedItems(prev => {
-                const updated = [...prev];
-                updated[idx] = { ...updated[idx], name: completedVal };
-                return updated;
-              });
-              
-              requestAnimationFrame(() => {
-                inputEl.setSelectionRange(startSel, completedVal.length);
-              });
-            }
-          }
-        }
-      }
-    }
   };
 
   const handleSelectPledgedItemRowSuggestion = (idx: number, name: string) => {
@@ -1472,7 +1439,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       updated[idx] = { ...updated[idx], name };
       return updated;
     });
-    setShowItemSuggestions(false);
   };
 
   // Handle forms submit
@@ -1791,6 +1757,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
   const handleOpenAddLoanModal = () => {
     setEditingTxnId(null);
+    setOfflineLoanMetalType("");
     setOfflineLoanForm({
       billNo: "",
       custName: "",
@@ -1806,7 +1773,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       status: "Pending",
       interestPaidUpto: "",
       clearedDate: "",
-      pledgedItemsStr: "",
       qty: "1",
       yield: "60%",
       grossWeight: "",
@@ -1857,9 +1823,9 @@ setShowOfflineLoanModal(true);
 
   // Auto-calculated interest and release date for custom offline loan inputs
   useEffect(() => {
-    if (showOfflineLoanModal) {
+    if (showOfflineLoanModal && !editingTxnId && ["Gold", "Silver"].includes(offlineLoanMetalType)) {
       let rate = "3.0%";
-      const amt = parseFloat(offlineLoanForm.amount) || 0;
+      const amt = Number(offlineLoanForm.amount.replace(/,/g, "")) || 0;
       if (offlineLoanMetalType === "Gold") {
         if (amt > 8000) rate = "2.0%";
         else rate = "3.0%";
@@ -1880,7 +1846,7 @@ setShowOfflineLoanModal(true);
 
       setOfflineLoanForm((prev: any) => ({ ...prev, interestRate: rate, endDate: calculatedEndDate }));
     }
-  }, [offlineLoanMetalType, offlineLoanForm.amount, offlineLoanForm.takenDate, showOfflineLoanModal]);
+  }, [offlineLoanMetalType, offlineLoanForm.amount, offlineLoanForm.takenDate, showOfflineLoanModal, editingTxnId]);
 
   // Variables preview inside Send SMS Tab
   const getSMSPreviewText = () => {
@@ -2024,88 +1990,7 @@ setShowOfflineLoanModal(true);
 
   const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     const target = e.target as HTMLInputElement;
-    const isNameField = target.placeholder === "Enter customer name...";
-    const isAddressField = target.placeholder === "Enter address...";
-    const isMandalField = target.placeholder === "Enter mandal...";
-    const isItemField = target.placeholder && target.placeholder.startsWith("Item");
-
-    // Determine currently active suggestions list
-    let suggestionsList: any[] = [];
-    if (isNameField && showCustSuggestions && offlineLoanForm.custName.trim()) {
-      suggestionsList = customers.filter(c => 
-        c.name.toLowerCase().includes(offlineLoanForm.custName.toLowerCase())
-      ).slice(0, 8);
-    } else if (isAddressField && showAddressSuggestions && offlineLoanForm.address.trim()) {
-      suggestionsList = uniqueAddresses.filter(a => 
-        a.toLowerCase().includes(offlineLoanForm.address.toLowerCase())
-      ).slice(0, 5);
-    } else if (isMandalField && showMandalSuggestions && offlineLoanForm.mandal.trim()) {
-      suggestionsList = uniqueMandals.filter(m => 
-        m.toLowerCase().includes(offlineLoanForm.mandal.toLowerCase())
-      ).slice(0, 5);
-    } else if (isItemField && showItemSuggestions && focusedItemIndex !== null) {
-      const activeItem = offlineLoanPledgedItems[focusedItemIndex];
-      const typedTerm = activeItem?.name || "";
-      suggestionsList = uniqueItemNames.filter(name => 
-        typedTerm && name.toLowerCase().includes(typedTerm.toLowerCase())
-      ).slice(0, 5);
-    }
-
-    const hasSuggestions = suggestionsList.length > 0;
-
-    if (e.key === "ArrowDown") {
-      if (hasSuggestions) {
-        e.preventDefault();
-        setActiveSuggestIndex(prev => (prev + 1) % suggestionsList.length);
-      }
-      return;
-    }
-
-    if (e.key === "ArrowUp") {
-      if (hasSuggestions) {
-        e.preventDefault();
-        setActiveSuggestIndex(prev => (prev - 1 + suggestionsList.length) % suggestionsList.length);
-      }
-      return;
-    }
-
     if (e.key === "Enter") {
-      if (hasSuggestions && activeSuggestIndex >= 0 && activeSuggestIndex < suggestionsList.length) {
-        e.preventDefault();
-        const selected = suggestionsList[activeSuggestIndex];
-        if (isNameField) {
-          setOfflineLoanForm(prev => ({
-            ...prev,
-            custName: selected.name,
-            phone: selected.phone,
-            father: selected.father || "",
-            idProof: selected.idproof || "",
-            address: selected.address || "",
-            mandal: selected.mandal || ""
-          }));
-          setShowCustSuggestions(false);
-        } else if (isAddressField) {
-          setOfflineLoanForm(prev => {
-            const updated = { ...prev, address: selected };
-            const lowerAddr = selected.trim().toLowerCase();
-            if (lowerAddr === 'kesarapalli' || lowerAddr === 'b. b. guddem' || lowerAddr === 'b.b.guddem' || lowerAddr === 'b. b. gudem' || lowerAddr === 'b.b.gudem' || lowerAddr === 'b.b. guddem') {
-              updated.mandal = 'Gannavaram';
-            }
-            return updated;
-          });
-          setShowAddressSuggestions(false);
-        } else if (isMandalField) {
-          setOfflineLoanForm(prev => ({ ...prev, mandal: selected }));
-          setShowMandalSuggestions(false);
-        } else if (isItemField && focusedItemIndex !== null) {
-          handleSelectPledgedItemRowSuggestion(focusedItemIndex, selected);
-          setShowItemSuggestions(false);
-        }
-        setActiveSuggestIndex(-1);
-        return; // Select suggestion on first enter, don't move to next field yet
-      }
-
-      // Default Enter navigation behavior (if no suggestion is active)
       if (target.tagName !== "TEXTAREA" && target.getAttribute("type") !== "submit") {
         e.preventDefault();
         const form = e.currentTarget;
@@ -2141,17 +2026,21 @@ setShowOfflineLoanModal(true);
   };
 
   const handleAutocompleteInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
+    value: string,
     fieldName: string,
-    suggestionPool: string[]
   ) => {
-    const value = e.target.value;
-    
-    // Update form state first
     setOfflineLoanForm(prev => {
       const updated = { ...prev, [fieldName]: value };
-      
-      // Auto-adjust Mandal if Address changes
+
+      if (fieldName === "custName" && prev.expectedCustomer && value.trim() !== String(prev.expectedCustomer.name || "").trim()) {
+        updated.expectedCustomer = undefined;
+        updated.phone = "";
+        updated.father = "";
+        updated.idProof = "";
+        updated.address = "";
+        updated.mandal = "";
+      }
+
       if (fieldName === 'address') {
         const lowerAddr = value.trim().toLowerCase();
         if (lowerAddr === 'kesarapalli' || lowerAddr === 'b. b. guddem' || lowerAddr === 'b.b.guddem' || lowerAddr === 'b. b. gudem' || lowerAddr === 'b.b.gudem' || lowerAddr === 'b.b. guddem') {
@@ -2160,49 +2049,52 @@ setShowOfflineLoanModal(true);
       }
       return updated;
     });
-
-    if (isDeleteKey.current) return;
-
-    // Inline autocompletion (typeahead)
-    if (!value) return;
-    const typedLower = value.toLowerCase();
-    const match = suggestionPool.find(item => item && item.toLowerCase().startsWith(typedLower));
-    
-    if (match) {
-      const typedWords = value.split(/\s+/);
-      const matchWords = match.split(/\s+/);
-      
-      const endsWithSpace = value.endsWith(" ");
-      const targetWordCount = typedWords.filter(Boolean).length + (endsWithSpace ? 1 : 0);
-      
-      if (targetWordCount <= matchWords.length) {
-        const completedText = matchWords.slice(0, targetWordCount).join(" ");
-        if (completedText.toLowerCase().startsWith(typedLower)) {
-          const suffix = completedText.slice(value.length);
-          if (suffix) {
-            const inputEl = e.target;
-            const startSel = value.length;
-            const endSel = completedText.length;
-            
-            // Set form state with suffix
-            setOfflineLoanForm(prev => ({ ...prev, [fieldName]: completedText }));
-            
-            // Highlight/select suffix after render
-            requestAnimationFrame(() => {
-              inputEl.setSelectionRange(startSel, endSel);
-            });
-          }
-        }
-      }
-    }
   };
 
   const handleSaveOfflineLoan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (offlineSaveInFlight.current) return;
     const form = offlineLoanForm;
-    if (!form.custName.trim() || !form.amount) {
-      alert("Please enter customer name and loan amount.");
+    const loanAmount = Number(form.amount.replace(/,/g, ""));
+    const phoneValue = form.phone.trim();
+    const cleanPhone = normalizePhoneForLoan(form.phone);
+    const validationTxn = editingTxnId ? form.expectedTransaction || transactions.find(t => t.id === editingTxnId) : null;
+    const existingBillNo = editingTxnId ? getBillNo(editingTxnId).replace(/^[★*]/, "") : "";
+    const legacyBillUnchanged = Boolean(editingTxnId && form.billNo === existingBillNo && !/^\d{1,3}$/.test(form.billNo));
+    const unchangedLegacyStar = Boolean(
+      validationTxn && /^[★*]/.test(getBillNo(validationTxn.id)) && form.starSeries
+      && Number(validationTxn.amount) === loanAmount
+    );
+    if (!form.custName.trim() || !Number.isFinite(loanAmount) || loanAmount <= 0) {
+      alert("Enter a customer name and a valid loan amount greater than zero.");
+      return;
+    }
+    if (!offlineLoanMetalType) {
+      alert("Choose Gold or Silver before saving the loan.");
+      return;
+    }
+    if (phoneValue && cleanPhone.length !== 10) {
+      alert("Enter all 10 phone digits, or clear the optional phone field.");
+      return;
+    }
+    if (form.billNo.trim() && !/^\d{1,3}$/.test(form.billNo) && !legacyBillUnchanged) {
+      alert("Bill number must contain 1 to 3 digits.");
+      return;
+    }
+    if (editingTxnId && !form.billNo.trim()) {
+      alert("Please enter a bill number.");
+      return;
+    }
+    if (form.starSeries && loanAmount <= 10000 && !unchangedLegacyStar) {
+      alert("The Star series is for loans above ₹10,000.");
+      return;
+    }
+    if (!offlineLoanPledgedItems.some(item => String(item.name || "").trim())) {
+      alert("Enter at least one pledged item.");
+      return;
+    }
+    if (offlineLoanPledgedItems.some(item => !Number.isInteger(Number(item.qty)) || Number(item.qty) < 1)) {
+      alert("Each pledged item must have a quantity of at least 1.");
       return;
     }
 
@@ -2210,23 +2102,59 @@ setShowOfflineLoanModal(true);
     try {
       const originalTxn = editingTxnId ? form.expectedTransaction || transactions.find(t => t.id === editingTxnId) : null;
       if (editingTxnId && !originalTxn) throw new Error("This loan is no longer available. Refresh Loan History before editing.");
-      if (editingTxnId && !form.billNo.trim()) throw new Error("Please enter a bill number.");
-      // Find or create customer
-      let custId = null;
-      const cleanPhone = form.phone.trim();
-      const cleanName = form.custName.trim().toLowerCase();
-      const isValidPhone = (p: string) => {
-        const clean = p.trim();
-        return clean !== "" && clean !== "-" && clean !== "null" && clean !== "undefined" && clean !== "None" && clean.length > 5;
-      };
 
-      // 1. Search for an existing customer in database matching name or valid phone
-      let cust = null;
-      if (cleanPhone && isValidPhone(cleanPhone)) {
-        cust = customers.find(c => c.phone && c.phone.trim() === cleanPhone);
+      const billYear = (form.takenDate || "").slice(0, 4);
+      const usedSeriesNumbers = transactions
+        .filter(transaction => {
+          if (transaction.type !== "loan" || transaction.id === editingTxnId) return false;
+          const transactionDate = String(transaction.loanDetails?.takenDate || transaction.date || "");
+          const transactionStar = /^[★*]/.test(getBillNo(transaction.id));
+          return transactionDate.slice(0, 4) === billYear && transactionStar === form.starSeries;
+        })
+        .map(transaction => getBillNo(transaction.id).replace(/^[★*]/, ""))
+        .filter(number => /^\d{1,3}$/.test(number));
+      const usedNumberSet = new Set(usedSeriesNumbers);
+      const maximumUsedNumber = Math.max(0, ...usedSeriesNumbers.map(Number));
+      let generatedBillNo = "";
+      for (let number = maximumUsedNumber + 1; number <= 999; number += 1) {
+        if (!usedNumberSet.has(String(number))) { generatedBillNo = String(number); break; }
       }
+      if (!generatedBillNo) {
+        for (let number = 1; number <= Math.min(maximumUsedNumber, 999); number += 1) {
+          if (!usedNumberSet.has(String(number))) { generatedBillNo = String(number); break; }
+        }
+      }
+      const billNoForSave = form.billNo.trim() || generatedBillNo;
+      if (!billNoForSave) {
+        alert(`All bill numbers from 1 to 999 are already used for ${billYear}.`);
+        return;
+      }
+      const targetBillNumber = `${form.starSeries ? "★" : ""}${billNoForSave}`;
+      const changedExistingBill = !editingTxnId || form.billNo !== existingBillNo || Boolean(originalTxn && form.starSeries !== /^[★*]/.test(getBillNo(originalTxn.id)));
+      const billAlreadyUsed = targetBillNumber && transactions.some(transaction => {
+        if (transaction.type !== "loan" || transaction.id === editingTxnId) return false;
+        const existingBill = getBillNo(transaction.id);
+        const transactionDate = String(transaction.loanDetails?.takenDate || transaction.date || "");
+        return existingBill === targetBillNumber && transactionDate.slice(0, 4) === billYear;
+      });
+      if (billAlreadyUsed && changedExistingBill) {
+        alert(`Bill number ${targetBillNumber} is already used for ${billYear}. Choose another number.`);
+        return;
+      }
+
+      // Explicitly selected or exact-name matched customers are safe to reuse.
+      let custId = null;
+      const cleanName = form.custName.trim().toLowerCase();
+      let cust = form.expectedCustomer?.id
+        ? customers.find(customer => customer.id === form.expectedCustomer.id) || form.expectedCustomer
+        : null;
       if (!cust) {
-        cust = customers.find(c => c.name.toLowerCase() === cleanName);
+        const exactNameMatches = customers.filter(c => String(c.name || "").trim().toLowerCase() === cleanName);
+        if (exactNameMatches.length > 1) {
+          alert("Several customers have this name. Choose the correct customer from the suggestions before saving.");
+          return;
+        }
+        cust = exactNameMatches[0] || null;
       }
 
       if (cust) {
@@ -2235,7 +2163,7 @@ setShowOfflineLoanModal(true);
         // 2. If we are editing, check if name matches the original customer name
         const existingTxn = transactions.find(t => t.id === editingTxnId);
         const originalCust = existingTxn ? customers.find(c => c.id === existingTxn.customerId) : null;
-        if (originalCust && originalCust.name.toLowerCase() === cleanName) {
+        if (originalCust && String(originalCust.name || "").trim().toLowerCase() === cleanName) {
           // Name is the same, so we are editing details of the same customer
           custId = originalCust.id;
         }
@@ -2254,35 +2182,29 @@ setShowOfflineLoanModal(true);
           ? String(originalTxn.loanDetails?.[loanField] || "")
           : String(originalCustomer?.[field] || "");
         if (originalCustomer && value === initial) return originalCustomer[field];
+        if (originalCustomer && !form.expectedCustomer && !value.trim()) return originalCustomer[field] || "";
         return value.trim() || (originalCustomer ? "" : fallback);
       };
+      const customerPhone = cleanPhone
+        ? originalCustomer && normalizePhoneForLoan(originalCustomer.phone) === cleanPhone
+          ? originalCustomer.phone
+          : cleanPhone
+        : originalCustomer?.phone || "";
       const newCustPayload = {
         expectedCustomer: form.expectedCustomer?.id === custId ? form.expectedCustomer : undefined,
         id: custId,
         name: form.custName.trim(),
-        phone: form.phone.trim(),
+        phone: customerPhone,
         address: customerField("address",form.address,"address","Offline Address"),
         father: customerField("father",form.father,"father","Offline Father"),
         idproof: customerField("idproof",form.idProof,"idProof","Offline ID"),
         mandal: customerField("mandal",form.mandal,"mandal","Offline Mandal")
       };
       // Use existing transaction ID if editing, otherwise generate
-      let txnId = editingTxnId;
-      if (!txnId) {
-        const billPrefix = form.starSeries ? "★" : "";
-        const year = form.takenDate ? new Date(form.takenDate).getFullYear().toString() : new Date().getFullYear().toString();
-        if (form.billNo.trim()) {
-          // If user already typed ★ manually, don't double-add it
-          const rawBill = form.billNo.trim().replace(/^[★*]/, "");
-          txnId = "BILL-" + billPrefix + rawBill + "-" + year;
-        } else {
-          txnId = "BILL-" + billPrefix + Date.now() + "-" + year;
-        }
-      }
-      
-      const billNumber = form.billNo.trim()
-        ? (form.starSeries ? "★" : "") + form.billNo.trim().replace(/^[★*]/, "")
-        : getBillNo(txnId!);
+      const billPrefix = form.starSeries ? "★" : "";
+      const txnYear = form.takenDate ? new Date(form.takenDate).getFullYear().toString() : new Date().getFullYear().toString();
+      const txnId = editingTxnId || `BILL-${billPrefix}${billNoForSave}-${txnYear}`;
+      const billNumber = `${billPrefix}${billNoForSave}`;
 
       // Editing a bill must keep every existing payment entry.
       let interestPayments: any[] = originalTxn?.loanDetails?.interestPayments || [];
@@ -2290,7 +2212,7 @@ setShowOfflineLoanModal(true);
         interestPayments = [{
           date: new Date().toISOString().split('T')[0],
           amountPaid: form.interestAmountPaid ? Number(form.interestAmountPaid) : calculateInterestForRange(
-            Number(form.amount),
+            loanAmount,
             parseFloat(form.interestRate) || 0,
             form.takenDate,
             form.interestPaidUpto,
@@ -2301,7 +2223,7 @@ setShowOfflineLoanModal(true);
         }];
       }
 
-      let originalAmt = Number(form.amount);
+      let originalAmt = loanAmount;
       let updatedTopups = [...(form.topups || [])];
       let updatedAccumulatedInterest = originalTxn?.loanDetails?.accumulatedInterest || 0;
       let updatedTakenDate = form.takenDate;
@@ -2462,7 +2384,6 @@ setShowOfflineLoanModal(true);
         status: "Pending",
         interestPaidUpto: "",
         clearedDate: "",
-        pledgedItemsStr: "",
         qty: "1",
         yield: "60%",
         grossWeight: "",
@@ -2754,24 +2675,29 @@ setShowOfflineLoanModal(true);
     }
   });
   const uniqueMandals = Array.from(uniqueMandalsMap.values());
-  const uniqueItemNames = Array.from(new Set([
-    ...itemsCatalog.map(i => i.name),
-    ...transactions.flatMap(t => t.loanDetails?.items?.map((i: any) => i.name) || [])
-  ].filter(Boolean)));
+  const uniqueItemNames = (() => {
+    const seen = new Set<string>();
+    return [...itemsCatalog.map(i => i.name), ...transactions.flatMap(t => t.loanDetails?.items?.map((i: any) => i.name) || [])]
+      .map(name => String(name || "").trim())
+      .filter(name => {
+        const normalized = name.toLocaleLowerCase();
+        if (!normalized || seen.has(normalized)) return false;
+        seen.add(normalized);
+        return true;
+      });
+  })();
 
-  const getPledgedItemSearchTerm = (val: string) => {
-    const parts = val.split(";");
-    return parts[parts.length - 1].trim();
-  };
-
-  const handleSelectPledgedItemSuggestion = (suggestedName: string) => {
-    const val = offlineLoanForm.pledgedItemsStr || "";
-    const parts = val.split(";");
-    parts[parts.length - 1] = " " + suggestedName; // Replace the last typed term
-    const newVal = parts.join(";").trim() + "; ";
-    setOfflineLoanForm(prev => ({ ...prev, pledgedItemsStr: newVal }));
-    setShowItemSuggestions(false);
-  };
+  const offlineCustomerOptions: AutocompleteOption[] = customers
+    .filter(customer => customer.name)
+    .map(customer => ({
+      value: customer.id,
+      label: String(customer.name),
+      description: [customer.phone, customer.address].filter(Boolean).join(" · "),
+    }));
+  const offlineAddressOptions: AutocompleteOption[] = uniqueAddresses.map(address => ({ value: address, label: address }));
+  const offlineMandalOptions: AutocompleteOption[] = uniqueMandals.map(mandal => ({ value: mandal, label: mandal }));
+  const offlineItemOptions: AutocompleteOption[] = uniqueItemNames.map(name => ({ value: name, label: name }));
+  const phoneDigits = normalizePhoneForLoan(offlineLoanForm.phone);
 
   const activeConnectedDevice = smsDevices.find(d => d.connection === "Connected");
 
@@ -3070,12 +2996,7 @@ setShowOfflineLoanModal(true);
                 </div>
               </nav>
             </div>
-            <div className="p-4 border-t border-slate-200">
-              <div className="bg-white border border-slate-200 rounded-xl p-2.5 flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <p className="text-[11px] font-medium text-slate-700">System Online</p>
-              </div>
-            </div>
+            <div className="h-3" aria-hidden="true" />
           </div>
         </div>
       )}
@@ -3177,14 +3098,8 @@ setShowOfflineLoanModal(true);
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-200">
-          <div className="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <p className="text-[11px] font-semibold text-slate-700">System Online</p>
-            </div>
-            <span className="text-[10px] font-mono text-slate-500">v2.4</span>
-          </div>
+        <div className="px-5 py-3 border-t border-slate-200 text-right">
+          <span className="text-[10px] font-mono text-slate-500">v2.4</span>
         </div>
       </aside>
 
@@ -3204,16 +3119,10 @@ setShowOfflineLoanModal(true);
               <Menu size={20} />
             </button>
             <div className="sbj-mobile-brand">
-              <img src="/shop-logo-mark.png" alt="" aria-hidden="true" />
-              <div className="min-w-0"><p className="sbj-brand-name">Sri Sai Balaji</p><span className="sbj-brand-caption">Jewelry &amp; Furniture</span></div>
+              <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Online</span>
-            </div>
-          </div>
+          <span className="sr-only">Navigation</span>
         </div>
 
         {/* Dynamic Top Header */}
@@ -6344,7 +6253,7 @@ setShowOfflineLoanModal(true);
                       expectedCustomer: cust ? structuredClone(cust) : undefined,
                       billNo: getBillNo(selectedLoanTxn.id).replace(/^[★*]/, ""),
                       custName: cust?.name || "",
-                      phone: cust?.phone || "",
+                      phone: normalizePhoneForLoan(cust?.phone),
                       father: selectedLoanTxn.loanDetails?.father || "",
                       idProof: selectedLoanTxn.loanDetails?.idProof || "",
                       address: selectedLoanTxn.loanDetails?.address || "",
@@ -6356,7 +6265,6 @@ setShowOfflineLoanModal(true);
                       status: selectedLoanTxn.status || "Pending",
                       interestPaidUpto: selectedLoanTxn.loanDetails?.interestPaidUpto || "",
                       clearedDate: selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || "",
-                      pledgedItemsStr: selectedLoanTxn.loanDetails?.items?.map((i: any) => i.name).join("; ") || "",
                       qty: String(firstItem?.qty || "1"),
                       yield: String(firstItem?.yield ?? "60%"),
                       grossWeight: String(firstItem?.grossWeight ?? ""),
@@ -6377,7 +6285,8 @@ setShowOfflineLoanModal(true);
                         return raw.startsWith("★") || raw.startsWith("*");
                       })()
                     });
-                    setOfflineLoanMetalType(selectedLoanTxn.category || "Gold");
+                    const existingMetal = String(selectedLoanTxn.category || "").toLowerCase();
+                    setOfflineLoanMetalType(existingMetal.includes("silver") ? "Silver" : existingMetal.includes("gold") ? "Gold" : "");
                     if (selectedLoanTxn.loanDetails?.items?.length) {
                       setOfflineLoanPledgedItems(selectedLoanTxn.loanDetails.items.map((i: any, idx: number) => ({
                         id: i.id || idx + 1,
@@ -6453,12 +6362,20 @@ setShowOfflineLoanModal(true);
                     )}
                     <input 
                       type="text" 
+                      inputMode="numeric"
+                      maxLength={3}
+                      aria-label="Bill number, up to 3 digits"
                       placeholder="Enter Bill No..."
                       className={`flex-1 p-2.5 text-xs outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'text-amber-800' : 'text-slate-800'}`}
                       value={offlineLoanForm.billNo}
-                      onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: e.target.value }))}
+                      onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: sanitizeLoanBillNumber(e.target.value) }))}
                     />
                   </div>
+                  <p className="mt-1 text-[10px] text-slate-400">
+                    {editingTxnId && offlineLoanForm.billNo && !/^\d{1,3}$/.test(offlineLoanForm.billNo)
+                      ? "This existing bill number is from an older record. Leave it unchanged or replace it with 1–3 digits."
+                      : "Numbers only, up to 3 digits. Leave blank to assign the next available number."}
+                  </p>
                 </div>
                 <div className="form-group">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Taken Date *</label>
@@ -6474,51 +6391,28 @@ setShowOfflineLoanModal(true);
                 {/* Row 2: Customer Name (with suggestions) */}
                 <div className="form-group relative">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Customer Name *</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="Enter customer name..."
-                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
+                  <AutocompleteInput
                     value={offlineLoanForm.custName}
-                    onChange={(e) => {
-                      handleAutocompleteInputChange(e, "custName", customers.map(c => c.name));
-                      setShowCustSuggestions(true);
+                    options={offlineCustomerOptions}
+                    required
+                    placeholder="Type a name to search customers..."
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
+                    onValueChange={value => handleAutocompleteInputChange(value, "custName")}
+                    onSelect={option => {
+                      const customer = customers.find(candidate => candidate.id === option.value);
+                      if (!customer) return;
+                      setOfflineLoanForm(prev => ({
+                        ...prev,
+                        custName: String(customer.name || ""),
+                        expectedCustomer: structuredClone(customer),
+                        phone: normalizePhoneForLoan(customer.phone),
+                        father: customer.father || "",
+                        idProof: customer.idproof || "",
+                        address: customer.address || "",
+                        mandal: customer.mandal || "",
+                      }));
                     }}
-                    onFocus={() => setShowCustSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowCustSuggestions(false), 200)}
                   />
-                  {showCustSuggestions && offlineLoanForm.custName.trim() && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-50">
-                      {customers.filter(c => 
-                        c.name.toLowerCase().includes(offlineLoanForm.custName.toLowerCase())
-                      ).slice(0, 8).map((c, index) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onMouseDown={() => {
-                            setOfflineLoanForm(prev => ({
-                              ...prev,
-                              custName: c.name,
-                              expectedCustomer: structuredClone(c),
-                              phone: c.phone,
-                              father: c.father || "",
-                              idProof: c.idproof || "",
-                              address: c.address || "",
-                              mandal: c.mandal || ""
-                            }));
-                            setShowCustSuggestions(false);
-                          }}
-                          className={`w-full text-left px-3.5 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
-                            activeSuggestIndex === index 
-                              ? 'bg-[#0B1320] text-[#E5C378]' 
-                              : 'hover:bg-slate-50 text-slate-700'
-                          }`}
-                        >
-                          {c.name} ({c.phone} - {c.address})
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Row 3: Father's/Husband's Name */}
@@ -6529,7 +6423,7 @@ setShowOfflineLoanModal(true);
                     placeholder="Father's / Husband's Name..."
                     className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.father}
-                    onChange={(e) => handleAutocompleteInputChange(e, "father", customers.map(c => c.father).filter(Boolean))}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, father: e.target.value }))}
                   />
                 </div>
 
@@ -6548,98 +6442,45 @@ setShowOfflineLoanModal(true);
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Phone Number</label>
                   <input 
                     type="tel" 
+                    inputMode="numeric"
+                    maxLength={10}
                     placeholder="Enter phone number (optional)..."
-                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium font-technical focus:border-[#C5A880]"
+                    aria-invalid={Boolean(offlineLoanForm.phone.trim()) && phoneDigits.length !== 10}
+                    className={`w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-medium font-technical ${
+                      !offlineLoanForm.phone.trim() ? "border-slate-200/90 focus:border-[#C5A880]" : phoneDigits.length === 10 ? "border-emerald-500 focus:border-emerald-600" : "border-rose-500 focus:border-rose-600"
+                    }`}
                     value={offlineLoanForm.phone}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, phone: normalizePhoneForLoan(e.target.value).slice(0, 10) }))}
                   />
+                  {offlineLoanForm.phone.trim() && phoneDigits.length !== 10 && (
+                    <p className="mt-1 text-[10px] font-medium text-rose-600">Enter all 10 digits or clear this optional field.</p>
+                  )}
                 </div>
 
                 {/* Row 5: Address (with suggestions) */}
                 <div className="form-group relative">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Address</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter address..."
-                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
+                  <AutocompleteInput
                     value={offlineLoanForm.address}
-                    onChange={(e) => {
-                      handleAutocompleteInputChange(e, "address", uniqueAddresses);
-                      setShowAddressSuggestions(true);
-                    }}
-                    onFocus={() => setShowAddressSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                    options={offlineAddressOptions}
+                    placeholder="Type to search saved addresses..."
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
+                    onValueChange={value => handleAutocompleteInputChange(value, "address")}
+                    onSelect={option => handleAutocompleteInputChange(option.value, "address")}
                   />
-                  {showAddressSuggestions && offlineLoanForm.address.trim() && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-50">
-                      {uniqueAddresses.filter(a => 
-                        a.toLowerCase().includes(offlineLoanForm.address.toLowerCase())
-                      ).slice(0, 5).map((addr, index) => (
-                        <button
-                          key={addr}
-                          type="button"
-                          onMouseDown={() => {
-                            setOfflineLoanForm(prev => {
-                              const updated = { ...prev, address: addr };
-                              const lowerAddr = addr.trim().toLowerCase();
-                              if (lowerAddr === 'kesarapalli' || lowerAddr === 'b. b. guddem' || lowerAddr === 'b.b.guddem' || lowerAddr === 'b. b. gudem' || lowerAddr === 'b.b.gudem' || lowerAddr === 'b.b. guddem') {
-                                updated.mandal = 'Gannavaram';
-                              }
-                              return updated;
-                            });
-                            setShowAddressSuggestions(false);
-                          }}
-                          className={`w-full text-left px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-                            activeSuggestIndex === index 
-                              ? 'bg-[#0B1320] text-[#E5C378]' 
-                              : 'hover:bg-slate-50 text-slate-700'
-                          }`}
-                        >
-                          {addr}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Row 6: Mandal (with suggestions) */}
                 <div className="form-group relative">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Mandal</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter mandal..."
-                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
+                  <AutocompleteInput
                     value={offlineLoanForm.mandal}
-                    onChange={(e) => {
-                      handleAutocompleteInputChange(e, "mandal", uniqueMandals);
-                      setShowMandalSuggestions(true);
-                    }}
-                    onFocus={() => setShowMandalSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowMandalSuggestions(false), 200)}
+                    options={offlineMandalOptions}
+                    placeholder="Type to search saved mandals..."
+                    className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
+                    onValueChange={value => handleAutocompleteInputChange(value, "mandal")}
+                    onSelect={option => handleAutocompleteInputChange(option.value, "mandal")}
                   />
-                  {showMandalSuggestions && offlineLoanForm.mandal.trim() && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-50">
-                      {uniqueMandals.filter(m => 
-                        m.toLowerCase().includes(offlineLoanForm.mandal.toLowerCase())
-                      ).slice(0, 5).map((mnd, index) => (
-                        <button
-                          key={mnd}
-                          type="button"
-                          onMouseDown={() => {
-                            setOfflineLoanForm(prev => ({ ...prev, mandal: mnd }));
-                            setShowMandalSuggestions(false);
-                          }}
-                          className={`w-full text-left px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-                            activeSuggestIndex === index 
-                              ? 'bg-[#0B1320] text-[#E5C378]' 
-                              : 'hover:bg-slate-50 text-slate-700'
-                          }`}
-                        >
-                          {mnd}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Amount and Metal Type side-by-side */}
@@ -6647,6 +6488,7 @@ setShowOfflineLoanModal(true);
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Loan Amount * (₹)</label>
                   <input 
                     type="text" 
+                    inputMode="decimal"
                     required 
                     className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-bold text-slate-900 focus:border-[#C5A880]"
                     value={offlineLoanForm.amount}
@@ -6655,13 +6497,14 @@ setShowOfflineLoanModal(true);
                 </div>
                 <div className="form-group">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Metal Type</label>
-                  <div className="flex items-center gap-4 h-[38px] border border-slate-200/90 rounded-xl px-3 bg-white">
+                  <div className={`flex items-center gap-4 min-h-[42px] border rounded-xl px-3 bg-white ${offlineLoanMetalType ? "border-slate-200/90" : "border-amber-400"}`}>
                     <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-700">
-                      <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Gold"} onChange={() => setOfflineLoanMetalType("Gold")} /> Gold
+                      <input type="radio" name="off-metal" required checked={offlineLoanMetalType === "Gold"} onChange={() => setOfflineLoanMetalType("Gold")} /> Gold
                     </label>
                     <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-700">
-                      <input type="radio" name="off-metal" checked={offlineLoanMetalType === "Silver"} onChange={() => setOfflineLoanMetalType("Silver")} /> Silver
+                      <input type="radio" name="off-metal" required checked={offlineLoanMetalType === "Silver"} onChange={() => setOfflineLoanMetalType("Silver")} /> Silver
                     </label>
+                    {!offlineLoanMetalType && <span className="text-[10px] text-amber-700">Choose one</span>}
                   </div>
                 </div>
 
@@ -6673,48 +6516,22 @@ setShowOfflineLoanModal(true);
                     {offlineLoanPledgedItems.map((item, idx) => (
                       <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-9 relative">
-                          <input 
-                            type="text" 
-                            required
-                            placeholder={`Item ${idx + 1}...`}
+                          <AutocompleteInput
                             className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                             value={item.name}
-                            onChange={(e) => handlePledgedItemRowChange(idx, "name", e.target.value, e)}
-                            onFocus={() => {
-                              setFocusedItemIndex(idx);
-                              setShowItemSuggestions(true);
-                            }}
-                            onBlur={() => setTimeout(() => {
-                              if (focusedItemIndex === idx) {
-                                setShowItemSuggestions(false);
-                              }
-                            }, 200)}
+                            options={offlineItemOptions}
+                            required
+                            placeholder={`Type to search item ${idx + 1}...`}
+                            onValueChange={value => handlePledgedItemRowChange(idx, "name", value)}
+                            onSelect={option => handleSelectPledgedItemRowSuggestion(idx, option.value)}
                           />
-                          {showItemSuggestions && focusedItemIndex === idx && item.name.trim() && (
-                            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-40 overflow-y-auto z-50 divide-y divide-slate-50">
-                              {uniqueItemNames.filter(name => 
-                                name.toLowerCase().includes(item.name.toLowerCase())
-                              ).slice(0, 5).map((suggestedName, sIdx) => (
-                                <button
-                                  key={suggestedName}
-                                  type="button"
-                                  onMouseDown={() => handleSelectPledgedItemRowSuggestion(idx, suggestedName)}
-                                  className={`w-full text-left px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-                                    activeSuggestIndex === sIdx 
-                                      ? 'bg-[#0B1320] text-[#E5C378]' 
-                                      : 'hover:bg-slate-50 text-slate-700'
-                                  }`}
-                                >
-                                  {suggestedName}
-                                </button>
-                              ))}
-                            </div>
-                          )}
                         </div>
                         <div className="col-span-2">
                           <input 
                             type="number" 
                             required
+                            min={1}
+                            step={1}
                             placeholder="Qty"
                             className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-semibold text-center focus:border-[#C5A880]"
                             value={item.qty || ""}

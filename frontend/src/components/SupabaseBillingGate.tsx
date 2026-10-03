@@ -134,7 +134,7 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
   </>;
 
   return <main className="sbj-login-screen flex items-center justify-center">
-    <form className="sbj-login-card w-full max-w-md bg-white p-8" onSubmit={submitAccount}>
+    <form className="sbj-login-card w-full max-w-md bg-white p-8" onSubmit={submitAccount} autoComplete="on">
       <div className="mb-6 flex justify-center">
         <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="sbj-login-logo h-20 w-full object-contain" />
       </div>
@@ -142,10 +142,10 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
       <p className="mt-2 mb-6 text-sm leading-relaxed text-slate-600">{accountMode==="signin"?"Sign in to securely access your shop records.":"Create an account using the shop’s private access code."}</p>
       {loading ? <p role="status">Checking access…</p> : <>
         <label className="block text-sm text-slate-700">Email
-          <input type="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)} className={inputClass} />
+          <input id="billing-email" name="email" type="email" autoComplete="username" inputMode="email" required value={email} onChange={e=>setEmail(e.target.value)} className={inputClass} />
         </label>
         <label className="block text-sm text-slate-700">Password
-          <input type="password" autoComplete={accountMode==="signin"?"current-password":"new-password"} minLength={accountMode==="signup"?10:undefined} required value={password} onChange={e=>setPassword(e.target.value)} className={inputClass} />
+          <input id="billing-password" name="password" type="password" autoComplete={accountMode==="signin"?"current-password":"new-password"} minLength={accountMode==="signup"?10:undefined} required value={password} onChange={e=>setPassword(e.target.value)} className={inputClass} />
         </label>
         {accountMode==="signup" && <>
           <label className="block text-sm text-slate-700">Confirm password
