@@ -5,6 +5,17 @@ import { billingFetch, billingSupabase, clearBillingSnapshots } from "@/lib/supa
 
 const inputClass="mt-1 mb-4 w-full rounded-lg border border-slate-300 p-3";
 
+function offerBrowserPasswordSave(email:string,password:string) {
+  const credentialApi = window as Window & {
+    PasswordCredential?: new (data:{id:string;password:string;name?:string})=>Credential;
+  };
+  if (!credentialApi.PasswordCredential || typeof navigator.credentials?.store !== "function") return;
+  try {
+    const credential=new credentialApi.PasswordCredential({id:email,password,name:"Sri Sai Balaji"});
+    void navigator.credentials.store(credential).catch(()=>{});
+  } catch { /* Keep normal browser password-manager form detection as a fallback. */ }
+}
+
 export default function SupabaseBillingGate({children}:{children:ReactNode}) {
   const [userId,setUserId] = useState<string | null>(null);
   const [authorized,setAuthorized] = useState(false);
@@ -69,9 +80,14 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
     try {
       const supabase=billingSupabase();
       if (accountMode==="signin") {
-        const {error}=await supabase.auth.signInWithPassword({email:email.trim(),password});
+        const submittedEmail=email.trim();
+        const submittedPassword=password;
+        const {error}=await supabase.auth.signInWithPassword({email:submittedEmail,password:submittedPassword});
         if (error) setError("Sign-in failed. Check your email and password.");
-        else setPassword("");
+        else {
+          offerBrowserPasswordSave(submittedEmail,submittedPassword);
+          setPassword("");
+        }
         return;
       }
       if (password.length<10) {setError("Choose a password with at least 10 characters.");return;}
@@ -85,12 +101,17 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
       });
       const result=await response.json();
       if (!response.ok) {setError(result.detail || "Account could not be created.");return;}
-      const {error:signInError}=await supabase.auth.signInWithPassword({email:email.trim(),password});
-      setPassword("");setConfirmPassword("");setSecretCode("");
+      const submittedEmail=email.trim();
+      const submittedPassword=password;
+      const {error:signInError}=await supabase.auth.signInWithPassword({email:submittedEmail,password:submittedPassword});
       if (signInError) {
         setAccountMode("signin");
+        setConfirmPassword("");setSecretCode("");
         setError("Account created. Sign in with your email and password.");
+        return;
       }
+      offerBrowserPasswordSave(submittedEmail,submittedPassword);
+      setPassword("");setConfirmPassword("");setSecretCode("");
     } catch {setError("Connection failed. Please try again.");}
     finally {setBusy(false);}
   };
@@ -134,7 +155,7 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
   </>;
 
   return <main className="sbj-login-screen flex items-center justify-center">
-    <form className="sbj-login-card w-full max-w-md bg-white p-8" onSubmit={submitAccount} autoComplete="on">
+    <form id="billing-login-form" method="post" className="sbj-login-card w-full max-w-md bg-white p-8" onSubmit={submitAccount} autoComplete="on">
       <div className="mb-6 flex justify-center">
         <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="sbj-login-logo h-20 w-full object-contain" />
       </div>
@@ -142,7 +163,7 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
       <p className="mt-2 mb-6 text-sm leading-relaxed text-slate-600">{accountMode==="signin"?"Sign in to securely access your shop records.":"Create an account using the shop’s private access code."}</p>
       {loading ? <p role="status">Checking access…</p> : <>
         <label className="block text-sm text-slate-700">Email
-          <input id="billing-email" name="email" type="email" autoComplete="username" inputMode="email" required value={email} onChange={e=>setEmail(e.target.value)} className={inputClass} />
+          <input id="billing-email" name="username" type="email" autoComplete="username" inputMode="email" required value={email} onChange={e=>setEmail(e.target.value)} className={inputClass} />
         </label>
         <label className="block text-sm text-slate-700">Password
           <input id="billing-password" name="password" type="password" autoComplete={accountMode==="signin"?"current-password":"new-password"} minLength={accountMode==="signup"?10:undefined} required value={password} onChange={e=>setPassword(e.target.value)} className={inputClass} />

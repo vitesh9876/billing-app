@@ -220,7 +220,7 @@ async function checkOlderReloadCannotUndoSave() {
   assert.match(css, /\.sbj-app-shell\.dark \.bg-white/, 'dark theme stays scoped to app surfaces');
   assert.doesNotMatch(css, /(?:^|\n)\.dark body\s*,|(?:^|\n)\.dark \.bg-white\s*,/, 'legacy global dark rules stay removed');
   assert.match(auth, /autoComplete="on"/, 'login form supports browser credential managers');
-  assert.match(auth, /name="email" type="email" autoComplete="username"/);
+  assert.match(auth, /name="username" type="email" autoComplete="username"/);
   assert.match(auth, /name="password" type="password" autoComplete=\{accountMode==="signin"\?"current-password"/);
   assert.equal((source.match(/Active Session/g) || []).length, 1, 'only one active-session status is shown');
   assert.doesNotMatch(source, /System Online|>Online</, 'redundant online statuses stay removed');
@@ -229,5 +229,9 @@ async function checkOlderReloadCannotUndoSave() {
   assert.match(source, /setSmsDispatchRetry.*>Retry</s, 'SMS pause status can be retried');
   assert.match(source, /style=\{\{ color: "#E5C378" \}\}>₹/, 'dashboard currency icon has explicit visible contrast');
   assert.doesNotMatch(source, /placeholder="Enter passcode[^\"]*(?:1004|e\.g\.)/i, 'passcode placeholders do not expose example values');
+  assert.match(css, /sbj-dashboard-kpis > \.sbj-card:first-child \{ grid-column: 1 \/ -1;/, 'pledged total gets enough room on mobile');
+  assert.match(css, /\.sbj-mobile-brand \{ position: absolute; left: 50%; transform: translateX\(-50%\)/, 'mobile logo is centered independently of the menu');
+  assert.match(auth, /PasswordCredential/, 'successful sign-in offers supported browser credential storage');
+  assert.match(auth, /name="username" type="email" autoComplete="username"/, 'login username follows password-manager form conventions');
   console.log('Passed: save safety, refresh coalescing, accurate totals, and bill edits preserving record identity, payment history, dates and item values.');
 })().catch(err => {console.error(err); process.exitCode = 1});

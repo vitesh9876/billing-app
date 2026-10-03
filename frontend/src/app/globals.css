@@ -349,12 +349,19 @@ button, select, input, textarea {
   .sbj-app-shell main textarea { min-height: 46px; font-size: 16px; }
   .sbj-dashboard-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
   .sbj-dashboard-kpis > .sbj-card { min-width: 0; gap: 10px !important; padding: 12px !important; }
+  .sbj-dashboard-kpis > .sbj-card:first-child { grid-column: 1 / -1; }
+  .sbj-dashboard-kpis > .sbj-card:first-child > div:nth-child(2) { min-width: 0; overflow: visible; }
+  .sbj-dashboard-kpis > .sbj-card:first-child h3,
+  .sbj-dashboard-kpis > .sbj-card:first-child p { overflow: visible !important; text-overflow: clip !important; }
+  .sbj-dashboard-kpis > .sbj-card:first-child h3 { white-space: normal; }
+  .sbj-dashboard-kpis > .sbj-card:first-child p:first-of-type { font-size: clamp(19px, 5.8vw, 25px) !important; white-space: nowrap; }
+  .sbj-dashboard-kpis > .sbj-card:first-child p:last-child { white-space: normal; }
   .sbj-dashboard-kpis > .sbj-card > div:first-child { width: 38px !important; height: 38px !important; font-size: 18px !important; }
   .sbj-dashboard-kpis > .sbj-card h3 { font-size: 9px !important; }
   .sbj-dashboard-kpis > .sbj-card p { font-size: clamp(17px, 5vw, 22px) !important; }
   .sbj-app-shell table { min-width: 680px; }
   .sbj-app-shell main section, .sbj-app-shell main article { min-width: 0; }
-  .sbj-mobile-brand { gap: 0; }
+  .sbj-mobile-brand { position: absolute; left: 50%; transform: translateX(-50%); gap: 0; pointer-events: none; }
   .sbj-mobile-brand img { width: 148px; height: 42px; padding: 3px 7px; border-radius: 7px; background: #f7f3e9; }
   .sbj-mobile-brand > div { display: none; }
   .sbj-app-shell main > header > div:last-child { align-self: flex-start; }
