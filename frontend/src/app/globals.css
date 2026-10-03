@@ -69,6 +69,15 @@ body {
   scrollbar-width: none !important;  /* Firefox */
 }
 
+.sbj-app-shell main {
+  scrollbar-width: thin;
+  scrollbar-color: #b48743 #eeeae2;
+}
+.sbj-app-shell main::-webkit-scrollbar { width: 10px; }
+.sbj-app-shell main::-webkit-scrollbar-track { background: #eeeae2; }
+.sbj-app-shell main::-webkit-scrollbar-thumb { background: #b48743; border: 2px solid #eeeae2; border-radius: 999px; }
+.sbj-app-shell main::-webkit-scrollbar-thumb:hover { background: #8c652f; }
+
 
 /* Custom premium transitions and focus rings */
 button, select, input, textarea {

@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const ts = require('typescript');
+const source = fs.readFileSync(path.join(__dirname,'../frontend/src/lib/teluguCalendar.ts'),'utf8');
+const edgeSource = fs.readFileSync(path.join(__dirname,'../supabase/functions/billing-api/teluguCalendar.ts'),'utf8');
+assert.equal(edgeSource,source,'browser and server must use the same Ugadi dates and series logic');
+const compiled = ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const calendarModule = {exports:{}};
+new Function('exports','require','module',compiled)(calendarModule.exports,require,calendarModule);
+const {teluguBillSeriesYear} = calendarModule.exports;
+assert.equal(teluguBillSeriesYear('2026-03-18'),2025);
+assert.equal(teluguBillSeriesYear('2026-03-19'),2026);
+assert.equal(teluguBillSeriesYear('2027-03-30'),2026);
+assert.equal(teluguBillSeriesYear('2027-04-07'),2027);
+console.log('Passed: Telugu bill series changes on Ugadi, not January 1.');

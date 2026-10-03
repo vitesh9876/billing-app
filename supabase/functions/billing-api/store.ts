@@ -1,4 +1,5 @@
 import { ApiError, assertExpected, billNumber, day, reminders, same, today, transaction, validateCustomer, validateTransaction, text, type Row } from "./domain.ts";
+import { teluguBillSeriesYear } from "./teluguCalendar.ts";
 
 export interface Connection {
   query(sql: string, params?: unknown[]): Promise<Row[]>;
@@ -60,11 +61,16 @@ export async function saveRecord(db: Database, body: Row): Promise<Row> {
     const details = t.type === "loan" ? t.loanDetails : t.items;
     const json = JSON.stringify(details);
     const candidate = { id: t.id, type: t.type, itemsJson: json };
-    if (t.type === "loan" && (!existing || billNumber(existing) !== billNumber(candidate) || existing.date.slice(0,4) !== t.date.slice(0,4))) {
-      const other = await c.query(`SELECT id,type,"itemsJson" FROM public.transactions
-        WHERE type='loan' AND id<>$1 AND left(date,4)=$2`, [t.id, t.date.slice(0,4)]);
-      if (other.some(row => billNumber(row) === billNumber(candidate))) {
-        throw new ApiError(409, "This bill number belongs to another loan in the same year.");
+    const candidateSeriesYear = teluguBillSeriesYear(t.loanDetails?.takenDate || t.date);
+    const seriesYearForRow = (row: Row) => {
+      const loaded = transaction(row);
+      return teluguBillSeriesYear(loaded.loanDetails?.takenDate || row.date);
+    };
+    if (t.type === "loan" && (!existing || billNumber(existing) !== billNumber(candidate) || seriesYearForRow(existing) !== candidateSeriesYear)) {
+      const other = await c.query(`SELECT id,type,date,"itemsJson" FROM public.transactions
+        WHERE type='loan' AND id<>$1`, [t.id]);
+      if (other.some(row => seriesYearForRow(row) === candidateSeriesYear && billNumber(row) === billNumber(candidate))) {
+        throw new ApiError(409, "This bill number belongs to another loan in the same Telugu calendar year.");
       }
     }
     const status = t.status ?? existing?.status ?? (t.type === "loan" ? "Pending" : "Cleared");

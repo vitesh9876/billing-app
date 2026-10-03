@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { billingFetch as fetch, subscribeBillingChanges } from "@/lib/supabaseBilling";
 import PwaInstallCard from "@/components/PwaInstallCard";
 import AutocompleteInput, { type AutocompleteOption } from "@/components/AutocompleteInput";
+import { teluguBillSeriesYear } from "@/lib/teluguCalendar";
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -820,10 +821,9 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
 
 
-  // Auto-generate next bill number for star or normal series for the given year
-  const getNextBillNo = (isStar: boolean, yearStr?: string): string => {
-    const year = yearStr || new Date().getFullYear().toString();
-    // Collect all existing bill numbers from the same series and year
+  // Auto-generate the next number within the Telugu calendar series.
+  const getNextBillNo = (isStar: boolean, dateStr?: string): string => {
+    const seriesYear = teluguBillSeriesYear(dateStr || new Date().toISOString().slice(0, 10));
     const offlineLoans = transactions.filter(t => t.type === "loan" && t.id);
     let maxNum = 0;
 
@@ -833,9 +833,9 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       
       // Check if this bill belongs to the target year
       const txnDate = t.loanDetails?.takenDate || t.date || "";
-      const txnYear = txnDate ? new Date(txnDate).getFullYear().toString() : "";
+      const txnSeriesYear = txnDate ? teluguBillSeriesYear(txnDate) : 0;
 
-      if (isStarBill === isStar && txnYear === year) {
+      if (isStarBill === isStar && txnSeriesYear === seriesYear) {
         const numPart = parseInt(raw.replace(/^[★*]/, ""), 10);
         if (!isNaN(numPart) && numPart > maxNum) {
           maxNum = numPart;
@@ -2119,13 +2119,13 @@ setShowOfflineLoanModal(true);
       const originalTxn = editingTxnId ? form.expectedTransaction || transactions.find(t => t.id === editingTxnId) : null;
       if (editingTxnId && !originalTxn) throw new Error("This loan is no longer available. Refresh Loan History before editing.");
 
-      const billYear = (form.takenDate || "").slice(0, 4);
+      const billSeriesYear = teluguBillSeriesYear(form.takenDate || new Date().toISOString().slice(0, 10));
       const usedSeriesNumbers = transactions
         .filter(transaction => {
           if (transaction.type !== "loan" || transaction.id === editingTxnId) return false;
           const transactionDate = String(transaction.loanDetails?.takenDate || transaction.date || "");
           const transactionStar = /^[★*]/.test(getBillNo(transaction.id));
-          return transactionDate.slice(0, 4) === billYear && transactionStar === form.starSeries;
+          return teluguBillSeriesYear(transactionDate) === billSeriesYear && transactionStar === form.starSeries;
         })
         .map(transaction => getBillNo(transaction.id).replace(/^[★*]/, ""))
         .filter(number => /^\d{1,3}$/.test(number));
@@ -2142,7 +2142,7 @@ setShowOfflineLoanModal(true);
       }
       const billNoForSave = form.billNo.trim() || generatedBillNo;
       if (!billNoForSave) {
-        alert(`All bill numbers from 1 to 999 are already used for ${billYear}.`);
+        alert(`All bill numbers from 1 to 999 are already used in the Telugu year beginning Ugadi ${billSeriesYear}.`);
         return;
       }
       const targetBillNumber = `${form.starSeries ? "★" : ""}${billNoForSave}`;
@@ -2151,10 +2151,10 @@ setShowOfflineLoanModal(true);
         if (transaction.type !== "loan" || transaction.id === editingTxnId) return false;
         const existingBill = getBillNo(transaction.id);
         const transactionDate = String(transaction.loanDetails?.takenDate || transaction.date || "");
-        return existingBill === targetBillNumber && transactionDate.slice(0, 4) === billYear;
+        return existingBill === targetBillNumber && teluguBillSeriesYear(transactionDate) === billSeriesYear;
       });
       if (billAlreadyUsed && changedExistingBill) {
-        alert(`Bill number ${targetBillNumber} is already used for ${billYear}. Choose another number.`);
+        alert(`Bill number ${targetBillNumber} is already used in the Telugu year beginning Ugadi ${billSeriesYear}. Choose another number.`);
         return;
       }
 
@@ -2218,8 +2218,7 @@ setShowOfflineLoanModal(true);
       };
       // Use existing transaction ID if editing, otherwise generate
       const billPrefix = form.starSeries ? "★" : "";
-      const txnYear = form.takenDate ? new Date(form.takenDate).getFullYear().toString() : new Date().getFullYear().toString();
-      const txnId = editingTxnId || `BILL-${billPrefix}${billNoForSave}-${txnYear}`;
+      const txnId = editingTxnId || `BILL-${billPrefix}${billNoForSave}-${form.takenDate}-${crypto.randomUUID()}`;
       const billNumber = `${billPrefix}${billNoForSave}`;
 
       // Editing a bill must keep every existing payment entry.
@@ -3120,7 +3119,15 @@ setShowOfflineLoanModal(true);
       </aside>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col min-w-0 print:hidden overflow-y-auto no-scrollbar relative">
+      <main
+        className="flex-1 flex flex-col min-w-0 print:hidden overflow-y-auto relative"
+        onKeyDown={event => {
+          if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+          if ((event.target as HTMLElement).closest("input, textarea, select, [contenteditable='true']")) return;
+          event.preventDefault();
+          event.currentTarget.scrollBy({ top: event.key === "ArrowDown" ? 120 : -120, behavior: "smooth" });
+        }}
+      >
         
         {/* Mobile Top App Bar (Only visible on mobile portrait / landscape < md) */}
         <div className="sbj-mobile-topbar md:hidden bg-[#F6F7F9] border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40 text-slate-800 shadow-sm">
@@ -6545,7 +6552,7 @@ setShowOfflineLoanModal(true);
                         </div>
                         <div className="col-span-2">
                           <input 
-                            type="text"
+                            type="number"
                             inputMode="numeric"
                             required
                             min={1}

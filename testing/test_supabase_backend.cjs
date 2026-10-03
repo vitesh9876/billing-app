@@ -12,7 +12,8 @@ function load(name) {
   if (modules.has(name)) return modules.get(name);
   const exports = {};
   modules.set(name,exports);
-  const code = ts.transpileModule(fs.readFileSync(path.join(root,name),'utf8'),{
+  const modulePath = path.join(root,name);
+  const code = ts.transpileModule(fs.readFileSync(modulePath,'utf8'),{
     compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
   }).outputText;
   vm.runInNewContext(code,{exports,require:p=>load(path.basename(p)),console,Response,Request,URL,
@@ -119,6 +120,14 @@ async function test(name,fn) {await fn();passed++;console.log('PASS '+name);}
     const c={...customer,id:'TEST-C2'};
     await assert.rejects(()=>saveRecord(db,{transaction:{...loan,id:'BILL-another-2026',customerId:c.id},customer:c}),/bill number/);
     assert.equal((await db.query('SELECT * FROM customers')).length,1);
+  });
+  await test('bill numbers stay unique through Ugadi and can repeat after the Telugu New Year',async()=>{
+    const beforeUgadi={...loan,id:'BILL-300-2027-MAR',date:'2027-03-30',createOnly:true};
+    await assert.rejects(()=>saveRecord(db,{transaction:beforeUgadi}),/Telugu calendar year/);
+    const afterUgadi={...loan,id:'BILL-300-2027-APR',date:'2027-04-07',createOnly:true};
+    const result=await saveRecord(db,{transaction:afterUgadi});
+    assert.equal(result.transaction.loanDetails.billNumber,'300');
+    await deleteTransaction(db,result.transaction.id,result.transaction);
   });
   await test('bill-only edit keeps stable ID, payments, items and unknown metadata',async()=>{
     const edit={...saved,updateOnly:true,expectedTransaction:saved,loanDetails:{...saved.loanDetails,billNumber:'301'}};
