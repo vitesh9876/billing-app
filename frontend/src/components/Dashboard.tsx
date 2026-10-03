@@ -66,6 +66,18 @@ function sanitizeLoanBillNumber(value: unknown) {
   return String(value ?? "").replace(/\D/g, "").slice(0, 3);
 }
 
+function sanitizeLoanText(value: string) {
+  return value.replace(/[^\p{L}\p{M}\s.'’,-]/gu, "");
+}
+
+function sanitizeLoanDecimal(value: string, allowPercent = false) {
+  const cleaned = value.replace(allowPercent ? /[^\d.%]/g : /[^\d.]/g, "");
+  const [whole = "", ...fraction] = cleaned.split(".");
+  const decimal = fraction.join("");
+  const number = fraction.length ? `${whole}.${decimal}` : whole;
+  return allowPercent && cleaned.includes("%") ? `${number}%` : number;
+}
+
 function calculateDashboardStats(transactions: any[], customers: any[]) {
   const amount = (value: unknown) => {
     const numeric = Number(value);
@@ -2030,6 +2042,9 @@ setShowOfflineLoanModal(true);
     value: string,
     fieldName: string,
   ) => {
+    if (["custName", "address", "mandal"].includes(fieldName)) {
+      value = sanitizeLoanText(value);
+    }
     setOfflineLoanForm(prev => {
       const updated = { ...prev, [fieldName]: value };
 
@@ -6425,7 +6440,7 @@ setShowOfflineLoanModal(true);
                     placeholder="Father's / Husband's Name..."
                     className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.father}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, father: e.target.value }))}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, father: sanitizeLoanText(e.target.value) }))}
                   />
                 </div>
 
@@ -6494,7 +6509,7 @@ setShowOfflineLoanModal(true);
                     required 
                     className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-bold text-slate-900 focus:border-[#C5A880]"
                     value={offlineLoanForm.amount}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, amount: e.target.value }))}
+                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, amount: sanitizeLoanDecimal(e.target.value) }))}
                   />
                 </div>
                 <div className="form-group">
@@ -6530,14 +6545,15 @@ setShowOfflineLoanModal(true);
                         </div>
                         <div className="col-span-2">
                           <input 
-                            type="number" 
+                            type="text"
+                            inputMode="numeric"
                             required
                             min={1}
                             step={1}
                             placeholder="Qty"
                             className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-semibold text-center focus:border-[#C5A880]"
                             value={item.qty || ""}
-                            onChange={(e) => handlePledgedItemRowChange(idx, "qty", parseInt(e.target.value) || 0)}
+                            onChange={(e) => handlePledgedItemRowChange(idx, "qty", parseInt(e.target.value.replace(/\D/g, "")) || 0)}
                           />
                         </div>
                         <div className="col-span-1 flex justify-center">
@@ -6581,7 +6597,7 @@ setShowOfflineLoanModal(true);
                         placeholder="60%"
                         className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.yield}
-                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, yield: e.target.value }))}
+                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, yield: sanitizeLoanDecimal(e.target.value, true) }))}
                       />
                     </div>
                     <div className="form-group">
@@ -6591,7 +6607,7 @@ setShowOfflineLoanModal(true);
                         placeholder="0.00"
                         className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.grossWeight}
-                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, grossWeight: e.target.value }))}
+                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, grossWeight: sanitizeLoanDecimal(e.target.value) }))}
                       />
                     </div>
                     <div className="form-group">
@@ -6601,7 +6617,7 @@ setShowOfflineLoanModal(true);
                         placeholder="0.00"
                         className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.netWeight}
-                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, netWeight: e.target.value }))}
+                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, netWeight: sanitizeLoanDecimal(e.target.value) }))}
                       />
                     </div>
                   </div>
@@ -6614,7 +6630,7 @@ setShowOfflineLoanModal(true);
                         placeholder="Worth in Rupees..."
                         className="w-full border border-slate-200/90 rounded-xl p-2 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                         value={offlineLoanForm.worth}
-                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, worth: e.target.value }))}
+                        onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, worth: sanitizeLoanDecimal(e.target.value) }))}
                       />
                     </div>
                     <div className="form-group">
