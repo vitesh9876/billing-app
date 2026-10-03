@@ -5083,10 +5083,10 @@ setShowOfflineLoanModal(true);
                           <tr 
                             key={idx} 
                             onClick={() => setSelectedLoanTxn(t)} 
-                            className="hover:bg-[#FAFBFD] transition-colors cursor-pointer"
+                            className="hover:bg-[#F3E2BC] transition-colors cursor-pointer"
                           >
                             <td className="py-3.5 pr-3 text-[#B8860B] font-semibold text-xs">
-                              #{displayBill}
+                              {displayBill}
                             </td>
                             <td className="py-3.5 pr-3 text-slate-800 font-medium">
                               {custName}
