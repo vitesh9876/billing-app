@@ -1,6 +1,20 @@
 import json
+import re
 from sqlalchemy.orm import Session
 from backend.app.models.models import Customer, Transaction, SMSQueue, Device, SMSTemplate, ItemCatalog
+
+class TransactionConflict(ValueError):
+    pass
+
+
+def displayed_bill_number(txn):
+    try:
+        details = json.loads(txn.itemsJson)
+    except (TypeError, ValueError):
+        details = {}
+    if isinstance(details, dict) and details.get("billNumber"):
+        return details["billNumber"]
+    return re.sub(r"-\d{4}$", "", txn.id.replace("BILL-", "").replace("TXN-OFFLINE-", "")).replace("*", "★", 1)
 
 class CustomerRepository:
     @staticmethod
@@ -12,7 +26,7 @@ class CustomerRepository:
         return db.query(Customer).filter(Customer.id == customer_id).first()
         
     @staticmethod
-    def save(db: Session, customer_data: dict):
+    def save(db: Session, customer_data: dict, *, commit=True):
         cust = db.query(Customer).filter(Customer.id == customer_data["id"]).first()
         if not cust:
             cust = Customer(**customer_data)
@@ -20,8 +34,9 @@ class CustomerRepository:
         else:
             for k, v in customer_data.items():
                 setattr(cust, k, v)
-        db.commit()
-        db.refresh(cust)
+        if commit:
+            db.commit()
+        # Save endpoints only acknowledge the commit; avoid an extra database read.
         return cust
 
     @staticmethod
@@ -35,50 +50,32 @@ class CustomerRepository:
 
 class TransactionRepository:
     @staticmethod
-    def get_all(db: Session):
-        txns = db.query(Transaction).all()
-        result = []
-        for t in txns:
-            item_dict = dict(
-                id=t.id,
-                customerId=t.customerId,
-                type=t.type,
-                amount=t.amount,
-                category=t.category,
-                date=t.date,
-                status=t.status,
-                clearedDate=t.clearedDate
-            )
-            # Unpack items from JSON
-            try:
-                item_dict["items"] = json.loads(t.itemsJson) if t.itemsJson else []
-            except Exception:
-                item_dict["items"] = []
-            # Extract fields for loan compatibility if type is loan
-            if t.type == "loan":
-                item_dict["loanDetails"] = {
-                    "items": item_dict["items"],
-                    "interestRate": "1.5%", # defaults/back-compat
-                    "takenDate": t.date,
-                    "endDate": t.date # defaults
-                }
-                # Check JSON for deeper nesting
-                try:
-                    loaded = json.loads(t.itemsJson)
-                    if isinstance(loaded, dict) and "items" in loaded:
-                        item_dict["loanDetails"] = loaded
-                        item_dict["items"] = loaded.get("items", [])
-                except Exception:
-                    pass
-            result.append(item_dict)
+    def to_dict(t):
+        result = dict(id=t.id, customerId=t.customerId, type=t.type, amount=t.amount,
+                      category=t.category, date=t.date, status=t.status, clearedDate=t.clearedDate)
+        try:
+            loaded = json.loads(t.itemsJson) if t.itemsJson else []
+        except (TypeError, ValueError):
+            loaded = []
+        result["items"] = loaded
+        if t.type == "loan":
+            if isinstance(loaded, dict) and "items" in loaded:
+                result["loanDetails"] = loaded
+                result["items"] = loaded.get("items", [])
+            else:
+                result["loanDetails"] = dict(items=loaded, interestRate="1.5%", takenDate=t.date, endDate=t.date)
         return result
+
+    @staticmethod
+    def get_all(db: Session):
+        return [TransactionRepository.to_dict(t) for t in db.query(Transaction).all()]
 
     @staticmethod
     def get_by_id(db: Session, txn_id: str):
         return db.query(Transaction).filter(Transaction.id == txn_id).first()
 
     @staticmethod
-    def save(db: Session, txn_data: dict):
+    def save(db: Session, txn_data: dict, *, commit=True):
         items_payload = txn_data.get("items", [])
         if txn_data.get("type") == "loan" and "loanDetails" in txn_data:
             # Save whole loanDetails block as JSON for complete specs
@@ -86,7 +83,25 @@ class TransactionRepository:
             
         items_json = json.dumps(items_payload)
         
-        t = db.query(Transaction).filter(Transaction.id == txn_data["id"]).first()
+        t = db.query(Transaction).filter(Transaction.id == txn_data["id"]).with_for_update().first()
+        if t and txn_data.get("createOnly"):
+            raise TransactionConflict("This bill already exists. Open the existing loan to edit it instead.")
+        if txn_data.get("updateOnly") and not t:
+            raise TransactionConflict("This loan was deleted. Refresh your records before editing.")
+        expected = txn_data.get("expectedTransaction")
+        if t and expected is not None and TransactionRepository.to_dict(t) != expected:
+            raise TransactionConflict("This record was changed elsewhere. Refresh it before saving so no changes are lost.")
+        if txn_data.get("type") == "loan" and isinstance(items_payload, dict) and "billNumber" in items_payload:
+            bill_number = str(items_payload["billNumber"]).strip()
+            if not bill_number:
+                raise TransactionConflict("Please enter a bill number.")
+            year = str(txn_data["date"])[:4]
+            if not t or displayed_bill_number(t) != bill_number or str(t.date)[:4] != year:
+                other_loans = db.query(Transaction.id, Transaction.itemsJson).filter(
+                    Transaction.type == "loan", Transaction.id != txn_data["id"], Transaction.date.startswith(year)
+                ).all()
+                if any(displayed_bill_number(other) == bill_number for other in other_loans):
+                    raise TransactionConflict("This bill number already belongs to another loan in the same year. Choose a different number.")
         if not t:
             t = Transaction(
                 id=txn_data["id"],
@@ -110,8 +125,9 @@ class TransactionRepository:
                 t.status = txn_data["status"]
             if "clearedDate" in txn_data:
                 t.clearedDate = txn_data["clearedDate"]
-        db.commit()
-        db.refresh(t)
+        if commit:
+            db.commit()
+        # The client refreshes records separately after a successful commit.
         return t
 
     @staticmethod
@@ -185,6 +201,19 @@ class DeviceRepository:
         return False
 
 class SMSTemplateRepository:
+    @staticmethod
+    def seed_defaults(db: Session, templates):
+        existing_names = {name for (name,) in db.query(SMSTemplate.name).all()}
+        added = 0
+        for name, content in templates:
+            if name not in existing_names:
+                db.add(SMSTemplate(name=name, content=content))
+                existing_names.add(name)
+                added += 1
+        if added:
+            db.commit()
+        return added
+
     @staticmethod
     def get_all(db: Session):
         return db.query(SMSTemplate).all()

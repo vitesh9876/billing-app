@@ -1,17 +1,21 @@
+import asyncio
 import json
 import logging
 import os
 import datetime
+import time
 from typing import Dict, Set
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, Query
+from fastapi import BackgroundTasks, FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
-from backend.app.db.session import engine, Base, get_db
+from backend.app.db.session import engine, Base, SessionLocal, get_db
 from backend.app.models.models import Customer, Transaction
 from backend.app.repository.repository import (
     CustomerRepository,
     TransactionRepository,
+    TransactionConflict,
     SMSQueueRepository,
     DeviceRepository,
     SMSTemplateRepository,
@@ -133,8 +137,20 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="SmartShop Versioned API v1")
 
+@app.middleware("http")
+async def record_request_time(request, call_next):
+    started = time.perf_counter()
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    response.headers["Server-Timing"] = f"api;dur={elapsed_ms:.1f}"
+    if elapsed_ms >= 1000:
+        logger.warning("Slow request: %s %s %.0fms", request.method, request.url.path, elapsed_ms)
+    return response
+
 @app.on_event("startup")
 def startup_event():
+    if os.getenv("ENABLE_DAILY_REMINDERS", "true").lower() not in {"true", "1", "yes"}:
+        return
     import threading
     threading.Thread(target=run_daily_scan, daemon=True).start()
 
@@ -147,7 +163,6 @@ app.add_middleware(
 )
 
 # Insert default templates if they don't exist
-db = next(get_db())
 default_templates = [
     ("Thank You", "ప్రియమైన {CustomerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ ని సందర్శించినందుకు ధన్యవాదాలు! మీ బిల్ నంబర్: {InvoiceNumber}, అమౌంట్: ₹{LoanAmount}."),
     ("Purchase Completed", "ప్రియమైన {CustomerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ ఐటమ్స్ పర్చేజ్ బిల్ {InvoiceNumber} విజయవంతంగా క్రియేట్ చేయబడింది. మొత్తం అమౌంట్: ₹{LoanAmount}. ధన్యవాదాలు!"),
@@ -158,9 +173,8 @@ default_templates = [
     ("Loan Warning (30 Days)", "ప్రియమైన {CustomerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ గడువు ముగియడానికి ఇంకా 30 రోజులు మాత్రమే మిగిలి ఉంది (లోన్ నంబర్: {InvoiceNumber}). దయచేసి గమనించగలరు."),
     ("Loan Warning (7 Days)", "ప్రియమైన {CustomerName}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ గడువు ముగియడానికి ఇంకా 7 రోజులు మాత్రమే మిగిలి ఉంది (లోన్ నంబర్: {InvoiceNumber}). త్వరగా చెల్లించవలసిందిగా కోరుతున్నాము, లేనిచో అదనపు వడ్డీ వసూలు చేయబడుతుంది.")
 ]
-for name, content in default_templates:
-    SMSTemplateRepository.save(db, name, content)
-db.close()
+with SessionLocal() as seed_db:
+    SMSTemplateRepository.seed_defaults(seed_db, default_templates)
 
 # Device Connection Manager
 class WSConnectionManager:
@@ -205,11 +219,15 @@ class BrowserWSManager:
             logger.info("Browser client disconnected.")
 
     async def broadcast(self, message: dict):
-        for conn in list(self.active_connections):
+        payload = json.dumps(message)
+
+        async def send(conn):
             try:
-                await conn.send_text(json.dumps(message))
+                await asyncio.wait_for(conn.send_text(payload), timeout=2.0)
             except Exception:
                 self.active_connections.discard(conn)
+
+        await asyncio.gather(*(send(conn) for conn in list(self.active_connections)))
 
 browser_ws = BrowserWSManager()
 
@@ -323,26 +341,27 @@ def get_customers(db: Session = Depends(get_db)):
     return [dict(id=c.id, name=c.name, phone=c.phone, address=c.address, father=c.father, idproof=c.idproof, mandal=c.mandal) for c in customers]
 
 @app.post("/api/v1/customers")
-async def save_customer(body: dict, db: Session = Depends(get_db)):
-    CustomerRepository.save(db, body)
-    await browser_ws.broadcast({"type": "update", "topic": "customers"})
-    return {"status": "success"}
+def save_customer(body: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    CustomerRepository.save(db, body, commit=False)
+    db.commit()
+    background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "customers"})
+    return dict(body)
 
 @app.delete("/api/v1/customers/{customer_id}")
-async def delete_customer(customer_id: str, db: Session = Depends(get_db)):
+def delete_customer(customer_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     success = CustomerRepository.delete(db, customer_id)
     if not success:
         raise HTTPException(status_code=404, detail="Customer not found")
-    await browser_ws.broadcast({"type": "update", "topic": "customers"})
+    background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "customers"})
     return {"status": "success"}
 
 
 @app.delete("/api/v1/transactions/{txn_id}")
-async def delete_transaction(txn_id: str, db: Session = Depends(get_db)):
+def delete_transaction(txn_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     success = TransactionRepository.delete(db, txn_id)
     if not success:
         raise HTTPException(status_code=404, detail="Transaction not found")
-    await browser_ws.broadcast({"type": "update", "topic": "transactions"})
+    background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "transactions"})
     return {"status": "success"}
 
 @app.get("/api/v1/transactions")
@@ -350,13 +369,47 @@ def get_transactions(db: Session = Depends(get_db)):
     return TransactionRepository.get_all(db)
 
 @app.post("/api/v1/transactions")
-async def save_transaction(body: dict, db: Session = Depends(get_db)):
-    TransactionRepository.save(db, body)
-    await browser_ws.broadcast({"type": "update", "topic": "transactions"})
-    return {"status": "success"}
+def save_transaction(body: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    try:
+        txn = TransactionRepository.save(db, body, commit=False)
+        saved = TransactionRepository.to_dict(txn)
+        db.commit()
+    except TransactionConflict as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "transactions"})
+    return saved
+
+@app.post("/api/v1/records/save")
+def save_record(body: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Commit customer and transaction together, returning the saved UI record."""
+    transaction = body.get("transaction")
+    customer = body.get("customer")
+    if not isinstance(transaction, dict):
+        raise HTTPException(status_code=400, detail="Transaction is required")
+    if customer is not None and (not isinstance(customer, dict) or customer.get("id") != transaction.get("customerId")):
+        raise HTTPException(status_code=400, detail="Customer does not match the transaction")
+    try:
+        # Query/validate the transaction before staging customer changes.
+        txn = TransactionRepository.save(db, transaction, commit=False)
+        if customer is not None:
+            CustomerRepository.save(db, customer, commit=False)
+        saved = TransactionRepository.to_dict(txn)
+        db.commit()
+    except TransactionConflict as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Save conflicts with existing data. Refresh your records before retrying.") from exc
+    except Exception:
+        db.rollback()
+        raise
+    background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "transactions"})
+    return {"transaction": saved, "customer": customer}
 
 @app.post("/api/v1/transactions/clear")
-async def clear_transaction(body: dict, db: Session = Depends(get_db)):
+def clear_transaction(body: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     txn_id = body.get("txnId")
     cleared_date = body.get("clearedDate") or datetime.datetime.now().strftime("%Y-%m-%d")
     txn = TransactionRepository.get_by_id(db, txn_id)
@@ -372,9 +425,10 @@ async def clear_transaction(body: dict, db: Session = Depends(get_db)):
                 txn.itemsJson = json.dumps(data)
         except Exception:
             pass
+        saved = TransactionRepository.to_dict(txn)
         db.commit()
-        await browser_ws.broadcast({"type": "update", "topic": "transactions"})
-        return {"status": "success"}
+        background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "transactions"})
+        return saved
     raise HTTPException(status_code=404, detail="Transaction not found")
 
 @app.post("/api/v1/sms/send")
@@ -463,17 +517,17 @@ def get_templates(db: Session = Depends(get_db)):
     return [dict(id=t.id, name=t.name, content=t.content) for t in templates]
 
 @app.post("/api/v1/sms/template")
-async def add_template(body: dict, db: Session = Depends(get_db)):
+def add_template(body: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     SMSTemplateRepository.save(db, body.get("name"), body.get("content"), body.get("id"))
-    await browser_ws.broadcast({"type": "update", "topic": "templates"})
+    background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "templates"})
     return {"status": "success"}
 
 @app.post("/api/v1/sms/template/delete")
-async def delete_template(body: dict, db: Session = Depends(get_db)):
+def delete_template(body: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     name = body.get("name")
     success = SMSTemplateRepository.delete(db, name)
     if success:
-        await browser_ws.broadcast({"type": "update", "topic": "templates"})
+        background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "templates"})
         return {"status": "success"}
     raise HTTPException(status_code=404, detail="Template not found")
 
@@ -483,15 +537,15 @@ def get_items(db: Session = Depends(get_db)):
     return [dict(id=i.id, name=i.name, category=i.category) for i in items]
 
 @app.post("/api/v1/items")
-async def save_item(body: dict, db: Session = Depends(get_db)):
+def save_item(body: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     ItemCatalogRepository.save(db, body)
-    await browser_ws.broadcast({"type": "update", "topic": "items"})
+    background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "items"})
     return {"status": "success"}
 
 @app.delete("/api/v1/items/{item_id}")
-async def delete_item(item_id: int, db: Session = Depends(get_db)):
+def delete_item(item_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     ItemCatalogRepository.delete(db, item_id)
-    await browser_ws.broadcast({"type": "update", "topic": "items"})
+    background_tasks.add_task(browser_ws.broadcast, {"type": "update", "topic": "items"})
     return {"status": "success"}
 
 @app.get("/api/v1/loans/reminders-status")

@@ -1,0 +1,6 @@
+{
+  "name": "billing-safety-tests",
+  "private": true,
+  "scripts": { "test:supabase": "node test_supabase_backend.cjs && node test_supabase_client.cjs" },
+  "devDependencies": { "@electric-sql/pglite": "0.3.14", "typescript": "5.9.3" }
+}

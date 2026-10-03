@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 class SmsBridgeManager private constructor(private val context: Context) {
   companion object {
@@ -42,6 +43,19 @@ class SmsBridgeManager private constructor(private val context: Context) {
     .build()
   private var webSocket: WebSocket? = null
   private val scope = CoroutineScope(Dispatchers.IO)
+  private val pairingSecret = SupabasePairingSecret(context)
+  private var supabaseJob: Job? = null
+  private val isSupabaseBackend: Boolean
+    get() = serverUrl.trimEnd('/').endsWith("/functions/v1/billing-api")
+  var supabasePairingKey: String
+    get() = pairingSecret.read()
+    set(value) { pairingSecret.write(value.trim()) }
+  private val supabaseTransport by lazy {
+    SupabaseBridgeTransport(context, { serverUrl }, { supabasePairingKey }, {
+      JSONObject().put("battery", getBatteryPercentage()).put("sim", getSimOperator())
+    }, { online -> _connectionState.value = if (online) "Connected" else "Connecting" },
+      { message -> addLog(message) }, { id, phone, message -> sendSMS(id, phone, message) })
+  }
 
   private val _logs = MutableStateFlow<List<String>>(emptyList())
   val logs = _logs.asStateFlow()
@@ -92,6 +106,17 @@ class SmsBridgeManager private constructor(private val context: Context) {
   }
 
   fun registerDevice(onResult: (Boolean) -> Unit = {}) {
+    if (isSupabaseBackend) {
+      scope.launch {
+        try {
+          supabaseTransport.heartbeat()
+          _registrationState.value = "Registered"
+          sharedPrefs.edit().putBoolean("is_registered", true).apply()
+          onResult(true)
+        } catch (_: Exception) { addLog("Pair this device from the website, then paste its private key."); onResult(false) }
+      }
+      return
+    }
     scope.launch {
       addLog("Attempting registration to server...")
       val battery = getBatteryPercentage()
@@ -147,6 +172,11 @@ class SmsBridgeManager private constructor(private val context: Context) {
 
     isManuallyDisconnected = false
     _connectionState.value = "Connecting"
+    if (isSupabaseBackend) {
+      if (supabaseJob?.isActive == true) return
+      supabaseJob = scope.launch { supabaseTransport.run() }
+      return
+    }
     addLog("Connecting to WebSocket...")
 
     // Convert http/https server url to ws/wss
@@ -169,7 +199,7 @@ class SmsBridgeManager private constructor(private val context: Context) {
       }
 
       override fun onMessage(webSocket: WebSocket, text: String) {
-        addLog("Received raw message: $text")
+        addLog("Received a bridge message.")
         try {
           val json = JSONObject(text)
           if (json.optString("type") == "sms_job") {
@@ -206,6 +236,8 @@ class SmsBridgeManager private constructor(private val context: Context) {
 
   fun disconnect() {
     isManuallyDisconnected = true
+    supabaseJob?.cancel()
+    supabaseJob = null
     webSocket?.close(1000, "User manual disconnect")
     webSocket = null
     _connectionState.value = "Disconnected"
@@ -245,7 +277,7 @@ class SmsBridgeManager private constructor(private val context: Context) {
 
   private fun sendSMS(smsId: String, phone: String, messageText: String) {
     scope.launch {
-      addLog("Sending SMS to $phone (ID: $smsId)...")
+      addLog("Submitting SMS (ID: $smsId)...")
       try {
         val smsManager: SmsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
           context.getSystemService(SmsManager::class.java)
@@ -261,7 +293,7 @@ class SmsBridgeManager private constructor(private val context: Context) {
           smsManager.sendTextMessage(phone, null, messageText, null, null)
         }
 
-        addLog("SMS successfully sent to $phone!")
+        addLog("SMS submitted to the phone (ID: $smsId).")
         reportSmsResult(smsId, "Sent")
       } catch (e: Exception) {
         addLog("Error sending SMS: ${e.message}")
@@ -271,6 +303,11 @@ class SmsBridgeManager private constructor(private val context: Context) {
   }
 
   private fun reportSmsResult(smsId: String, status: String, error: String = "") {
+    if (isSupabaseBackend) {
+      try { supabaseTransport.report(smsId, status, error) }
+      catch (_: Exception) { addLog("SMS acknowledgement could not be retained. Check the queue before retrying.") }
+      return
+    }
     val ws = webSocket ?: return
     try {
       val payload = JSONObject().apply {

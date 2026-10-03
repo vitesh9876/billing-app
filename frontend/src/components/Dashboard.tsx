@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { billingFetch as fetch, subscribeBillingChanges, supabaseBillingEnabled } from "@/lib/supabaseBilling";
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -41,7 +42,8 @@ import {
   ShieldAlert
 } from "lucide-react";
 
-function formatBillNoForDisplay(id: string) {
+function formatBillNoForDisplay(id: string, billNumber?: string) {
+  if (billNumber) return billNumber;
   if (!id) return "";
   let cleaned = id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
   cleaned = cleaned.replace(/-\d{4}$/, "");
@@ -49,6 +51,20 @@ function formatBillNoForDisplay(id: string) {
     return "★" + cleaned.replace(/^[★*]/, "");
   }
   return cleaned;
+}
+
+function calculateDashboardStats(transactions: any[], customers: any[]) {
+  const amount = (value: unknown) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
+  };
+  const activeLoans = transactions.filter(t => t.type === "loan" && t.status !== "Cleared");
+  return {
+    totalSales: transactions.filter(t => t.type === "purchase").reduce((sum, t) => sum + amount(t.amount), 0),
+    activeLoans: activeLoans.length,
+    pledgedValue: activeLoans.reduce((sum, t) => sum + amount(t.amount), 0),
+    totalCustomers: customers.length
+  };
 }
 
 function getLoanTakenDate(t: any): string {
@@ -314,17 +330,34 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   const safeItems = Array.isArray(itemsCatalog) ? itemsCatalog : [];
   
   // Dashboard states
-  const [stats, setStats] = useState({
-    totalSales: 0,
-    activeLoans: 0,
-    pledgedValue: 0,
-    totalCustomers: 0
-  });
+  const [dashboardLoaded, setDashboardLoaded] = useState(false);
+  const stats = useMemo(() => calculateDashboardStats(transactions, customers), [transactions, customers]);
+  const billNumbersById = useMemo(() => new Map<string, string>(transactions.map(t => [t.id, formatBillNoForDisplay(t.id, t.loanDetails?.billNumber)])), [transactions]);
+  const getBillNo = (id: string) => billNumbersById.get(id) || formatBillNoForDisplay(id);
 
   // SMS status
   const [smsDevices, setSmsDevices] = useState<any[]>([]);
   const [smsQueue, setSmsQueue] = useState<any[]>([]);
   const [smsTemplates, setSmsTemplates] = useState<any[]>([]);
+
+  const todayAtGlance = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const newLoans = transactions.filter(t => t.type === "loan" && getLoanTakenDate(t) === today).length;
+    const paymentsReceived = transactions.reduce((count, t) => {
+      const interestPayments = Array.isArray(t.loanDetails?.interestPayments) ? t.loanDetails.interestPayments : [];
+      const principalRepayments = Array.isArray(t.loanDetails?.topups) ? t.loanDetails.topups : [];
+      return count
+        + interestPayments.filter((payment: any) => payment.date === today).length
+        + principalRepayments.filter((payment: any) => payment.type === "repayment" && payment.date === today).length;
+    }, 0);
+    const remindersPending = remindersStatus.filter(reminder => Number(reminder.daysLeft) <= 0).length;
+    const smsSentToday = smsQueue.filter(message => {
+      const sentDate = String(message.created_time || message.createdAt || message.date || "").slice(0, 10);
+      return ["Sent", "Delivered"].includes(message.status) && sentDate === today;
+    }).length;
+    const smsQueued = smsQueue.filter(message => ["Pending", "Queued", "Sending"].includes(message.status)).length;
+    return { newLoans, paymentsReceived, remindersPending, smsSentToday, smsQueued };
+  }, [transactions, remindersStatus, smsQueue]);
   
   // Real-time WebSocket connection status
   const [wsConnected, setWsConnected] = useState(false);
@@ -408,6 +441,8 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     { id: 1, name: "", qty: 1, yield: "", grossWeight: "", netWeight: "", remarks: "" }
   ]);
   interface OfflineLoanFormState {
+    expectedTransaction?: any;
+    expectedCustomer?: any;
     billNo: string;
     custName: string;
     phone: string;
@@ -519,8 +554,8 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       if (activeTab !== "loan-history") return true;
       const cust = customers.find(c => c.id === t.customerId);
       const custName = cust ? cust.name.toLowerCase() : "";
-      const rawBill = t.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
-      const billNo = formatBillNoForDisplay(t.id).toLowerCase();
+      const rawBill = getBillNo(t.id);
+      const billNo = getBillNo(t.id).toLowerCase();
       
       const isStar = rawBill.startsWith("★") || rawBill.startsWith("*");
       const matchesSeries = loanSeriesFilter === "all"
@@ -557,8 +592,8 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       if (valA > valB) return loanSortOrder === "asc" ? 1 : -1;
 
       // Tie-break by Bill Number numerically when primary values are equal
-      const rawBillA = (a.id || "").replace("BILL-", "").replace("TXN-OFFLINE-", "");
-      const rawBillB = (b.id || "").replace("BILL-", "").replace("TXN-OFFLINE-", "");
+      const rawBillA = getBillNo(a.id || "");
+      const rawBillB = getBillNo(b.id || "");
       const numA = parseInt(rawBillA.replace(/\D/g, ""), 10) || 0;
       const numB = parseInt(rawBillB.replace(/\D/g, ""), 10) || 0;
 
@@ -606,6 +641,11 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
   // Establish persistent WebSocket to server for real-time state sync
   useEffect(() => {
+    if (supabaseBillingEnabled) {
+      const unsubscribe = subscribeBillingChanges(refreshData,setWsConnected);
+      refreshData();
+      return unsubscribe;
+    }
     let socket: WebSocket;
     const connectWS = () => {
       let backendUrl = process.env.NEXT_PUBLIC_API_URL || "";
@@ -649,10 +689,70 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     };
   }, []);
 
-  const refreshData = () => {
-    fetch("/api/v1/dashboard-data")
-      .then(res => res.json())
-      .then(data => {
+  const refreshInFlight = useRef(false);
+  const refreshPending = useRef(false);
+  const billingSaveInFlight = useRef(false);
+  const offlineSaveInFlight = useRef(false);
+  const mutationRevision = useRef(0);
+  const recordSavesInFlight = useRef(new Set<string>());
+  const [savingRecord, setSavingRecord] = useState(false);
+  const [saveNotice, setSaveNotice] = useState("");
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showSaveNotice = (message: string) => {
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    setSaveNotice(message);
+    noticeTimer.current = setTimeout(() => setSaveNotice(""), 4000);
+  };
+  useEffect(() => () => {
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+  }, []);
+
+  const applySavedTransaction = (transaction: any, customer?: any) => {
+    mutationRevision.current += 1;
+    setTransactions(previous => [transaction, ...previous.filter(t => t.id !== transaction.id)]);
+    if (customer) setCustomers(previous => [customer, ...previous.filter(c => c.id !== customer.id)]);
+  };
+
+  const saveRecord = async (transaction: any, customer?: any) => {
+    if (recordSavesInFlight.current.has(transaction.id)) throw new Error("This record is already being saved.");
+    recordSavesInFlight.current.add(transaction.id);
+    setSavingRecord(true);
+    try {
+      const response = await fetch("/api/v1/records/save", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transaction, customer })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "Save failed. Your form has been kept.");
+      if (!result.transaction?.id) throw new Error("Save could not be confirmed. Check your records before retrying.");
+      applySavedTransaction(result.transaction, result.customer);
+      return result.transaction;
+    } finally {
+      recordSavesInFlight.current.delete(transaction.id);
+      setSavingRecord(recordSavesInFlight.current.size > 0);
+    }
+  };
+
+  const refreshData = async () => {
+    refreshPending.current = true;
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
+    try {
+      // Coalesce update bursts, keeping one follow-up read for changes during a fetch.
+      do {
+        refreshPending.current = false;
+        const revision = mutationRevision.current;
+        const res = await fetch("/api/v1/dashboard-data");
+        if (!res.ok) throw new Error("Failed to load dashboard data");
+        const data = await res.json();
+        if (!Array.isArray(data.transactions) || !Array.isArray(data.customers)) {
+          throw new Error("Incomplete dashboard data");
+        }
+        if (revision !== mutationRevision.current) {
+          // A read started before a confirmed mutation cannot undo its UI result.
+          refreshPending.current = true;
+          continue;
+        }
         if (data.customers) setCustomers(data.customers);
         if (data.transactions) setTransactions(data.transactions);
         if (data.smsTemplates) setSmsTemplates(data.smsTemplates);
@@ -660,8 +760,13 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         if (data.smsDevices) setSmsDevices(data.smsDevices);
         if (Array.isArray(data.itemsCatalog)) setItemsCatalog(data.itemsCatalog);
         if (Array.isArray(data.remindersStatus)) setRemindersStatus(data.remindersStatus);
-      })
-      .catch(err => console.error("Error loading dashboard data:", err));
+        setDashboardLoaded(true);
+      } while (refreshPending.current);
+    } catch (err) {
+      console.error("Error loading dashboard data:", err);
+    } finally {
+      refreshInFlight.current = false;
+    }
   };
 
   // Clear suggestions when navigating tabs
@@ -698,24 +803,6 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     }
   }, [activeTab]);
 
-  // Re-calculate dashboard statistics whenever transactions or customers change
-  useEffect(() => {
-    const totalSales = transactions
-      .filter(t => t.type === "purchase")
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const activeLoansList = transactions.filter(t => t.type === "loan" && t.status !== "Cleared");
-    const activeLoans = activeLoansList.length;
-    const pledgedValue = activeLoansList.reduce((sum, t) => sum + t.amount, 0);
-
-    setStats({
-      totalSales,
-      activeLoans,
-      pledgedValue,
-      totalCustomers: customers.length
-    });
-  }, [transactions, customers]);
-
 
 
   // Auto-generate next bill number for star or normal series for the given year
@@ -726,7 +813,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     let maxNum = 0;
 
     offlineLoans.forEach(t => {
-      const raw = t.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+      const raw = getBillNo(t.id);
       const isStarBill = raw.startsWith("★") || raw.startsWith("*");
       
       // Check if this bill belongs to the target year
@@ -891,16 +978,14 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     
     const updatedTxn = {
       ...txn,
+      updateOnly: true,
+      expectedTransaction: txn,
       loanDetails: updatedLoanDetails
     };
     
-    fetch("/api/v1/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedTxn)
-    }).then(res => res.json())
-      .then(() => {
-        alert("Interest payment recorded successfully.");
+    saveRecord(updatedTxn)
+      .then(savedTxn => {
+        showSaveNotice("Interest payment saved.");
         
         // Send Interest Paid SMS Confirmation
         const customerObj = customers.find(c => c.id === txn.customerId);
@@ -910,10 +995,10 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
           const msg = tpl
             ? tpl.content
                 .replace("{CustomerName}", customerObj.name)
-                .replace("{InvoiceNumber}", formatBillNoForDisplay(txnId))
+                .replace("{InvoiceNumber}", getBillNo(txnId))
                 .replace("{LoanAmount}", amount.toLocaleString('en-IN'))
                 .replace("{LoanEndDate}", formattedPaidUpto)
-            : `ప్రియమైన ${customerObj.name}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ నంబర్ ${formatBillNoForDisplay(txnId)} కి సంబంధించిన వడ్డీ ₹${amount.toLocaleString('en-IN')} చెల్లించబడింది. వడ్డీ ${formattedPaidUpto} వరకు క్లియర్ చేయబడింది. ధన్యవాదాలు.`;
+            : `ప్రియమైన ${customerObj.name}, శ్రీ సాయి బాలాజీ జ్యువెలర్స్ & ఫర్నిచర్ నుండి నమస్కారములు. మీ లోన్ నంబర్ ${getBillNo(txnId)} కి సంబంధించిన వడ్డీ ₹${amount.toLocaleString('en-IN')} చెల్లించబడింది. వడ్డీ ${formattedPaidUpto} వరకు క్లియర్ చేయబడింది. ధన్యవాదాలు.`;
           
           fetch("/api/v1/sms/send", {
             method: "POST",
@@ -929,11 +1014,9 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
           });
         }
 
-        setTransactions(transactions.map(t => t.id === txnId ? updatedTxn : t));
-        setSelectedLoanTxn(updatedTxn);
+        setSelectedLoanTxn(savedTxn);
         setInterestRemarks("");
-        refreshData();
-      });
+      }).catch(err => alert(err.message || "Save could not be confirmed. Check your records before retrying."));
   };
 
   const handleSaveTopUp = () => {
@@ -1009,24 +1092,20 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
     const updatedTxn = {
       ...txn,
+      updateOnly: true,
+      expectedTransaction: txn,
       amount: originalAmt + extra,
       loanDetails: updatedLoanDetails
     };
 
-    fetch("/api/v1/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedTxn)
-    }).then(res => res.json())
+    saveRecord(updatedTxn)
       .then((savedTxn) => {
-        alert(logMessage);
+        showSaveNotice(logMessage);
         setShowTopUpForm(false);
         setTopUpAmount("");
         setTopUpRemarks("");
-        setTransactions(transactions.map(t => t.id === savedTxn.id ? savedTxn : t));
         setSelectedLoanTxn(savedTxn);
-        refreshData();
-      });
+      }).catch(err => alert(err.message || "Save could not be confirmed. Check your records before retrying."));
   };
 
   const handleSaveRepayment = () => {
@@ -1108,24 +1187,20 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
     const updatedTxn = {
       ...txn,
+      updateOnly: true,
+      expectedTransaction: txn,
       amount: originalAmt - repay,
       loanDetails: updatedLoanDetails
     };
 
-    fetch("/api/v1/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedTxn)
-    }).then(res => res.json())
+    saveRecord(updatedTxn)
       .then((savedTxn) => {
-        alert(logMessage);
+        showSaveNotice(logMessage);
         setShowRepaymentForm(false);
         setRepaymentAmount("");
         setRepaymentRemarks("");
-        setTransactions(transactions.map(t => t.id === savedTxn.id ? savedTxn : t));
         setSelectedLoanTxn(savedTxn);
-        refreshData();
-      });
+      }).catch(err => alert(err.message || "Save could not be confirmed. Check your records before retrying."));
   };
 
   const handleSendBulkReminders = async () => {
@@ -1147,7 +1222,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
       const formattedMsg = bulkReminderMessage
         .replace("{CustomerName}", rem.customerName)
-        .replace("{LoanId}", formatBillNoForDisplay(rem.loanId));
+        .replace("{LoanId}", getBillNo(rem.loanId));
 
       try {
         await fetch("/api/v1/sms/send", {
@@ -1405,20 +1480,24 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   // Handle forms submit
   const handleSavePurchase = (e: React.FormEvent) => {
     e.preventDefault();
+    if (billingSaveInFlight.current) return;
     if (!billingCustName.trim() || !billingCustPhone.trim()) {
       alert("Please enter customer name and phone number.");
       return;
     }
 
-    const saveTxn = (custId: string, customerObj: any) => {
+    billingSaveInFlight.current = true;
+
+    const saveTxn = (custId: string, customerObj: any, newCustomer = false) => {
       const total = purchaseItems.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
       // Category-based sequential prefix
       const prefix = purchaseCategory === "Jewelry" ? "J-" : "F-";
-      const count = transactions.filter(t => t.type === "purchase" && t.id.startsWith(prefix)).length;
+      const count = Math.max(0, ...transactions.filter(t => t.type === "purchase" && t.id.startsWith(prefix)).map(t => Number(t.id.slice(prefix.length)) || 0));
       const txnId = prefix + String(count + 1).padStart(3, "0");
 
       const payload = {
         id: txnId,
+        createOnly: true,
         customerId: custId,
         type: "purchase",
         amount: total,
@@ -1433,14 +1512,10 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         }))
       };
 
-      fetch("/api/v1/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-      .then(() => {
-        alert("Purchase ticket saved successfully!");
-        handlePrintTicket(payload, customerObj, "purchase");
+      return saveRecord(payload, newCustomer ? customerObj : undefined)
+      .then(savedTxn => {
+        showSaveNotice("Purchase ticket saved. ");
+        handlePrintTicket(savedTxn, customerObj, "purchase");
 
         // Auto-save item name to catalog if it's not already in list
         purchaseItems.forEach(item => {
@@ -1487,14 +1562,14 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         setBillingCustName("");
         setBillingCustPhone("");
         setActiveTab("dashboard");
-        refreshData();
-      });
+      })
+      .catch(err => alert(err.message || "Save could not be confirmed. Your form has been kept. Check your records before retrying."))
+      .finally(() => { billingSaveInFlight.current = false; });
     };
 
     if (!selectedCustomerId) {
       // Create new sequential customer
-      const nextCustNum = customers.filter(c => c.id.startsWith("CUST-")).length + 1;
-      const newCustId = "CUST-" + String(nextCustNum).padStart(3, "0");
+      const newCustId = "CUST-" + crypto.randomUUID();
       const newCust = {
         id: newCustId,
         name: billingCustName,
@@ -1504,14 +1579,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         idproof: "N/A",
         mandal: "Gannavaram"
       };
-      fetch("/api/v1/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCust)
-      })
-      .then(() => {
-        saveTxn(newCustId, newCust);
-      });
+      saveTxn(newCustId, newCust, true);
     } else {
       const cust = customers.find(c => c.id === selectedCustomerId);
       saveTxn(selectedCustomerId, cust);
@@ -1520,16 +1588,19 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
   const handleSaveLoan = (e: React.FormEvent) => {
     e.preventDefault();
+    if (billingSaveInFlight.current) return;
     if (!billingCustName.trim() || !billingCustPhone.trim()) {
       alert("Please enter customer name and phone number.");
       return;
     }
 
-    const saveTxn = (custId: string, customerObj: any) => {
+    billingSaveInFlight.current = true;
+
+    const saveTxn = (custId: string, customerObj: any, newCustomer = false) => {
       const totalAmount = parseFloat(loanDetails.amount) || 0;
       // Series-based loan ID
       const prefix = totalAmount > 8000 ? "L★-" : "L-";
-      const count = transactions.filter(t => t.type === "loan" && t.id.startsWith(prefix)).length;
+      const count = Math.max(0, ...transactions.filter(t => t.type === "loan" && t.id.startsWith(prefix)).map(t => Number(t.id.slice(prefix.length)) || 0));
       const txnId = prefix + String(count + 1).padStart(3, "0");
       
       let endDate = loanDetails.endDate;
@@ -1541,6 +1612,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
       const payload = {
         id: txnId,
+        createOnly: true,
         customerId: custId,
         type: "loan",
         amount: totalAmount,
@@ -1563,14 +1635,10 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         }
       };
 
-      fetch("/api/v1/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
-      .then(() => {
-        alert("Loan pawn ticket saved successfully!");
-        handlePrintTicket(payload, customerObj, "loan");
+      return saveRecord(payload, newCustomer ? customerObj : undefined)
+      .then(savedTxn => {
+        showSaveNotice("Loan saved. ");
+        handlePrintTicket(savedTxn, customerObj, "loan");
 
         // Auto-save item name to catalog if it's not already in list
         loanPledgedItems.forEach(item => {
@@ -1619,14 +1687,14 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         setBillingCustName("");
         setBillingCustPhone("");
         setActiveTab("dashboard");
-        refreshData();
-      });
+      })
+      .catch(err => alert(err.message || "Save could not be confirmed. Your form has been kept. Check your records before retrying."))
+      .finally(() => { billingSaveInFlight.current = false; });
     };
 
     if (!selectedCustomerId) {
       // Create new customer with sequential ID
-      const nextCustNum = customers.filter(c => c.id.startsWith("CUST-")).length + 1;
-      const newCustId = "CUST-" + String(nextCustNum).padStart(3, "0");
+      const newCustId = "CUST-" + crypto.randomUUID();
       const newCust = {
         id: newCustId,
         name: billingCustName,
@@ -1636,14 +1704,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         idproof: loanDetails.idProof || "N/A",
         mandal: loanDetails.mandal || "Gannavaram"
       };
-      fetch("/api/v1/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCust)
-      })
-      .then(() => {
-        saveTxn(newCustId, newCust);
-      });
+      saveTxn(newCustId, newCust, true);
     } else {
       const cust = customers.find(c => c.id === selectedCustomerId);
       saveTxn(selectedCustomerId, cust);
@@ -1665,8 +1726,8 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       .filter(t => {
         const cust = customers.find(c => c.id === t.customerId);
         const custName = cust ? cust.name.toLowerCase() : "";
-        const rawBill = t.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
-        const billNo = formatBillNoForDisplay(t.id).toLowerCase();
+        const rawBill = getBillNo(t.id);
+        const billNo = getBillNo(t.id).toLowerCase();
         
         const isStar = rawBill.startsWith("★") || rawBill.startsWith("*");
         const matchesSeries = loanSeriesFilter === "all"
@@ -1837,7 +1898,7 @@ setShowOfflineLoanModal(true);
       "{CustomerName}": nameVal || "Customer",
       "{ShopName}": "Sri Sai Balaji Jewelry & Furniture",
       "{Phone}": phoneVal || "",
-      "{InvoiceNumber}": lastTxn ? formatBillNoForDisplay(lastTxn.id) : "N/A",
+      "{InvoiceNumber}": lastTxn ? getBillNo(lastTxn.id) : "N/A",
       "{LoanAmount}": lastTxn ? lastTxn.amount.toLocaleString('en-IN') : "0",
       "{LoanEndDate}": (lastTxn && lastTxn.loanDetails) ? formatDateToDDMMYYYY(lastTxn.loanDetails.endDate || "") : "N/A",
       "{DaysLeft}": "30",
@@ -2140,13 +2201,18 @@ setShowOfflineLoanModal(true);
 
   const handleSaveOfflineLoan = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (offlineSaveInFlight.current) return;
     const form = offlineLoanForm;
     if (!form.custName.trim() || !form.amount) {
       alert("Please enter customer name and loan amount.");
       return;
     }
 
+    offlineSaveInFlight.current = true;
     try {
+      const originalTxn = editingTxnId ? form.expectedTransaction || transactions.find(t => t.id === editingTxnId) : null;
+      if (editingTxnId && !originalTxn) throw new Error("This loan is no longer available. Refresh Loan History before editing.");
+      if (editingTxnId && !form.billNo.trim()) throw new Error("Please enter a bill number.");
       // Find or create customer
       let custId = null;
       const cleanPhone = form.phone.trim();
@@ -2179,26 +2245,29 @@ setShowOfflineLoanModal(true);
 
       if (!custId) {
         // 3. Name changed to a new one, so create a new customer record
-        custId = "CUST-" + Date.now();
+        custId = "CUST-" + crypto.randomUUID();
       }
 
       // Always save or update the customer details
+      const originalCustomer = form.expectedCustomer?.id === custId ? form.expectedCustomer : cust;
+      const editingSameCustomer = originalTxn?.customerId === custId;
+      const customerField = (field: string, value: string, loanField: string, fallback: string) => {
+        const initial = editingSameCustomer && originalTxn
+          ? String(originalTxn.loanDetails?.[loanField] || "")
+          : String(originalCustomer?.[field] || "");
+        if (originalCustomer && value === initial) return originalCustomer[field];
+        return value.trim() || (originalCustomer ? "" : fallback);
+      };
       const newCustPayload = {
+        expectedCustomer: form.expectedCustomer?.id === custId ? form.expectedCustomer : undefined,
         id: custId,
         name: form.custName.trim(),
         phone: form.phone.trim(),
-        address: form.address.trim() || "Offline Address",
-        father: form.father.trim() || "Offline Father",
-        idproof: form.idProof.trim() || "Offline ID",
-        mandal: form.mandal.trim() || "Offline Mandal"
+        address: customerField("address",form.address,"address","Offline Address"),
+        father: customerField("father",form.father,"father","Offline Father"),
+        idproof: customerField("idproof",form.idProof,"idProof","Offline ID"),
+        mandal: customerField("mandal",form.mandal,"mandal","Offline Mandal")
       };
-      const custRes = await fetch("/api/v1/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newCustPayload)
-      });
-      if (!custRes.ok) throw new Error("Failed to save customer details");
-
       // Use existing transaction ID if editing, otherwise generate
       let txnId = editingTxnId;
       if (!txnId) {
@@ -2213,9 +2282,13 @@ setShowOfflineLoanModal(true);
         }
       }
       
-      // Calculate interest payments if already cleared interest upto a date
-      let interestPayments: any[] = [];
-      if (form.interestPaidUpto && form.interestPaidUpto !== form.takenDate) {
+      const billNumber = form.billNo.trim()
+        ? (form.starSeries ? "★" : "") + form.billNo.trim().replace(/^[★*]/, "")
+        : getBillNo(txnId!);
+
+      // Editing a bill must keep every existing payment entry.
+      let interestPayments: any[] = originalTxn?.loanDetails?.interestPayments || [];
+      if (!editingTxnId && form.interestPaidUpto && form.interestPaidUpto !== form.takenDate) {
         interestPayments = [{
           date: new Date().toISOString().split('T')[0],
           amountPaid: form.interestAmountPaid ? Number(form.interestAmountPaid) : calculateInterestForRange(
@@ -2232,7 +2305,7 @@ setShowOfflineLoanModal(true);
 
       let originalAmt = Number(form.amount);
       let updatedTopups = [...(form.topups || [])];
-      let updatedAccumulatedInterest = selectedLoanTxn?.loanDetails?.accumulatedInterest || 0;
+      let updatedAccumulatedInterest = originalTxn?.loanDetails?.accumulatedInterest || 0;
       let updatedTakenDate = form.takenDate;
       let updatedInterestPaidUpto = form.interestPaidUpto || form.takenDate;
 
@@ -2323,14 +2396,19 @@ setShowOfflineLoanModal(true);
 
       const txnPayload = {
         id: txnId,
+        createOnly: !editingTxnId,
+        updateOnly: Boolean(editingTxnId),
+        expectedTransaction: originalTxn || undefined,
         customerId: custId,
         type: "loan",
         amount: originalAmt,
         category: offlineLoanMetalType,
-        date: form.takenDate,
+        date: originalTxn && form.takenDate === originalTxn.loanDetails?.takenDate ? originalTxn.date : form.takenDate,
         status: form.status,
         clearedDate: form.status === "Cleared" ? (form.clearedDate || new Date().toISOString().split('T')[0]) : null,
         loanDetails: {
+          ...originalTxn?.loanDetails,
+          billNumber,
           father: form.father.trim(),
           idProof: form.idProof.trim(),
           address: form.address.trim(),
@@ -2345,28 +2423,29 @@ setShowOfflineLoanModal(true);
           topups: updatedTopups,
           interestPayments: interestPayments,
           note: form.note.trim(),
-          items: offlineLoanPledgedItems.map((item, idx) => ({
-            id: idx + 1,
-            name: item.name.trim() || "Pledged Item",
-            qty: Number(item.qty) || 1,
-            yield: form.yield.trim() || "60%",
-            grossWeight: form.grossWeight.trim(),
-            netWeight: form.netWeight.trim(),
-            value: form.worth.trim(),
-            remarks: form.remarks.trim()
-          }))
+          items: offlineLoanPledgedItems.map((item, idx) => {
+            const previousItem = originalTxn?.loanDetails?.items?.[idx];
+            const itemField = (field: string, value: string, fallback = "") =>
+              previousItem && String(originalTxn.loanDetails.items[0]?.[field] ?? fallback) === value
+                ? previousItem[field]
+                : value.trim() || fallback;
+            return {
+              ...previousItem,
+              id: previousItem?.id ?? idx + 1,
+              name: item.name.trim() || "Pledged Item",
+              qty: Number(item.qty) || 1,
+              yield: itemField("yield", form.yield, "60%"),
+              grossWeight: itemField("grossWeight", form.grossWeight),
+              netWeight: itemField("netWeight", form.netWeight),
+              value: itemField("value", form.worth),
+              remarks: itemField("remarks", form.remarks)
+            };
+          })
         }
       };
 
-      const txnRes = await fetch("/api/v1/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(txnPayload)
-      });
-
-      if (!txnRes.ok) throw new Error("Failed to create loan transaction");
-
-      alert("Offline loan saved successfully!");
+      await saveRecord(txnPayload, newCustPayload);
+      showSaveNotice(editingTxnId ? "Loan changes saved." : "Loan saved.");
       setShowOfflineLoanModal(false);
       setEditingTxnId(null);
       setOfflineLoanPledgedItems([{ id: 1, name: "", qty: 1 }]);
@@ -2403,9 +2482,10 @@ setShowOfflineLoanModal(true);
         newRepaymentRemarks: "",
         starSeries: false
       });
-      refreshData();
     } catch (err: any) {
       alert("Error: " + err.message);
+    } finally {
+      offlineSaveInFlight.current = false;
     }
   };
 
@@ -2588,23 +2668,13 @@ setShowOfflineLoanModal(true);
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ txnId: clearingTxnId, clearedDate: finalClearedDate })
-    }).then(() => {
-      setTransactions(transactions.map(t => {
-        if (t.id === clearingTxnId) {
-          return { 
-            ...t, 
-            status: "Cleared", 
-            clearedDate: finalClearedDate,
-            loanDetails: t.loanDetails ? { ...t.loanDetails, clearedDate: finalClearedDate } : undefined
-          };
-        }
-        return t;
-      }));
-      alert("Loan marked as Cleared successfully.");
+    }).then(async res => {
+      if (!res.ok) throw new Error("Loan could not be cleared. Your record has been kept.");
+      applySavedTransaction(await res.json());
+      showSaveNotice("Loan marked as cleared.");
       setShowClearLoanModal(false);
       setSelectedLoanTxn(null);
-      refreshData();
-    });
+    }).catch(err => alert(err.message || "Clearing could not be confirmed. Check your records before retrying."));
   };
 
   const handleDeleteLoan = (txnId: string) => {
@@ -2618,14 +2688,14 @@ setShowOfflineLoanModal(true);
         method: "DELETE"
       }).then((res) => {
         if (res.ok) {
-          setTransactions(transactions.filter(t => t.id !== txnId));
-          alert("Loan deleted successfully.");
+          mutationRevision.current += 1;
+          setTransactions(previous => previous.filter(t => t.id !== txnId));
+          showSaveNotice("Loan deleted.");
           setSelectedLoanTxn(null);
-          refreshData();
         } else {
           alert("Failed to delete loan.");
         }
-      });
+      }).catch(() => alert("Deletion could not be confirmed. Check Loan History before retrying."));
     } else {
       alert("Incorrect passcode! Authorization Denied.");
     }
@@ -2637,18 +2707,21 @@ setShowOfflineLoanModal(true);
     const isNew = !customerForm.id;
     const payload = {
       ...customerForm,
-      id: isNew ? "CUST-" + String(customers.length + 1).padStart(3, "0") : customerForm.id
+      id: isNew ? "CUST-" + crypto.randomUUID() : customerForm.id
     };
 
     fetch("/api/v1/customers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
-    }).then(() => {
-      alert(isNew ? "New customer registered successfully!" : "Customer profile updated.");
+    }).then(res => {
+      if (!res.ok) throw new Error("Customer save failed. Your form has been kept.");
+      mutationRevision.current += 1;
+      const savedCustomer = Object.fromEntries(Object.entries(payload).filter(([key]) => key !== "expectedCustomer"));
+      setCustomers(previous => [savedCustomer, ...previous.filter(c => c.id !== payload.id)]);
+      showSaveNotice(isNew ? "Customer registered." : "Customer profile updated.");
       setShowCustomerModal(false);
-      refreshData();
-    });
+    }).catch(err => alert(err.message || "Save could not be confirmed. Check your records before retrying."));
   };
 
   const handleOpenAddCustomer = () => {
@@ -2657,7 +2730,7 @@ setShowOfflineLoanModal(true);
   };
 
   const handleOpenEditCustomer = (cust: any) => {
-    setCustomerForm(cust);
+    setCustomerForm({ ...cust, expectedCustomer: structuredClone(cust) });
     setShowCustomerModal(true);
   };
 
@@ -2720,8 +2793,18 @@ setShowOfflineLoanModal(true);
         fullDates.push(d.toISOString().split("T")[0]);
       }
     } else if (chartTimeframe === "month") {
-      labels = ["1-5 Aug", "6-10 Aug", "11-15 Aug", "16-20 Aug", "21-25 Aug", "26-31 Aug"];
-      fullDates = ["2026-08-01", "2026-08-06", "2026-08-11", "2026-08-16", "2026-08-21", "2026-08-26"];
+      const monthName = now.toLocaleDateString("en-GB", { month: "short" });
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const bucketCount = 6;
+      labels = Array.from({ length: bucketCount }, (_, idx) => {
+        const startDay = idx * 5 + 1;
+        const endDay = idx === bucketCount - 1 ? daysInMonth : Math.min(startDay + 4, daysInMonth);
+        return `${startDay}-${endDay} ${monthName}`;
+      });
+      fullDates = Array.from({ length: bucketCount }, (_, idx) => {
+        const date = new Date(now.getFullYear(), now.getMonth(), idx * 5 + 1);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      });
     } else if (chartTimeframe === "6m") {
       for (let i = 5; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -2762,7 +2845,7 @@ setShowOfflineLoanModal(true);
         } else if (chartTimeframe === "month") {
           const dayNum = parseInt(tDate.split("-")[2] || "1", 10);
           const bucketIndex = Math.min(5, Math.floor((dayNum - 1) / 5));
-          if (bucketIndex === idx) {
+          if (tDate.startsWith(fullDates[0].slice(0, 7)) && bucketIndex === idx) {
             if (isCleared) {
               clearedCount += 1;
               clearedAmount += amt;
@@ -2785,32 +2868,15 @@ setShowOfflineLoanModal(true);
         }
       });
 
-      // Default baseline values based on portfolio if small sample
-      const baselineTakenCounts = [42, 58, 36, 64, 48, 52];
-      const baselineClearedCounts = [28, 44, 31, 52, 38, 45];
-      const baselineDueCounts = [12, 18, 14, 22, 19, 16];
-
-      const baselineTakenAmounts = [420000, 680000, 410000, 790000, 560000, 620000];
-      const baselineClearedAmounts = [290000, 510000, 360000, 620000, 440000, 530000];
-      const baselineDueAmounts = [140000, 210000, 160000, 260000, 220000, 190000];
-
-      const finalTakenCount = takenCount > 0 ? takenCount : (baselineTakenCounts[idx % 6] || 40);
-      const finalClearedCount = clearedCount > 0 ? clearedCount : (baselineClearedCounts[idx % 6] || 30);
-      const finalDueCount = dueCount > 0 ? dueCount : (baselineDueCounts[idx % 6] || 15);
-
-      const finalTakenAmount = takenAmount > 0 ? takenAmount : (baselineTakenAmounts[idx % 6] || 450000);
-      const finalClearedAmount = clearedAmount > 0 ? clearedAmount : (baselineClearedAmounts[idx % 6] || 320000);
-      const finalDueAmount = dueAmount > 0 ? dueAmount : (baselineDueAmounts[idx % 6] || 150000);
-
       return {
         label: lbl,
         fullDate: fullDates[idx],
-        takenCount: finalTakenCount,
-        clearedCount: finalClearedCount,
-        dueCount: finalDueCount,
-        takenAmount: finalTakenAmount,
-        clearedAmount: finalClearedAmount,
-        dueAmount: finalDueAmount
+        takenCount,
+        clearedCount,
+        dueCount,
+        takenAmount,
+        clearedAmount,
+        dueAmount
       };
     });
 
@@ -2900,6 +2966,11 @@ setShowOfflineLoanModal(true);
 
   return (
     <div className={`flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-[#F6F7F9] font-sans print:bg-white text-slate-900 w-full ${theme}`}>
+      {saveNotice && (
+        <div role="status" className="fixed bottom-5 right-5 z-[100] max-w-sm rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-lg print:hidden">
+          {saveNotice}
+        </div>
+      )}
       
       {/* Mobile Drawer Overlay */}
       {mobileMenuOpen && (
@@ -3234,7 +3305,7 @@ setShowOfflineLoanModal(true);
                     </div>
                     <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
                       {revealedSensitiveKeys["kpi-pledged"]
-                        ? `₹${(stats.pledgedValue || 9556275).toLocaleString('en-IN')}`
+                        ? (dashboardLoaded ? `₹${stats.pledgedValue.toLocaleString('en-IN')}` : "Loading…")
                         : "₹ * * * * *"}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">Across all active loans</p>
@@ -3251,7 +3322,7 @@ setShowOfflineLoanModal(true);
                   <div className="min-w-0">
                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Active Loans</h3>
                     <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
-                      {stats.activeLoans || 661}
+                      {dashboardLoaded ? stats.activeLoans : "Loading…"}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">Loan accounts</p>
                   </div>
@@ -3265,7 +3336,7 @@ setShowOfflineLoanModal(true);
                   <div className="min-w-0">
                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Customers</h3>
                     <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
-                      {stats.totalCustomers || 540}
+                      {dashboardLoaded ? stats.totalCustomers : "Loading…"}
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">Registered customers</p>
                   </div>
@@ -3638,7 +3709,7 @@ setShowOfflineLoanModal(true);
                           </div>
                           <span className="text-xs font-semibold text-slate-700">New Loans</span>
                         </div>
-                        <span className="text-lg font-bold font-serif text-slate-900">08</span>
+                        <span className="text-lg font-bold font-serif text-slate-900">{todayAtGlance.newLoans}</span>
                       </div>
 
                       {/* Row 2: Payments Received */}
@@ -3651,7 +3722,7 @@ setShowOfflineLoanModal(true);
                           </div>
                           <span className="text-xs font-semibold text-slate-700">Payments Received</span>
                         </div>
-                        <span className="text-lg font-bold font-serif text-slate-900">13</span>
+                        <span className="text-lg font-bold font-serif text-slate-900">{todayAtGlance.paymentsReceived}</span>
                       </div>
 
                       {/* Row 3: Reminders Pending */}
@@ -3662,7 +3733,7 @@ setShowOfflineLoanModal(true);
                           </div>
                           <span className="text-xs font-semibold text-slate-700">Reminders Pending</span>
                         </div>
-                        <span className="text-lg font-bold font-serif text-slate-900">32</span>
+                        <span className="text-lg font-bold font-serif text-slate-900">{todayAtGlance.remindersPending}</span>
                       </div>
 
                       {/* Row 4: SMS Sent */}
@@ -3673,7 +3744,7 @@ setShowOfflineLoanModal(true);
                           </div>
                           <span className="text-xs font-semibold text-slate-700">SMS Sent</span>
                         </div>
-                        <span className="text-lg font-bold font-serif text-slate-900">42</span>
+                        <span className="text-lg font-bold font-serif text-slate-900">{todayAtGlance.smsSentToday}</span>
                       </div>
                     </div>
                   </div>
@@ -3725,13 +3796,13 @@ setShowOfflineLoanModal(true);
                       <div>
                         <span className="text-[9.5px] text-slate-400 font-bold block uppercase tracking-wider">SMS Queued</span>
                         <strong className="text-base font-serif text-slate-900">
-                          {smsQueue.filter(s => ["Pending", "Queued", "Sending"].includes(s.status)).length || 32}
+                          {todayAtGlance.smsQueued}
                         </strong>
                       </div>
                       <div>
                         <span className="text-[9.5px] text-slate-400 font-bold block uppercase tracking-wider">Sent Today</span>
                         <strong className="text-base font-serif text-emerald-600">
-                          {smsQueue.filter(s => ["Sent", "Delivered"].includes(s.status)).length || 42}
+                          {todayAtGlance.smsSentToday}
                         </strong>
                       </div>
                     </div>
@@ -3780,13 +3851,7 @@ setShowOfflineLoanModal(true);
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50 font-medium">
-                        {(transactions.length > 0 ? transactions.slice(0, 5) : [
-                          { id: "sample-1", date: "2026-07-04", customerName: "yalagandula Venkateswarao", type: "LOAN", amount: 4500, status: "Active" },
-                          { id: "sample-2", date: "2023-02-11", customerName: "Ragini Ravanamma", type: "LOAN", amount: 1000, status: "Active" },
-                          { id: "sample-3", date: "2026-05-30", customerName: "Shaik subhani", type: "LOAN", amount: 20000, status: "Active" },
-                          { id: "sample-4", date: "2026-04-15", customerName: "Savalam rajababu", type: "LOAN", amount: 5000, status: "Active" },
-                          { id: "sample-5", date: "2024-06-10", customerName: "AVUTUPALLI KOTESHWARAO", type: "LOAN", amount: 6000, status: "Active" }
-                        ]).map((t: any, idx: number) => {
+                        {transactions.slice(0, 5).map((t: any, idx: number) => {
                           const custName = t.customerName || customers.find(c => c.id === t.customerId)?.name || "Customer";
                           const rowKey = `recent-txn-${t.id || idx}`;
                           const isRevealed = !!revealedSensitiveKeys[rowKey];
@@ -3824,6 +3889,11 @@ setShowOfflineLoanModal(true);
                             </tr>
                           );
                         })}
+                        {transactions.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="py-6 text-center text-slate-400">No transactions in this database yet.</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -4103,7 +4173,7 @@ setShowOfflineLoanModal(true);
                       .filter(s => smsQueueFilter === "all" || s.status === smsQueueFilter)
                       .map((s, idx) => (
                         <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
-                          <td className="py-3.5 pr-3 text-[#B8860B] font-semibold font-technical">#{formatBillNoForDisplay(s.id || s.uuid || "")}</td>
+                          <td className="py-3.5 pr-3 text-[#B8860B] font-semibold font-technical">#{getBillNo(s.id || s.uuid || "")}</td>
                           <td className="py-3.5 pr-3 font-technical text-slate-800">{s.phone}</td>
                           <td className="py-3.5 pr-3 max-w-xs truncate text-slate-600" title={s.message}>{s.message}</td>
                           <td className="py-3.5 pr-3 font-technical text-slate-500">{s.created_time}</td>
@@ -4812,7 +4882,7 @@ setShowOfflineLoanModal(true);
                               .map((p, idx) => (
                                 <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
                                   <td className="py-3 pr-3 text-slate-600">{formatDateToDDMMYYYY(p.date)}</td>
-                                  <td className="py-3 pr-3 text-[#B8860B] font-semibold">#{formatBillNoForDisplay(p.id)}</td>
+                                  <td className="py-3 pr-3 text-[#B8860B] font-semibold">#{getBillNo(p.id)}</td>
                                   <td className="py-3 pr-3">
                                     <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#EDFDF2] text-[#15803D] border border-[#DCFCE7]">
                                       {p.category}
@@ -4859,7 +4929,7 @@ setShowOfflineLoanModal(true);
                               .map((l, idx) => (
                                 <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
                                   <td className="py-3 pr-3 text-slate-600">{formatDateToDDMMYYYY(l.date)}</td>
-                                  <td className="py-3 pr-3 text-[#B8860B] font-semibold">#{formatBillNoForDisplay(l.id)}</td>
+                                  <td className="py-3 pr-3 text-[#B8860B] font-semibold">#{getBillNo(l.id)}</td>
                                   <td className="py-3 pr-3 text-slate-800 font-medium">{l.loanDetails?.items?.map((i: any) => i.name).join(', ')}</td>
                                   <td className="py-3 pr-3 font-bold text-slate-900">₹{l.amount.toLocaleString('en-IN')}</td>
                                   <td className="py-3 pr-3 text-slate-600">{formatDateToDDMMYYYY(l.loanDetails?.endDate)}</td>
@@ -4954,18 +5024,7 @@ setShowOfflineLoanModal(true);
 
           {/* COMBINED LOAN HISTORY TAB */}
           {activeTab === "loan-history" && (() => {
-            const fallbackLoans = [
-              { id: "BILL-300", displayBill: "300", customerName: "chanumolu Nagina", pledgedItems: "pattilu", qty: 1, dateFormatted: "20/08/2026", amount: 2500, grossWeight: "35 g", address: "Gannavaram", interestGenerated: 0, status: "Pending" },
-              { id: "BILL-299", displayBill: "299", customerName: "sattenapalli vijaykumar", pledgedItems: "baby ring", qty: 1, dateFormatted: "20/08/2026", amount: 5000, grossWeight: "3.000 g", address: "Bhuthumallipadu", interestGenerated: 0, status: "Pending" },
-              { id: "BILL-298", displayBill: "298", customerName: "nallamothu yesuratnam", pledgedItems: "buttalu", qty: 1, dateFormatted: "19/08/2026", amount: 6000, grossWeight: "3.000 g", address: "chinthakunta", interestGenerated: 0, status: "Pending" },
-              { id: "BILL-296", displayBill: "296", customerName: "POTHURAJU NAGAMANI", pledgedItems: "baby ring", qty: 1, dateFormatted: "19/08/2026", amount: 8000, grossWeight: "1.200 g", address: "purshothpatanam", interestGenerated: 0, status: "Pending" },
-              { id: "BILL-295", displayBill: "295", customerName: "POTHURAJU NAGAMANI", pledgedItems: "pattilu", qty: 2, dateFormatted: "19/08/2026", amount: 12000, grossWeight: "185 g", address: "purshothpatanam", interestGenerated: 0, status: "Pending" },
-              { id: "BILL-294", displayBill: "294", customerName: "laamu sirisha", pledgedItems: "hangings", qty: 1, dateFormatted: "18/08/2026", amount: 5000, grossWeight: "3.200 g", address: "chikkavaram", interestGenerated: 75, status: "Pending" },
-              { id: "BILL-293", displayBill: "293", customerName: "Shaik nasrin", pledgedItems: "fancy ring", qty: 1, dateFormatted: "18/08/2026", amount: 7000, grossWeight: "2.950 g", address: "Gannavaram", interestGenerated: 105, status: "Pending" },
-              { id: "BILL-★265", displayBill: "★265", customerName: "bai subramanyam", pledgedItems: "locket", qty: 1, dateFormatted: "18/08/2026", amount: 23000, grossWeight: "3.400 g", address: "Gannavaram", interestGenerated: 230, status: "Pending" }
-            ];
-
-            const displayLoanList = activeLoanList.length > 0 ? activeLoanList : fallbackLoans;
+            const displayLoanList = activeLoanList;
 
             return (
               <div className="sbj-card p-6 md:p-8 relative">
@@ -5112,7 +5171,7 @@ setShowOfflineLoanModal(true);
                         const totalQty = t.qty || t.loanDetails?.items?.reduce((s: number, i: any) => s + (Number(i.qty) || 1), 0) || 1;
                         const grossWeight = t.grossWeight || t.loanDetails?.items?.[0]?.grossWeight || "-";
                         const address = t.address || cust?.address || t.loanDetails?.address || "-";
-                        const displayBill = t.displayBill || formatBillNoForDisplay(t.id);
+                        const displayBill = t.displayBill || getBillNo(t.id);
                         const interestAmt = t.interestGenerated !== undefined ? t.interestGenerated : getLoanInterest(t);
                         const takenDateFormatted = t.dateFormatted || formatDateToDDMMYYYY(getLoanTakenDate(t));
                         const isCleared = t.status === "Cleared";
@@ -5166,23 +5225,6 @@ setShowOfflineLoanModal(true);
                   </table>
                 </div>
 
-                {/* Footer Pagination */}
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-6 border-t border-slate-100 mt-2">
-                  <p className="text-xs text-slate-400">
-                    Showing 1 to {displayLoanList.length} of {displayLoanList.length} loans
-                  </p>
-                  <div className="flex items-center gap-1.5">
-                    <button className="w-7 h-7 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs transition-all">
-                      &lt;
-                    </button>
-                    <button className="w-7 h-7 rounded-lg bg-[#DFB76C] text-[#5C3F08] font-bold text-xs flex items-center justify-center shadow-xs">
-                      1
-                    </button>
-                    <button className="w-7 h-7 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs transition-all">
-                      &gt;
-                    </button>
-                  </div>
-                </div>
               </div>
             );
           })()}
@@ -5789,7 +5831,7 @@ setShowOfflineLoanModal(true);
                       ) : (
                         remindersStatus.map((r, idx) => (
                           <tr key={idx} className="hover:bg-[#FAFBFD] transition-colors">
-                            <td className="py-3.5 pr-3 text-[#B8860B] font-semibold font-technical">#{formatBillNoForDisplay(r.loanId)}</td>
+                            <td className="py-3.5 pr-3 text-[#B8860B] font-semibold font-technical">#{getBillNo(r.loanId)}</td>
                             <td className="py-3.5 pr-3 text-slate-900 font-semibold">{r.customerName}</td>
                             <td className="py-3.5 pr-3 text-slate-600 font-technical">{r.phone}</td>
                             <td className="py-3.5 pr-3 font-bold text-slate-900">₹{r.amount.toLocaleString('en-IN')}</td>
@@ -5912,7 +5954,7 @@ setShowOfflineLoanModal(true);
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50 sm:divide-y-0">
-                <div><span className="text-slate-400 font-medium">Bill No:</span> <span className="text-[#B8860B] font-bold ml-1">#{formatBillNoForDisplay(selectedLoanTxn.id)}</span></div>
+                <div><span className="text-slate-400 font-medium">Bill No:</span> <span className="text-[#B8860B] font-bold ml-1">#{getBillNo(selectedLoanTxn.id)}</span></div>
                 <div className="pt-1 sm:pt-0"><span className="text-slate-400 font-medium">Date:</span> <span className="font-semibold text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.date)}</span></div>
                 <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Pledger Name:</span> <span className="text-slate-900 font-bold ml-1">{customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</span></div>
                 <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Father's Name:</span> <span className="font-semibold text-slate-800 ml-1">{selectedLoanTxn.loanDetails?.father || "-"}</span></div>
@@ -6295,7 +6337,9 @@ setShowOfflineLoanModal(true);
                     const cust = customers.find(c => c.id === selectedLoanTxn.customerId);
                     const firstItem = selectedLoanTxn.loanDetails?.items?.[0];
                     setOfflineLoanForm({
-                      billNo: selectedLoanTxn.id.startsWith("BILL-") ? selectedLoanTxn.id.replace("BILL-", "") : (selectedLoanTxn.id.startsWith("TXN-OFFLINE-") ? "" : selectedLoanTxn.id),
+                      expectedTransaction: structuredClone(selectedLoanTxn),
+                      expectedCustomer: cust ? structuredClone(cust) : undefined,
+                      billNo: getBillNo(selectedLoanTxn.id).replace(/^[★*]/, ""),
                       custName: cust?.name || "",
                       phone: cust?.phone || "",
                       father: selectedLoanTxn.loanDetails?.father || "",
@@ -6311,11 +6355,11 @@ setShowOfflineLoanModal(true);
                       clearedDate: selectedLoanTxn.clearedDate || selectedLoanTxn.loanDetails?.clearedDate || "",
                       pledgedItemsStr: selectedLoanTxn.loanDetails?.items?.map((i: any) => i.name).join("; ") || "",
                       qty: String(firstItem?.qty || "1"),
-                      yield: firstItem?.yield || "60%",
-                      grossWeight: firstItem?.grossWeight || "",
-                      netWeight: firstItem?.netWeight || "",
-                      worth: firstItem?.value || "",
-                      remarks: firstItem?.remarks || "",
+                      yield: String(firstItem?.yield ?? "60%"),
+                      grossWeight: String(firstItem?.grossWeight ?? ""),
+                      netWeight: String(firstItem?.netWeight ?? ""),
+                      worth: String(firstItem?.value ?? ""),
+                      remarks: String(firstItem?.remarks ?? ""),
                       interestAmountPaid: selectedLoanTxn.loanDetails?.interestPayments?.[0]?.amountPaid ? String(selectedLoanTxn.loanDetails.interestPayments[0].amountPaid) : "",
                       note: selectedLoanTxn.loanDetails?.note || "",
                       topups: selectedLoanTxn.loanDetails?.topups || [],
@@ -6326,7 +6370,7 @@ setShowOfflineLoanModal(true);
                       newRepaymentDate: new Date().toISOString().split('T')[0],
                       newRepaymentRemarks: "",
                       starSeries: (() => {
-                        const raw = selectedLoanTxn.id.replace("BILL-", "").replace("TXN-OFFLINE-", "");
+                        const raw = getBillNo(selectedLoanTxn.id);
                         return raw.startsWith("★") || raw.startsWith("*");
                       })()
                     });
@@ -6452,6 +6496,7 @@ setShowOfflineLoanModal(true);
                             setOfflineLoanForm(prev => ({
                               ...prev,
                               custName: c.name,
+                              expectedCustomer: structuredClone(c),
                               phone: c.phone,
                               father: c.father || "",
                               idProof: c.idproof || "",
@@ -6830,9 +6875,10 @@ setShowOfflineLoanModal(true);
                 </button>
                 <button 
                   type="submit" 
+                  disabled={savingRecord}
                   className="px-5 py-2.5 bg-[#0B1320] hover:bg-[#152238] text-white rounded-xl font-semibold text-xs shadow-sm cursor-pointer"
                 >
-                  Save Loan Record
+                  {savingRecord ? "Saving…" : "Save Loan Record"}
                 </button>
               </div>
             </form>
@@ -7293,7 +7339,7 @@ setShowOfflineLoanModal(true);
                       <svg className="w-3 h-3 mr-1 text-[#b89550]" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clipRule="evenodd"></path></svg>
                       Bill No. :
                     </span>
-                    <span className="font-black text-[12px] text-blue-950 mt-0.5">#{formatBillNoForDisplay(activePrintTicket.txn.id)}</span>
+                    <span className="font-black text-[12px] text-blue-950 mt-0.5">#{getBillNo(activePrintTicket.txn.id)}</span>
                   </div>
                   <div className="flex flex-col justify-center border-t border-slate-100 pt-2">
                     <span className="text-slate-500 font-bold text-[8.5px] uppercase tracking-wider flex items-center">
@@ -7416,7 +7462,7 @@ setShowOfflineLoanModal(true);
                   {/* Fields */}
                   <div className="mt-3 space-y-1.5">
                     <div className="flex justify-between font-bold">
-                      <div>వరుస నెం: <span className="underline ml-1">#{formatBillNoForDisplay(activePrintTicket.txn.id)}</span></div>
+                      <div>వరుస నెం: <span className="underline ml-1">#{getBillNo(activePrintTicket.txn.id)}</span></div>
                       <div>తేది: <span className="underline">{formatDateToDDMMYYYY(activePrintTicket.txn.loanDetails.takenDate)}</span></div>
                     </div>
 
@@ -7556,7 +7602,7 @@ setShowOfflineLoanModal(true);
                   <div className="space-y-1.5 font-semibold">
                     <div className="flex justify-between items-center">
                       <div className="flex-1 border-b border-dotted border-pink-400">
-                        బి.నెం: <span className="font-bold ml-1">#{formatBillNoForDisplay(activePrintTicket.txn.id)}</span>
+                        బి.నెం: <span className="font-bold ml-1">#{getBillNo(activePrintTicket.txn.id)}</span>
                       </div>
                       <div className="w-36 text-right border-b border-dotted border-pink-400">
                         తేది: <span className="font-bold">{formatDateToDDMMYYYY(activePrintTicket.txn.loanDetails.takenDate)}</span>
@@ -7653,7 +7699,7 @@ setShowOfflineLoanModal(true);
                 return (
                   <tr key={idx} className="border-b border-slate-200">
                     <td className="py-2 px-1.5 text-slate-600">{idx + 1}</td>
-                    <td className="py-2 px-1.5 font-bold text-slate-900">#{formatBillNoForDisplay(t.id)}</td>
+                    <td className="py-2 px-1.5 font-bold text-slate-900">#{getBillNo(t.id)}</td>
                     <td className="py-2 px-1.5">{cust?.name || "Unknown"}</td>
                     <td className="py-2 px-1.5">{t.loanDetails?.items?.map((i: any) => i.name).join(', ') || "-"}</td>
                     <td className="py-2 px-1.5 text-center">{totalQty}</td>

@@ -1,0 +1,11 @@
+{
+  "imports": {
+    "postgres": "npm:postgres@3.4.7",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.99.3"
+  },
+  "compilerOptions": { "strict": true },
+  "tasks": {
+    "check": "deno check index.ts handler.ts store.ts",
+    "test": "deno test --allow-read tests/"
+  }
+}

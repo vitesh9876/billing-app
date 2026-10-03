@@ -1,0 +1,7 @@
+project_id = "billing-app"
+
+[functions.billing-api]
+# Authentication is enforced in handler.ts using Supabase Auth and an owner allowlist.
+# This supports current publishable keys and asymmetric JWT signing keys.
+verify_jwt = false
+

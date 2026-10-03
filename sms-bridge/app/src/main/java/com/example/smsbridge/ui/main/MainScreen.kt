@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -44,6 +45,7 @@ fun MainScreen(
 
   var serverUrlInput by remember { mutableStateOf(bridgeManager.serverUrl) }
   var deviceNameInput by remember { mutableStateOf(bridgeManager.deviceName) }
+  var pairingKeyInput by remember { mutableStateOf(bridgeManager.supabasePairingKey) }
 
   // Permission launcher
   var hasSmsPermission by remember { mutableStateOf(false) }
@@ -190,6 +192,18 @@ fun MainScreen(
             singleLine = true
           )
 
+          OutlinedTextField(
+            value = pairingKeyInput,
+            onValueChange = {
+              pairingKeyInput = it
+              try { bridgeManager.supabasePairingKey = it }
+              catch (_: Exception) { bridgeManager.addLog("Pairing key could not be saved securely.") }
+            },
+            label = { Text("Supabase pairing key") },
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+          )
           OutlinedTextField(
             value = deviceNameInput,
             onValueChange = {
