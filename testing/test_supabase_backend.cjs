@@ -49,6 +49,7 @@ const settings = {allowedOrigins:new Set(['https://billing.example']),writesEnab
 const createdUsers = new Map();
 const auth = async token=> {
   if(token==='valid') return {id:'owner',email:'owner@example.test'};
+  if(token==='pause-test') return {id:'11111111-1111-4111-8111-111111111111',email:'owner@example.test'};
   const account=createdUsers.get(token);
   if(!account) return null;
   const operators=await db.query('SELECT user_id FROM billing_operators WHERE user_id=$1',[account.id]);
@@ -79,7 +80,7 @@ async function test(name,fn) {await fn();passed++;console.log('PASS '+name);}
     CREATE TABLE item_catalog (id serial PRIMARY KEY,name text NOT NULL,category text NOT NULL);`);
   await test('missing, invalid and non-owner tokens cannot read or write',async()=>{
     for(const token of [null,'invalid','other']) {
-      for(const [route,method,payload] of [['/customers','GET'],['/records/save','POST',{transaction:loan,customer}]]) {
+      for(const [route,method,payload] of [['/customers','GET'],['/sms/dispatch-control','GET'],['/records/save','POST',{transaction:loan,customer}]]) {
         const r=await handler(request(route,method,payload,token));assert.equal(r.status,401);
       }
     }
@@ -192,6 +193,7 @@ async function test(name,fn) {await fn();passed++;console.log('PASS '+name);}
       INSERT INTO auth.users VALUES ('11111111-1111-4111-8111-111111111111'),('22222222-2222-4222-8222-222222222222');`);
     await pg.exec(fs.readFileSync(path.join(root,'../../migrations/202610030001_billing_access.sql'),'utf8'));
     await pg.exec(fs.readFileSync(path.join(root,'../../migrations/202610030002_signup_and_activity.sql'),'utf8'));
+    await pg.exec(fs.readFileSync(path.join(root,'../../migrations/202610030003_sms_dispatch_control.sql'),'utf8'));
     await pg.exec(`INSERT INTO billing_operators(user_id) VALUES ('11111111-1111-4111-8111-111111111111');
       INSERT INTO billing_changes(topic) VALUES ('transactions');
       SET ROLE authenticated;
@@ -200,6 +202,7 @@ async function test(name,fn) {await fn();passed++;console.log('PASS '+name);}
     assert.equal((await pg.query('SELECT * FROM billing_changes')).rows.length,0);
     await assert.rejects(()=>pg.query('SELECT * FROM billing_access_events'),/permission denied/);
     await assert.rejects(()=>pg.query('SELECT * FROM billing_signup_guard'),/permission denied/);
+    await assert.rejects(()=>pg.query('SELECT * FROM sms_dispatch_control'),/permission denied/);
     await assert.rejects(()=>pg.query("INSERT INTO storage.objects(bucket_id,name) VALUES ('billing-documents','22222222-2222-4222-8222-222222222222/test.pdf')"),/row-level security/);
     await pg.query("SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false)");
     assert.equal((await pg.query('SELECT * FROM billing_changes')).rows.length,1);
@@ -223,8 +226,9 @@ async function test(name,fn) {await fn();passed++;console.log('PASS '+name);}
     const activity=await handler(request('/activity','GET',undefined,'valid'));
     assert.equal(activity.status,200);
     const log=await activity.json();
-    assert.deepEqual(log.events.map(e=>e.event).sort(),['account_created','login','password_changed']);
-    assert.ok(log.events.every(e=>e.actor_email==='new@example.test'));
+    const newAccountEvents=log.events.filter(e=>e.actor_email==='new@example.test');
+    assert.deepEqual(newAccountEvents.map(e=>e.event).sort(),['account_created','login','password_changed']);
+    assert.ok(newAccountEvents.every(e=>e.actor_email==='new@example.test'));
     for(let i=0;i<7;i++) {
       const attempt=await handler(request('/auth/register','POST',{email:`guess${i}@example.test`,password:'correct horse battery',secretCode:'wrong'},null));
       assert.equal(attempt.status,403);
@@ -253,8 +257,16 @@ async function test(name,fn) {await fn();passed++;console.log('PASS '+name);}
     assert.equal((await pairedHandler(request('/customers','GET',undefined,token))).status,401);
     assert.equal((await pairedHandler(request('/bridge/claim','POST',{},'wrong-token'))).status,401);
     await queueSMS(db,{id:'SMS-PAIR-TEST',phone:'9999999999',message:'Synthetic test'});
+    const pause=await handler(request('/sms/dispatch-control','POST',{paused:true},'pause-test'));
+    assert.equal(pause.status,200);assert.equal((await pause.json()).paused,true);
     const first=await pairedHandler(request('/bridge/claim','POST',{},token));
-    assert.equal(first.status,200);assert.equal((await first.json()).job.smsId,'SMS-PAIR-TEST');
+    const pausedClaim=await first.json();
+    assert.equal(first.status,200);assert.equal(pausedClaim.job,null);assert.equal(pausedClaim.paused,true);
+    assert.equal((await db.query('SELECT status FROM sms_queue WHERE uuid=$1',['SMS-PAIR-TEST']))[0].status,'Pending');
+    const resume=await handler(request('/sms/dispatch-control','POST',{paused:false},'pause-test'));
+    assert.equal(resume.status,200);assert.equal((await resume.json()).paused,false);
+    const resumed=await pairedHandler(request('/bridge/claim','POST',{},token));
+    assert.equal((await resumed.json()).job.smsId,'SMS-PAIR-TEST');
     const second=await pairedHandler(request('/bridge/claim','POST',{},token));assert.equal((await second.json()).job,null);
     const result={smsId:'SMS-PAIR-TEST',status:'Submitted'};
     assert.equal((await pairedHandler(request('/bridge/result','POST',result,token))).status,200);

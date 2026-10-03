@@ -542,6 +542,9 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   // SMS queue filter
   const [smsQueueSearch, setSmsQueueSearch] = useState("");
   const [smsQueueFilter, setSmsQueueFilter] = useState("all");
+  const [smsDispatchPaused, setSmsDispatchPaused] = useState<boolean | null>(null);
+  const [smsDispatchBusy, setSmsDispatchBusy] = useState(false);
+  const [smsDispatchError, setSmsDispatchError] = useState("");
 
   // Printing state
   const [activePrintTicket, setActivePrintTicket] = useState<any>(null);
@@ -723,6 +726,43 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       console.error("Error loading dashboard data:", err);
     } finally {
       refreshInFlight.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== "sms-queue") return;
+    let cancelled = false;
+    setSmsDispatchPaused(null);
+    setSmsDispatchError("");
+    fetch("/api/v1/sms/dispatch-control").then(async response => {
+      const result = await response.json();
+      if (!response.ok || typeof result.paused !== "boolean") throw new Error(result.detail || "Could not load SMS pause status.");
+      if (!cancelled) setSmsDispatchPaused(result.paused);
+    }).catch(error => {
+      if (!cancelled) setSmsDispatchError(error.message || "Could not load SMS pause status.");
+    });
+    return () => { cancelled = true; };
+  }, [activeTab]);
+
+  const toggleSMSDispatch = async () => {
+    if (smsDispatchPaused === null || smsDispatchBusy) return;
+    const paused = !smsDispatchPaused;
+    setSmsDispatchBusy(true);
+    setSmsDispatchError("");
+    try {
+      const response = await fetch("/api/v1/sms/dispatch-control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paused }),
+      });
+      const result = await response.json();
+      if (!response.ok || typeof result.paused !== "boolean") throw new Error(result.detail || "SMS delivery setting was not saved.");
+      setSmsDispatchPaused(result.paused);
+      showSaveNotice(result.paused ? "Pending and queued SMS paused." : "SMS delivery resumed.");
+    } catch (error) {
+      setSmsDispatchError(error instanceof Error ? error.message : "SMS delivery setting was not saved.");
+    } finally {
+      setSmsDispatchBusy(false);
     }
   };
 
@@ -4075,6 +4115,30 @@ setShowOfflineLoanModal(true);
                     <option value="Failed">Failed</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
+                </div>
+              </div>
+
+              <div className="mb-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Pause pending and queued SMS</h3>
+                  <p className="mt-1 text-xs text-slate-600">Paused messages stay safely in the queue. A message already sending may finish.</p>
+                  {smsDispatchError && <p role="alert" className="mt-2 text-xs font-medium text-rose-700">{smsDispatchError}</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className={`text-xs font-semibold ${smsDispatchPaused ? "text-amber-800" : "text-emerald-700"}`}>
+                    {smsDispatchPaused === null ? "Checking…" : smsDispatchPaused ? "Paused" : "Active"}
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={smsDispatchPaused === true}
+                    aria-label="Pause pending and queued SMS"
+                    disabled={smsDispatchPaused === null || smsDispatchBusy}
+                    onClick={toggleSMSDispatch}
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${smsDispatchPaused ? "bg-amber-600" : "bg-emerald-600"}`}
+                  >
+                    <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${smsDispatchPaused ? "translate-x-6" : "translate-x-1"}`} />
+                  </button>
                 </div>
               </div>
 

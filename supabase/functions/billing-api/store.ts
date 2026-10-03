@@ -141,6 +141,25 @@ export function queueView(s: Row): Row {
   return { id:s.uuid, customer_id:s.customerId, phone:s.phone,message:s.message,status:s.status,
     retry_count:s.retryCount,created_time:s.createdAt };
 }
+
+export async function smsDispatchControl(db: Database): Promise<Row> {
+  const row=(await db.query('SELECT paused,updated_at,updated_by_email FROM public.sms_dispatch_control WHERE singleton=true'))[0];
+  if (!row) throw new ApiError(503,"SMS delivery control is not configured.");
+  return {paused:row.paused,updatedAt:row.updated_at,updatedBy:row.updated_by_email};
+}
+
+export async function setSMSDispatchPaused(db: Database, paused: boolean, email: string): Promise<Row> {
+  return await write(db,async c=> {
+    const row=(await c.query(`UPDATE public.sms_dispatch_control SET paused=$1,updated_at=now(),
+      updated_by=nullif(current_setting('billing.actor',true),'')::uuid,updated_by_email=$2
+      WHERE singleton=true RETURNING paused,updated_at,updated_by_email`,[paused,email]))[0];
+    if (!row) throw new ApiError(503,"SMS delivery control is not configured.");
+    const actor=await c.query("SELECT nullif(current_setting('billing.actor',true),'') AS id");
+    await c.query(`INSERT INTO public.billing_access_events(actor,actor_email,event) VALUES ($1,$2,$3)`,
+      [actor[0]?.id,email,paused?'sms_dispatch_paused':'sms_dispatch_resumed']);
+    return {paused:row.paused,updatedAt:row.updated_at,updatedBy:row.updated_by_email};
+  });
+}
 export function deviceView(d: Row): Row {
   const lastSeen=Date.parse(d.lastSeen || '');
   const connected=d.connectionStatus==='Connected' && Number.isFinite(lastSeen) && Date.now()-lastSeen<90000;
@@ -246,6 +265,8 @@ export async function bridgeRequest(db: Database, deviceId: string, action: stri
       await c.query(`UPDATE public.devices SET "connectionStatus"='Connected',"isOnline"=true,
         "lastSeen"=$2,battery=$3,operator=$4 WHERE "deviceUuid"=$1`,[deviceId,new Date().toISOString(),battery,String(body.sim ?? "Unknown").slice(0,100)]);
       if (action === "heartbeat") return {status:"success"};
+      const dispatch=(await c.query('SELECT paused FROM public.sms_dispatch_control WHERE singleton=true'))[0];
+      if (dispatch?.paused) return {job:null,paused:true};
       const job=(await c.query(`SELECT * FROM public.sms_queue WHERE status IN ('Pending','Queued')
         ORDER BY priority DESC NULLS LAST,"createdAt",uuid LIMIT 1 FOR UPDATE SKIP LOCKED`))[0];
       if (!job) return {job:null};

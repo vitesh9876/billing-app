@@ -1,6 +1,6 @@
 import { ApiError, object, reminders, transaction, type Row } from "./domain.ts";
 import { bridgeRequest, pairDevice, revokeDevice, triggerReminders, catalogWrite, changeSMS, clearTransaction, dashboard, deleteAuxiliary, deleteCustomer,
-  deleteTransaction, deviceView, putCustomer, queueSMS, queueView, saveRecord, templateWrite, type Database } from "./store.ts";
+  deleteTransaction, deviceView, putCustomer, queueSMS, queueView, saveRecord, setSMSDispatchPaused, smsDispatchControl, templateWrite, type Database } from "./store.ts";
 
 export interface Settings {
   allowedOrigins: Set<string>;
@@ -172,6 +172,7 @@ export function createHandler(db: Database, authenticate: Authenticate, settings
         if (path === "/items") return response(await db.query('SELECT * FROM public.item_catalog'));
         if (path === "/sms/templates") return response(await db.query('SELECT * FROM public.sms_templates'));
         if (path === "/sms/queue") return response((await db.query('SELECT * FROM public.sms_queue')).map(queueView));
+        if (path === "/sms/dispatch-control") return response(await smsDispatchControl(db));
         if (path === "/devices") return response((await db.query('SELECT * FROM public.devices')).map(deviceView));
         if (path === "/loans/reminders-status") {
           const data = await dashboard(db);
@@ -192,6 +193,10 @@ export function createHandler(db: Database, authenticate: Authenticate, settings
         if (path === "/sms/template") return response(await templateWrite(requestDb,data));
         if (path === "/sms/template/delete") return response(await deleteAuxiliary(requestDb,"template",data.name,data.expectedTemplate));
         if (path === "/sms/send") return response(await queueSMS(requestDb,data));
+        if (path === "/sms/dispatch-control") {
+          if (typeof data.paused !== "boolean") throw new ApiError(400,"Choose whether SMS delivery should be paused.");
+          return response(await setSMSDispatchPaused(requestDb,data.paused,user.email));
+        }
         if (path === "/sms/cancel") return response(await changeSMS(requestDb,data,true));
         if (path === "/sms/retry") return response(await changeSMS(requestDb,data,false));
         if (path === '/devices/pair') {
