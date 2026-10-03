@@ -1,13 +1,15 @@
 "use client";
 import { useState } from "react";
 import SupabaseBillingGate from "@/components/SupabaseBillingGate";
+import ShopBrandHeader from "@/components/ShopBrandHeader";
 import { billingFetch } from "@/lib/supabaseBilling";
 
 function PairBridge() {
   const [device,setDevice]=useState(''),[name,setName]=useState('Shop phone');
   const [key,setKey]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
   return <main className="mx-auto max-w-xl p-8 text-slate-900">
-    <a href="/" className="text-sm underline">Back to billing</a>
+    <ShopBrandHeader />
+    <a href="/" className="mb-2 block text-sm underline">Back to billing</a>
     <h1 className="mt-5 text-3xl font-semibold">Pair SMS phone</h1>
     <p className="my-4 text-slate-600">Copy the device UUID from the updated Android bridge app. Pairing again replaces its previous key.</p>
     <form onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setKey('');setMessage('');

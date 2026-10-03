@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   description: "Sri Sai Balaji Jewelry & Furniture Billing & Loan System",
   manifest: "/manifest.json",
   icons: {
-    icon: "/logo.jpg",
-    shortcut: "/logo.jpg",
-    apple: "/logo.jpg",
+    icon: "/shop-logo-transparent.png",
+    shortcut: "/shop-logo-transparent.png",
+    apple: "/shop-logo-transparent.png",
   },
   appleWebApp: {
     title: "Sri Sai Balaji",

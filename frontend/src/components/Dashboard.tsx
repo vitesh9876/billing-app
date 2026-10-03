@@ -2936,29 +2936,17 @@ setShowOfflineLoanModal(true);
             className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs transition-opacity" 
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-[#0B1320] text-slate-100 border-r border-[#162238] shadow-2xl z-50 justify-between">
+          <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-[#F6F7F9] text-slate-800 border-r border-slate-200 shadow-2xl z-50 justify-between">
             <div>
               {/* Drawer Header */}
-              <div className="p-5 border-b border-[#162238] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="text-[#C5A880]">
-                    <svg width="22" height="16" viewBox="0 0 24 16" fill="currentColor">
-                      <path d="M2 13.5L4 4.5L9 8.5L12 1.5L15 8.5L20 4.5L22 13.5H2Z" />
-                      <circle cx="4" cy="3.5" r="1.5" />
-                      <circle cx="12" cy="1" r="1.5" />
-                      <circle cx="20" cy="3.5" r="1.5" />
-                      <rect x="2" y="14.5" width="20" height="2" rx="0.5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="font-serif text-lg font-bold text-[#E5C378]">SBJ</h2>
-                    <p className="font-cinzel text-[9px] font-bold text-[#A68A56] tracking-widest">SRI SAI BALAJI</p>
-                  </div>
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+                <div className="min-w-0 flex-1 pr-3">
+                  <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="block h-auto w-full object-contain" />
                 </div>
                 <button 
                   type="button" 
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#152238] cursor-pointer"
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
                 >
                   <X size={20} />
                 </button>
@@ -2971,7 +2959,7 @@ setShowOfflineLoanModal(true);
                   <button 
                     onClick={() => { setActiveTab("dashboard"); setMobileMenuOpen(false); }} 
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                      activeTab === "dashboard" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                      activeTab === "dashboard" ? "bg-amber-50 border border-amber-300 text-amber-900" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
                     <LayoutDashboard size={17} /> Dashboard
@@ -2983,7 +2971,7 @@ setShowOfflineLoanModal(true);
                     <button 
                       onClick={() => { setActiveTab("billing"); setMobileMenuOpen(false); }} 
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        activeTab === "billing" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                        activeTab === "billing" ? "bg-amber-50 border border-amber-300 text-amber-900" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                     >
                       <PlusCircle size={17} /> New Billing
@@ -2991,7 +2979,7 @@ setShowOfflineLoanModal(true);
                     <button 
                       onClick={() => { setActiveTab("customers"); setMobileMenuOpen(false); }} 
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        activeTab === "customers" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                        activeTab === "customers" ? "bg-amber-50 border border-amber-300 text-amber-900" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                     >
                       <Users size={17} /> Customers Data
@@ -2999,7 +2987,7 @@ setShowOfflineLoanModal(true);
                     <button 
                       onClick={() => { setActiveTab("loan-history"); setMobileMenuOpen(false); }} 
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        activeTab === "loan-history" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                        activeTab === "loan-history" ? "bg-amber-50 border border-amber-300 text-amber-900" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                     >
                       <History size={17} /> Loan History
@@ -3011,7 +2999,7 @@ setShowOfflineLoanModal(true);
                   <button 
                     onClick={() => { setActiveTab("sms"); setMobileMenuOpen(false); }} 
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                      activeTab === "sms" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                      activeTab === "sms" ? "bg-amber-50 border border-amber-300 text-amber-900" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
                     <MessageSquare size={17} /> SMS
@@ -3023,7 +3011,7 @@ setShowOfflineLoanModal(true);
                     <button 
                       onClick={() => { setActiveTab("settings"); setMobileMenuOpen(false); }} 
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        activeTab === "settings" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                        activeTab === "settings" ? "bg-amber-50 border border-amber-300 text-amber-900" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                     >
                       <Settings size={17} /> Settings
@@ -3031,7 +3019,7 @@ setShowOfflineLoanModal(true);
                     <button 
                       onClick={() => { setActiveTab("readme"); setMobileMenuOpen(false); }} 
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        activeTab === "readme" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378]" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                        activeTab === "readme" ? "bg-amber-50 border border-amber-300 text-amber-900" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       }`}
                     >
                       <BookOpen size={17} /> Readme Guide
@@ -3040,10 +3028,10 @@ setShowOfflineLoanModal(true);
                 </div>
               </nav>
             </div>
-            <div className="p-4 border-t border-[#162238]">
-              <div className="bg-[#101A2B] border border-slate-800 rounded-xl p-2.5 flex items-center gap-2.5">
+            <div className="p-4 border-t border-slate-200">
+              <div className="bg-white border border-slate-200 rounded-xl p-2.5 flex items-center gap-2.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <p className="text-[11px] font-medium text-slate-300">System Online</p>
+                <p className="text-[11px] font-medium text-slate-700">System Online</p>
               </div>
             </div>
           </div>
@@ -3051,23 +3039,11 @@ setShowOfflineLoanModal(true);
       )}
 
       {/* Desktop Sidebar Navbar (Always visible on desktop screens >= md) */}
-      <aside className="hidden md:flex flex-col w-64 bg-[#0B1320] text-slate-100 border-r border-[#162238] shadow-2xl justify-between shrink-0 select-none">
+      <aside className="hidden md:flex flex-col w-64 bg-[#F6F7F9] text-slate-800 border-r border-slate-200 shadow-sm justify-between shrink-0 select-none">
         <div>
           {/* Brand Header */}
-          <div className="p-6 border-b border-[#162238] flex items-center gap-3">
-            <div className="text-[#C5A880] w-9 h-9 rounded-xl bg-[#152238] border border-[#C5A880]/40 flex items-center justify-center shadow-inner">
-              <svg width="20" height="15" viewBox="0 0 24 16" fill="currentColor">
-                <path d="M2 13.5L4 4.5L9 8.5L12 1.5L15 8.5L20 4.5L22 13.5H2Z" />
-                <circle cx="4" cy="3.5" r="1.5" />
-                <circle cx="12" cy="1" r="1.5" />
-                <circle cx="20" cy="3.5" r="1.5" />
-                <rect x="2" y="14.5" width="20" height="2" rx="0.5" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="font-serif text-lg font-bold text-[#E5C378] tracking-wide">SBJ</h2>
-              <p className="font-cinzel text-[8.5px] font-bold text-[#A68A56] tracking-widest leading-none">SRI SAI BALAJI</p>
-            </div>
+          <div className="border-b border-slate-200 px-4 py-5">
+            <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="block h-auto w-full object-contain" />
           </div>
 
           {/* Desktop Nav Links */}
@@ -3078,7 +3054,7 @@ setShowOfflineLoanModal(true);
                 type="button"
                 onClick={() => setActiveTab("dashboard")} 
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  activeTab === "dashboard" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm font-bold" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  activeTab === "dashboard" ? "bg-amber-50 border border-amber-300 text-amber-900 shadow-sm font-bold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
                 <LayoutDashboard size={17} /> Dashboard
@@ -3092,7 +3068,7 @@ setShowOfflineLoanModal(true);
                   type="button"
                   onClick={() => setActiveTab("billing")} 
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeTab === "billing" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm font-bold" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                    activeTab === "billing" ? "bg-amber-50 border border-amber-300 text-amber-900 shadow-sm font-bold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <PlusCircle size={17} /> New Billing
@@ -3101,7 +3077,7 @@ setShowOfflineLoanModal(true);
                   type="button"
                   onClick={() => setActiveTab("customers")} 
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeTab === "customers" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm font-bold" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                    activeTab === "customers" ? "bg-amber-50 border border-amber-300 text-amber-900 shadow-sm font-bold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <Users size={17} /> Customers Data
@@ -3110,7 +3086,7 @@ setShowOfflineLoanModal(true);
                   type="button"
                   onClick={() => setActiveTab("loan-history")} 
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeTab === "loan-history" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm font-bold" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                    activeTab === "loan-history" ? "bg-amber-50 border border-amber-300 text-amber-900 shadow-sm font-bold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <History size={17} /> Loan History
@@ -3124,7 +3100,7 @@ setShowOfflineLoanModal(true);
                 type="button"
                 onClick={() => setActiveTab("sms")} 
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  activeTab === "sms" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm font-bold" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                  activeTab === "sms" ? "bg-amber-50 border border-amber-300 text-amber-900 shadow-sm font-bold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
                 <MessageSquare size={17} /> SMS Management
@@ -3138,7 +3114,7 @@ setShowOfflineLoanModal(true);
                   type="button"
                   onClick={() => setActiveTab("settings")} 
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeTab === "settings" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm font-bold" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                    activeTab === "settings" ? "bg-amber-50 border border-amber-300 text-amber-900 shadow-sm font-bold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <Settings size={17} /> Settings
@@ -3147,7 +3123,7 @@ setShowOfflineLoanModal(true);
                   type="button"
                   onClick={() => setActiveTab("readme")} 
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeTab === "readme" ? "bg-[#152238] border border-[#C5A880]/50 text-[#E5C378] shadow-sm font-bold" : "text-slate-400 hover:bg-[#121D2F] hover:text-slate-200"
+                    activeTab === "readme" ? "bg-amber-50 border border-amber-300 text-amber-900 shadow-sm font-bold" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
                   <BookOpen size={17} /> Readme Guide
@@ -3158,13 +3134,13 @@ setShowOfflineLoanModal(true);
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-[#162238]">
-          <div className="bg-[#101A2B] border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+        <div className="p-4 border-t border-slate-200">
+          <div className="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <p className="text-[11px] font-semibold text-slate-300">System Online</p>
+              <p className="text-[11px] font-semibold text-slate-700">System Online</p>
             </div>
-            <span className="text-[10px] font-mono text-[#C5A880]">v2.4</span>
+            <span className="text-[10px] font-mono text-slate-500">v2.4</span>
           </div>
         </div>
       </aside>
@@ -3173,33 +3149,23 @@ setShowOfflineLoanModal(true);
       <main className="flex-1 flex flex-col min-w-0 print:hidden overflow-y-auto no-scrollbar relative">
         
         {/* Mobile Top App Bar (Only visible on mobile portrait / landscape < md) */}
-        <div className="md:hidden bg-[#0B1320] border-b border-[#162238] px-4 py-3 flex items-center justify-between sticky top-0 z-40 text-slate-100 shadow-md">
+        <div className="md:hidden bg-[#F6F7F9] border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40 text-slate-800 shadow-sm">
           <div className="flex items-center gap-2.5">
             <button 
               type="button" 
               onClick={() => setMobileMenuOpen(true)} 
-              className="p-1.5 rounded-lg bg-[#152238] text-[#E5C378] hover:bg-[#1f304d] transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer"
               title="Open Navigation Menu"
             >
               <Menu size={20} />
             </button>
-            <div className="flex items-center gap-1.5">
-              <div className="text-[#C5A880]">
-                <svg width="18" height="14" viewBox="0 0 24 16" fill="currentColor">
-                  <path d="M2 13.5L4 4.5L9 8.5L12 1.5L15 8.5L20 4.5L22 13.5H2Z" />
-                  <circle cx="4" cy="3.5" r="1.5" />
-                  <circle cx="12" cy="1" r="1.5" />
-                  <circle cx="20" cy="3.5" r="1.5" />
-                  <rect x="2" y="14.5" width="20" height="2" rx="0.5" />
-                </svg>
-              </div>
-              <span className="font-serif font-bold text-sm tracking-wider text-[#E5C378]">SBJ</span>
-              <span className="text-[10px] font-cinzel font-bold text-[#A68A56] tracking-widest truncate max-w-[130px]">SRI SAI BALAJI</span>
+            <div className="min-w-0 w-36">
+              <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="block h-auto w-full object-contain" />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-300 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>Online</span>
             </div>
           </div>
@@ -7253,7 +7219,7 @@ setShowOfflineLoanModal(true);
                 <div className="flex items-center gap-3 mt-2 mb-1">
                   {/* Sai Baba Portrait */}
                   <div className="w-16 h-16 rounded-full border border-slate-350 overflow-hidden flex-shrink-0 flex items-center justify-center bg-slate-50">
-                    <img src="/logo.jpg" alt="Shirdi Sai Baba" className="w-full h-full object-cover" />
+                    <img src="/saibaba.png" alt="Shirdi Sai Baba" className="w-full h-full object-cover" />
                   </div>
 
                   {/* Title details */}
@@ -7609,9 +7575,8 @@ setShowOfflineLoanModal(true);
           {/* Header */}
           <div className="border-b-2 border-slate-800 pb-3 mb-4 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <img src="/logo.jpg" alt="Shop Logo" className="w-12 h-12 rounded object-cover border border-slate-300" />
               <div>
-                <h1 className="font-black text-base text-slate-900 tracking-wide">SRI SAI BALAJI JEWELRY & FURNITURE</h1>
+                <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="h-12 w-56 object-contain" />
                 <p className="text-xs font-bold text-slate-600">LOAN HISTORY REPORT</p>
               </div>
             </div>
@@ -7686,38 +7651,38 @@ setShowOfflineLoanModal(true);
       )}
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B1320] border-t border-[#162238] flex items-center justify-around py-2 px-1 text-slate-400 shadow-2xl backdrop-blur-md md:hidden print:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#F6F7F9] border-t border-slate-200 flex items-center justify-around py-2 px-1 text-slate-500 shadow-lg backdrop-blur-md md:hidden print:hidden">
         <button 
           onClick={() => setActiveTab("dashboard")} 
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "dashboard" ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "dashboard" ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
-          <LayoutDashboard size={19} className={activeTab === "dashboard" ? "text-[#E5C378]" : "text-slate-400"} />
+          <LayoutDashboard size={19} className={activeTab === "dashboard" ? "text-amber-800" : "text-slate-500"} />
           <span className="text-[9.5px] mt-0.5">Home</span>
         </button>
         <button 
           onClick={() => setActiveTab("billing")} 
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "billing" ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "billing" ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
-          <PlusCircle size={19} className={activeTab === "billing" ? "text-[#E5C378]" : "text-slate-400"} />
+          <PlusCircle size={19} className={activeTab === "billing" ? "text-amber-800" : "text-slate-500"} />
           <span className="text-[9.5px] mt-0.5">Billing</span>
         </button>
         <button 
           onClick={() => setActiveTab("loan-history")} 
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "loan-history" ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "loan-history" ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
-          <History size={19} className={activeTab === "loan-history" ? "text-[#E5C378]" : "text-slate-400"} />
+          <History size={19} className={activeTab === "loan-history" ? "text-amber-800" : "text-slate-500"} />
           <span className="text-[9.5px] mt-0.5">Loans</span>
         </button>
         <button 
           onClick={() => setActiveTab("customers")} 
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "customers" ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "customers" ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
-          <Users size={19} className={activeTab === "customers" ? "text-[#E5C378]" : "text-slate-400"} />
+          <Users size={19} className={activeTab === "customers" ? "text-amber-800" : "text-slate-500"} />
           <span className="text-[9.5px] mt-0.5">Customers</span>
         </button>
         <button 
           onClick={() => setMobileMenuOpen(true)} 
-          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${mobileMenuOpen || (activeTab !== "dashboard" && activeTab !== "billing" && activeTab !== "loan-history" && activeTab !== "customers") ? "text-[#E5C378] font-bold" : "hover:text-slate-200"}`}
+          className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${mobileMenuOpen || (activeTab !== "dashboard" && activeTab !== "billing" && activeTab !== "loan-history" && activeTab !== "customers") ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
           <MoreHorizontal size={19} />
           <span className="text-[9.5px] mt-0.5">More</span>

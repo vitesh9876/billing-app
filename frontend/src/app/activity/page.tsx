@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ShopBrandHeader from "@/components/ShopBrandHeader";
 import { useEffect, useState } from "react";
 import SupabaseBillingGate from "@/components/SupabaseBillingGate";
 import { billingFetch } from "@/lib/supabaseBilling";
@@ -38,7 +39,8 @@ function ActivityLog(){
 
   return <main className="min-h-screen bg-slate-50 p-4 text-slate-900 md:p-8">
     <div className="mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-8">
-      <Link href="/" className="text-sm text-amber-700 underline">← Back to billing</Link>
+      <ShopBrandHeader />
+      <Link href="/" className="block text-sm text-amber-700 underline">← Back to billing</Link>
       <h1 className="mt-5 text-3xl font-semibold">Account and change activity</h1>
       <p className="mt-2 mb-6 text-sm text-slate-600">Sign-ins, account events, and recorded changes to billing records.</p>
       {message && <p role="status" className="mb-4 text-sm text-slate-600">{message}</p>}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SupabaseBillingGate from "@/components/SupabaseBillingGate";
+import ShopBrandHeader from "@/components/ShopBrandHeader";
 import { billingSupabase } from "@/lib/supabaseBilling";
 
 function Documents() {
@@ -17,7 +18,8 @@ function Documents() {
   };
   useEffect(()=> {void load();},[]);
   return <main className="mx-auto max-w-3xl p-8 text-slate-900">
-    <a href="/" className="text-sm underline">Back to billing</a>
+    <ShopBrandHeader />
+    <a href="/" className="mb-2 block text-sm underline">Back to billing</a>
     <h1 className="mt-5 text-3xl font-semibold">Private documents</h1>
     <p className="mt-2 mb-5 text-slate-600">Upload a PDF or photo, up to 10 MB. Saved files are kept separately from your bills.</p>
     <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" disabled={busy} onChange={async e=> {
