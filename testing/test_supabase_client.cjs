@@ -6,6 +6,8 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname,'../frontend/src/lib/supabaseBilling.ts'),'utf8');
 function client() {
   const calls=[];
+  const persistentStorage={};
+  let authOptions;
   let session={access_token:'test-access-token',user:{id:'owner'}};
   let connected=false,updates=0,removed=0;
   const channel={on(_event,filter,callback){assert.equal(filter.table,'billing_changes');this.update=callback;return this;},
@@ -15,20 +17,23 @@ function client() {
     itemsCatalog:[],smsTemplates:[]};
   const exports={};
   vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{
-    exports,require:name=>{assert.equal(name,'@supabase/supabase-js');return {createClient:()=>sdk};},
+    exports,require:name=>{assert.equal(name,'@supabase/supabase-js');return {createClient:(_url,_key,options)=>{authOptions=options.auth;return sdk;}};},
     process:{env:{NEXT_PUBLIC_SUPABASE_URL:'https://test.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'test-public-key'}},
     Headers,Response,Map,Set,JSON,Error,Number,
-    window:{sessionStorage:{},setInterval:()=>1,clearInterval(){},addEventListener(){},removeEventListener(){}},
+    window:{localStorage:persistentStorage,setInterval:()=>1,clearInterval(){},addEventListener(){},removeEventListener(){}},
     document:{visibilityState:'visible'},
     fetch:async(url,init)=>{calls.push({url,init});return Response.json(url.includes('dashboard-data')?snapshots:{status:'success'});},
   });
   return {api:exports,calls,setSession:value=>{session=value;},channel,
+    get authOptions(){return authOptions;},persistentStorage,
     get connected(){return connected;},get updates(){return updates;},get removed(){return removed;},
     subscribe:()=>exports.subscribeBillingChanges(()=>updates++,value=>connected=value)};
 }
 (async()=>{
   const c=client();
   await c.api.billingFetch('/api/v1/dashboard-data');
+  assert.equal(c.authOptions.persistSession,true,'authenticated session persists beyond the current tab');
+  assert.equal(c.authOptions.storage,c.persistentStorage,'persistent browser storage is configured');
   const read=c.calls[0];
   assert.equal(read.url,'https://test.supabase.co/functions/v1/billing-api/dashboard-data');
   assert.equal(read.init.headers.get('Authorization'),'Bearer test-access-token');

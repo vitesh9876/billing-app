@@ -1,11 +1,18 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 export interface AutocompleteOption {
   value: string;
   label: string;
   description?: string;
+}
+
+function findInlineSuggestion(query: string, options: AutocompleteOption[]): AutocompleteOption | null {
+  const normalized = query.toLocaleLowerCase();
+  if (!normalized) return null;
+  return options.find(option => option.label.toLocaleLowerCase().startsWith(normalized)
+    && option.label.length > query.length) || null;
 }
 
 interface AutocompleteInputProps {
@@ -37,6 +44,13 @@ export default function AutocompleteInput({
   const listId = `${generatedId}-suggestions`;
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [completionStyle, setCompletionStyle] = useState<{
+    left: number;
+    font: string;
+    lineHeight: string;
+    letterSpacing: string;
+  } | null>(null);
 
   const suggestions = useMemo(() => {
     const query = value.trim().toLocaleLowerCase();
@@ -53,6 +67,33 @@ export default function AutocompleteInput({
     ].slice(0, maxResults);
   }, [isOpen, maxResults, options, value]);
 
+  const inlineOption = useMemo(() => {
+    if (!isOpen) return null;
+    return findInlineSuggestion(value, suggestions);
+  }, [isOpen, suggestions, value]);
+  const completion = inlineOption ? inlineOption.label.slice(value.length) : "";
+
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input || !completion) {
+      setCompletionStyle(null);
+      return;
+    }
+    const styles = window.getComputedStyle(input);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) {
+      setCompletionStyle(null);
+      return;
+    }
+    context.font = styles.font;
+    const letterSpacing = Number.parseFloat(styles.letterSpacing) || 0;
+    const textWidth = context.measureText(value).width + letterSpacing * Math.max(0, value.length - 1);
+    const left = (Number.parseFloat(styles.borderLeftWidth) || 0)
+      + (Number.parseFloat(styles.paddingLeft) || 0) + textWidth;
+    setCompletionStyle({ left, font: styles.font, lineHeight: styles.lineHeight, letterSpacing: styles.letterSpacing });
+  }, [className, completion, value]);
+
   const choose = (option: AutocompleteOption) => {
     onSelect(option);
     setIsOpen(false);
@@ -62,12 +103,13 @@ export default function AutocompleteInput({
   return (
     <div className="relative">
       <input
+        ref={inputRef}
         type="text"
         required={required}
         autoComplete={autoComplete}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        aria-autocomplete="list"
+        aria-autocomplete="both"
         aria-expanded={suggestions.length > 0}
         aria-controls={listId}
         aria-activedescendant={activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
@@ -102,9 +144,26 @@ export default function AutocompleteInput({
             event.stopPropagation();
             setIsOpen(false);
             setActiveIndex(-1);
+          } else if (event.key === "ArrowRight" && completion && event.currentTarget.selectionStart === value.length && event.currentTarget.selectionEnd === value.length) {
+            event.preventDefault();
+            choose(inlineOption!);
+          } else if (event.key === "Tab" && completion && activeIndex < 0) {
+            choose(inlineOption!);
           }
         }}
       />
+
+      {completion && completionStyle && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute top-0 z-10 flex h-full items-center"
+          style={{ left: completionStyle.left }}
+        >
+          <span className="rounded-sm bg-blue-100 px-0.5 text-blue-700" style={{ font: completionStyle.font, lineHeight: completionStyle.lineHeight, letterSpacing: completionStyle.letterSpacing }}>
+            {completion}
+          </span>
+        </span>
+      )}
 
       {suggestions.length > 0 && (
         <div

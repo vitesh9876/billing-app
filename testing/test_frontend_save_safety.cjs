@@ -5,6 +5,7 @@ const ts = require('../frontend/node_modules/typescript');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/components/Dashboard.tsx'), 'utf8');
 const css = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/app/globals.css'), 'utf8');
 const auth = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/components/SupabaseBillingGate.tsx'), 'utf8');
+const autocomplete = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/components/AutocompleteInput.tsx'), 'utf8');
 const ast = ts.createSourceFile('Dashboard.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 const extracted = {};
 function visit(node) {
@@ -17,6 +18,15 @@ function visit(node) {
   ts.forEachChild(node, visit);
 }
 visit(ast);
+const autocompleteAst = ts.createSourceFile('AutocompleteInput.tsx', autocomplete, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+let inlineSuggestionSource = '';
+function visitAutocomplete(node) {
+  if (ts.isFunctionDeclaration(node) && node.name?.getText(autocompleteAst) === 'findInlineSuggestion') {
+    inlineSuggestionSource = ts.transpileModule(`${node.getText(autocompleteAst)}; globalThis.findInlineSuggestion = findInlineSuggestion;`, {compilerOptions: {target: ts.ScriptTarget.ES2022}}).outputText;
+  }
+  ts.forEachChild(node, visitAutocomplete);
+}
+visitAutocomplete(autocompleteAst);
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function contextFor(name, values) {
   const ctx = vm.createContext({recordSavesInFlight: {current: new Set()}, mutationRevision: {current: 0}, setSavingRecord() {}, showSaveNotice() {}, crypto: require('node:crypto').webcrypto, ...values, console, Date});
@@ -217,6 +227,12 @@ async function checkOlderReloadCannotUndoSave() {
   checkTotals();
   await checkOfflineBillEdit();
   await checkOfflineLoanValidation();
+  const autocompleteContext = vm.createContext({});
+  vm.runInContext(inlineSuggestionSource, autocompleteContext);
+  const itemOptions = [{value: 'ring', label: 'Ring'}, {value: 'chain', label: 'Chain'}];
+  assert.equal(autocompleteContext.findInlineSuggestion('rin', itemOptions).label, 'Ring', 'three typed letters show their inline completion');
+  assert.equal(autocompleteContext.findInlineSuggestion('ring', itemOptions), null, 'an exact item name has no redundant completion');
+  assert.equal(autocompleteContext.findInlineSuggestion('zzz', itemOptions), null, 'unmatched text has no inline completion');
   assert.match(css, /\.sbj-app-shell\.dark \.bg-white/, 'dark theme stays scoped to app surfaces');
   assert.doesNotMatch(css, /(?:^|\n)\.dark body\s*,|(?:^|\n)\.dark \.bg-white\s*,/, 'legacy global dark rules stay removed');
   assert.match(auth, /autoComplete="on"/, 'login form supports browser credential managers');
@@ -233,5 +249,7 @@ async function checkOlderReloadCannotUndoSave() {
   assert.match(css, /\.sbj-mobile-brand \{ position: absolute; left: 50%; transform: translateX\(-50%\)/, 'mobile logo is centered independently of the menu');
   assert.match(auth, /PasswordCredential/, 'successful sign-in offers supported browser credential storage');
   assert.match(auth, /name="username" type="email" autoComplete="username"/, 'login username follows password-manager form conventions');
+  assert.match(autocomplete, /aria-autocomplete="both"/, 'autocomplete exposes inline and list suggestions');
+  assert.match(source, /<div className="space-y-2\.5 pr-1">/, 'pledged item suggestions are not clipped by a nested scroll area');
   console.log('Passed: save safety, refresh coalescing, accurate totals, and bill edits preserving record identity, payment history, dates and item values.');
 })().catch(err => {console.error(err); process.exitCode = 1});

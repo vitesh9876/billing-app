@@ -6514,7 +6514,7 @@ setShowOfflineLoanModal(true);
                 <div className="col-span-1 sm:col-span-2 border border-slate-100 rounded-2xl p-4 bg-[#FAFBFD] space-y-3">
                   <h4 className="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-2">Pledged Items Block</h4>
                   
-                  <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                  <div className="space-y-2.5 pr-1">
                     {offlineLoanPledgedItems.map((item, idx) => (
                       <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-9 relative">
