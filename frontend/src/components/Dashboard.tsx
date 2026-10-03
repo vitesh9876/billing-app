@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { billingFetch as fetch, subscribeBillingChanges } from "@/lib/supabaseBilling";
+import PwaInstallCard from "@/components/PwaInstallCard";
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -2962,7 +2963,7 @@ setShowOfflineLoanModal(true);
   }, [chartTimeframe, chartMetricMode, transactions]);
 
   return (
-    <div className={`flex h-screen overflow-hidden print:h-auto print:overflow-visible print:block bg-[#F6F7F9] font-sans print:bg-white text-slate-900 w-full ${theme}`}>
+    <div className={`sbj-app-shell flex h-dvh overflow-hidden print:h-auto print:overflow-visible print:block bg-[#F6F7F9] font-sans print:bg-white text-slate-900 w-full ${theme}`}>
       {saveNotice && (
         <div role="status" className="fixed bottom-5 right-5 z-[100] max-w-sm rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-lg print:hidden">
           {saveNotice}
@@ -2971,17 +2972,18 @@ setShowOfflineLoanModal(true);
       
       {/* Mobile Drawer Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+        <div className="sbj-mobile-drawer md:hidden fixed inset-0 z-50 flex">
           <div 
             className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs transition-opacity" 
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-[#F6F7F9] text-slate-800 border-r border-slate-200 shadow-2xl z-50 justify-between">
+          <div className="sbj-sidebar relative flex flex-col w-72 max-w-[84vw] h-full bg-[#F6F7F9] text-slate-800 border-r border-slate-200 shadow-2xl z-50 justify-between">
             <div>
               {/* Drawer Header */}
-              <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-                <div className="min-w-0 flex-1 pr-3">
-                  <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="block h-auto w-full object-contain" />
+              <div className="sbj-brand min-h-0 p-4 flex items-center justify-between">
+                <div className="flex min-w-0 items-center gap-3 pr-3">
+                  <img src="/shop-logo-mark.png" alt="" aria-hidden="true" />
+                  <div className="min-w-0"><p className="sbj-brand-name">Sri Sai Balaji</p><span className="sbj-brand-caption">Jewelry &amp; Furniture</span></div>
                 </div>
                 <button 
                   type="button" 
@@ -3079,11 +3081,12 @@ setShowOfflineLoanModal(true);
       )}
 
       {/* Desktop Sidebar Navbar (Always visible on desktop screens >= md) */}
-      <aside className="hidden md:flex flex-col w-64 bg-[#F6F7F9] text-slate-800 border-r border-slate-200 shadow-sm justify-between shrink-0 select-none">
+      <aside className="sbj-sidebar hidden md:flex flex-col w-64 bg-[#F6F7F9] text-slate-800 border-r border-slate-200 shadow-sm justify-between shrink-0 select-none">
         <div>
           {/* Brand Header */}
-          <div className="border-b border-slate-200 px-4 py-5">
-            <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="block h-auto w-full object-contain" />
+          <div className="sbj-brand flex items-center gap-3">
+            <img src="/shop-logo-mark.png" alt="" aria-hidden="true" />
+            <div className="min-w-0"><p className="sbj-brand-name">Sri Sai Balaji</p><span className="sbj-brand-caption">Jewelry &amp; Furniture</span></div>
           </div>
 
           {/* Desktop Nav Links */}
@@ -3189,18 +3192,20 @@ setShowOfflineLoanModal(true);
       <main className="flex-1 flex flex-col min-w-0 print:hidden overflow-y-auto no-scrollbar relative">
         
         {/* Mobile Top App Bar (Only visible on mobile portrait / landscape < md) */}
-        <div className="md:hidden bg-[#F6F7F9] border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40 text-slate-800 shadow-sm">
+        <div className="sbj-mobile-topbar md:hidden bg-[#F6F7F9] border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40 text-slate-800 shadow-sm">
           <div className="flex items-center gap-2.5">
             <button 
               type="button" 
               onClick={() => setMobileMenuOpen(true)} 
-              className="p-1.5 rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="min-h-11 min-w-11 flex items-center justify-center rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer"
               title="Open Navigation Menu"
+              aria-label="Open navigation menu"
             >
               <Menu size={20} />
             </button>
-            <div className="min-w-0 w-36">
-              <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="block h-auto w-full object-contain" />
+            <div className="sbj-mobile-brand">
+              <img src="/shop-logo-mark.png" alt="" aria-hidden="true" />
+              <div className="min-w-0"><p className="sbj-brand-name">Sri Sai Balaji</p><span className="sbj-brand-caption">Jewelry &amp; Furniture</span></div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -3247,7 +3252,7 @@ setShowOfflineLoanModal(true);
             <div className="space-y-6">
               
               {/* Top 4 KPI Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="sbj-dashboard-kpis grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 
                 {/* 1. Total Pledged Value */}
                 <div className="sbj-card p-5 flex items-center gap-4 relative group">
@@ -5317,6 +5322,7 @@ setShowOfflineLoanModal(true);
               <div className="pt-6 border-t border-slate-100">
                 <h4 className="font-serif text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Other Settings</h4>
                 <div className="border border-slate-200/90 rounded-2xl divide-y divide-slate-100 overflow-hidden bg-white shadow-xs">
+                  <PwaInstallCard />
                   <div className="p-4 flex items-center justify-between">
                     <div>
                       <h5 className="text-xs font-bold text-slate-800 flex items-center gap-2">
@@ -7726,9 +7732,10 @@ setShowOfflineLoanModal(true);
       )}
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#F6F7F9] border-t border-slate-200 flex items-center justify-around py-2 px-1 text-slate-500 shadow-lg backdrop-blur-md md:hidden print:hidden">
+      <nav aria-label="Primary" className="sbj-bottom-nav fixed bottom-0 left-0 right-0 z-40 bg-[#F6F7F9] border-t border-slate-200 flex items-center justify-around py-2 px-1 text-slate-500 shadow-lg backdrop-blur-md md:hidden print:hidden">
         <button 
           onClick={() => setActiveTab("dashboard")} 
+          aria-current={activeTab === "dashboard" ? "page" : undefined}
           className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "dashboard" ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
           <LayoutDashboard size={19} className={activeTab === "dashboard" ? "text-amber-800" : "text-slate-500"} />
@@ -7736,6 +7743,7 @@ setShowOfflineLoanModal(true);
         </button>
         <button 
           onClick={() => setActiveTab("billing")} 
+          aria-current={activeTab === "billing" ? "page" : undefined}
           className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "billing" ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
           <PlusCircle size={19} className={activeTab === "billing" ? "text-amber-800" : "text-slate-500"} />
@@ -7743,6 +7751,7 @@ setShowOfflineLoanModal(true);
         </button>
         <button 
           onClick={() => setActiveTab("loan-history")} 
+          aria-current={activeTab === "loan-history" ? "page" : undefined}
           className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "loan-history" ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
           <History size={19} className={activeTab === "loan-history" ? "text-amber-800" : "text-slate-500"} />
@@ -7750,6 +7759,7 @@ setShowOfflineLoanModal(true);
         </button>
         <button 
           onClick={() => setActiveTab("customers")} 
+          aria-current={activeTab === "customers" ? "page" : undefined}
           className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all cursor-pointer ${activeTab === "customers" ? "text-amber-800 font-bold" : "hover:text-slate-900"}`}
         >
           <Users size={19} className={activeTab === "customers" ? "text-amber-800" : "text-slate-500"} />

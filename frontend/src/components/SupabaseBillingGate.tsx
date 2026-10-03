@@ -133,11 +133,13 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
     {children}
   </>;
 
-  return <main className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-    <form className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm" onSubmit={submitAccount}>
-      <img src="/shop-logo-transparent.png" alt="Sri Sai Balaji Jewelry and Furniture" className="mx-auto mb-4 block h-auto w-40 object-contain" />
-      <h1 className="text-2xl font-semibold text-slate-900">{accountMode==="signin"?"Sign in to SBJ":"Create an SBJ account"}</h1>
-      <p className="mt-2 mb-6 text-sm text-slate-600">Access your billing records securely.</p>
+  return <main className="sbj-login-screen flex items-center justify-center">
+    <form className="sbj-login-card w-full max-w-md bg-white p-8" onSubmit={submitAccount}>
+      <div className="mb-6 flex justify-center">
+        <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="sbj-login-logo h-20 w-full object-contain" />
+      </div>
+      <h1 className="font-serif text-3xl font-bold text-slate-900">{accountMode==="signin"?"Welcome back":"Create your account"}</h1>
+      <p className="mt-2 mb-6 text-sm leading-relaxed text-slate-600">{accountMode==="signin"?"Sign in to securely access your shop records.":"Create an account using the shop’s private access code."}</p>
       {loading ? <p role="status">Checking access…</p> : <>
         <label className="block text-sm text-slate-700">Email
           <input type="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)} className={inputClass} />
