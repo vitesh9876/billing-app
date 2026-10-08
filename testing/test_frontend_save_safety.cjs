@@ -94,16 +94,22 @@ async function checkRefresh() {
 }
 function checkTotals() {
   const ctx = contextFor('calculateDashboardStats', {});
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const yesterdayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterday = `${yesterdayDate.getFullYear()}-${String(yesterdayDate.getMonth() + 1).padStart(2, '0')}-${String(yesterdayDate.getDate()).padStart(2, '0')}`;
   const transactions = [
     {type: 'loan', amount: '1000', status: 'Pending'},
     {type: 'loan', amount: 2500, status: 'Pending'},
     {type: 'loan', amount: 9000, status: 'Cleared'},
-    {type: 'purchase', amount: '500'},
+    {type: 'purchase', amount: '500', date: today},
+    {type: 'purchase', amount: '250', date: yesterday},
     {type: 'loan', amount: 'invalid', status: 'Pending'}
   ];
   const stats = ctx.handler(transactions, [{id: 1}]);
   assert.equal(stats.pledgedValue, 3500, 'numeric sum of active loans only');
-  assert.equal(stats.totalSales, 500);
+  assert.equal(stats.totalSales, 750, 'revenue includes all purchase invoices');
+  assert.equal(stats.todaySales, 500, 'today sales excludes older invoices');
   assert.equal(ctx.handler([], []).pledgedValue, 0, 'empty data has a real zero total');
   assert.equal(ctx.handler([...transactions].reverse(), []).pledgedValue, 3500);
   assert.ok(!source.includes('stats.pledgedValue ||'), 'zero is not replaced with sample money');
