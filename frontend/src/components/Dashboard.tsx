@@ -32,7 +32,6 @@ import {
   Menu,
   MoreHorizontal,
   Sparkles,
-  TrendingUp,
   BarChart2,
   Copy,
   SendHorizontal,
@@ -84,12 +83,8 @@ function calculateDashboardStats(transactions: any[], customers: any[]) {
     const numeric = Number(value);
     return Number.isFinite(numeric) ? numeric : 0;
   };
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const activeLoans = transactions.filter(t => t.type === "loan" && t.status !== "Cleared");
   return {
-    totalSales: transactions.filter(t => t.type === "purchase").reduce((sum, t) => sum + amount(t.amount), 0),
-    todaySales: transactions.filter(t => t.type === "purchase" && String(t.date || "").slice(0, 10) === today).reduce((sum, t) => sum + amount(t.amount), 0),
     activeLoans: activeLoans.length,
     pledgedValue: activeLoans.reduce((sum, t) => sum + amount(t.amount), 0),
     totalCustomers: customers.length
@@ -3187,7 +3182,7 @@ setShowOfflineLoanModal(true);
             <div className="space-y-6">
               
               {/* Dashboard KPI Cards */}
-              <div className="sbj-dashboard-kpis grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-5">
+              <div className="sbj-dashboard-kpis grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 
                 {/* 1. Total Pledged Value */}
                 <div className="sbj-card p-5 flex items-center gap-4 relative group">
@@ -3245,59 +3240,6 @@ setShowOfflineLoanModal(true);
                   </div>
                 </div>
 
-                {/* 4. Total Revenue */}
-                <div className="sbj-card p-5 flex items-center gap-4 relative group">
-                  <div className="w-13 h-13 rounded-full bg-[#0F766E] text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <TrendingUp size={22} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Revenue</h3>
-                      <button
-                        type="button"
-                        onClick={() => handleRequestReveal("kpi-revenue")}
-                        className="text-slate-400 hover:text-[#C5A880] transition-colors p-1 rounded-md hover:bg-slate-100 cursor-pointer shrink-0"
-                        title={revealedSensitiveKeys["kpi-revenue"] ? "Hide amount" : "Reveal amount (Requires Passcode)"}
-                      >
-                        {revealedSensitiveKeys["kpi-revenue"] ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
-                    </div>
-                    <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
-                      {revealedSensitiveKeys["kpi-revenue"]
-                        ? `₹${(dashboardLoaded ? stats.totalSales : 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                        : "₹ * * * *"}
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">All recorded sales invoices</p>
-                  </div>
-                </div>
-
-                {/* 5. Today's Sales */}
-                <div className="sbj-card p-5 flex items-center gap-4 relative group">
-                  <div className="w-13 h-13 rounded-full bg-[#D97706] text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Today's Sales</h3>
-                      <button
-                        type="button"
-                        onClick={() => handleRequestReveal("kpi-sales")}
-                        className="text-slate-400 hover:text-[#C5A880] transition-colors p-1 rounded-md hover:bg-slate-100 cursor-pointer shrink-0"
-                        title={revealedSensitiveKeys["kpi-sales"] ? "Hide amount" : "Reveal amount (Requires Passcode)"}
-                      >
-                        {revealedSensitiveKeys["kpi-sales"] ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
-                    </div>
-                    <p className="text-2xl font-bold font-serif text-slate-900 mt-0.5 tracking-tight truncate">
-                      {revealedSensitiveKeys["kpi-sales"]
-                        ? `₹${(stats.todaySales || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-                        : "₹ * * * *"}
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5 truncate">From today's invoices</p>
-                  </div>
-                </div>
               </div>
 
               {/* Middle Section: Loan Activity Chart + Today at a Glance + SMS Bridge Device */}
