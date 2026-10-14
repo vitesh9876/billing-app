@@ -1575,8 +1575,12 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       const totalAmount = parseFloat(loanDetails.amount) || 0;
       // Series-based loan ID
       const prefix = totalAmount > 8000 ? "L★-" : "L-";
-      const count = Math.max(0, ...transactions.filter(t => t.type === "loan" && t.id.startsWith(prefix)).map(t => Number(t.id.slice(prefix.length)) || 0));
-      const txnId = prefix + String(count + 1).padStart(3, "0");
+      const count = Math.max(0, ...transactions.filter(t => t.type === "loan" && (t.id.startsWith(prefix) || t.loanDetails?.billNumber?.startsWith(prefix))).map(t => {
+        const raw = t.loanDetails?.billNumber || t.id;
+        return Number(raw.slice(prefix.length)) || 0;
+      }));
+      const billNumber = prefix + String(count + 1).padStart(3, "0");
+      const txnId = `BILL-${billNumber}-${loanDetails.takenDate || new Date().toISOString().split("T")[0]}-${crypto.randomUUID()}`;
       
       let endDate = loanDetails.endDate;
       if (!endDate && loanDetails.takenDate) {
@@ -1593,6 +1597,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         amount: totalAmount,
         date: new Date().toISOString().split("T")[0],
         loanDetails: {
+          billNumber,
           father: loanDetails.father || "N/A",
           idProof: loanDetails.idProof || "N/A",
           interestRate: loanDetails.interestRate,
@@ -2144,17 +2149,6 @@ setShowOfflineLoanModal(true);
         return;
       }
       const targetBillNumber = `${form.starSeries ? "★" : ""}${billNoForSave}`;
-      const changedExistingBill = !editingTxnId || form.billNo !== existingBillNo || Boolean(originalTxn && form.starSeries !== /^[★*]/.test(getBillNo(originalTxn.id)));
-      const billAlreadyUsed = targetBillNumber && transactions.some(transaction => {
-        if (transaction.type !== "loan" || transaction.id === editingTxnId) return false;
-        const existingBill = getBillNo(transaction.id);
-        const transactionDate = String(transaction.loanDetails?.takenDate || transaction.date || "");
-        return existingBill === targetBillNumber && teluguBillSeriesYear(transactionDate) === billSeriesYear;
-      });
-      if (billAlreadyUsed && changedExistingBill) {
-        alert(`Bill number ${targetBillNumber} is already used in the Telugu year beginning Ugadi ${billSeriesYear}. Choose another number.`);
-        return;
-      }
 
       // Explicitly selected or exact-name matched customers are safe to reuse.
       let custId = null;

@@ -60,19 +60,6 @@ export async function saveRecord(db: Database, body: Row): Promise<Row> {
     }
     const details = t.type === "loan" ? t.loanDetails : t.items;
     const json = JSON.stringify(details);
-    const candidate = { id: t.id, type: t.type, itemsJson: json };
-    const candidateSeriesYear = teluguBillSeriesYear(t.loanDetails?.takenDate || t.date);
-    const seriesYearForRow = (row: Row) => {
-      const loaded = transaction(row);
-      return teluguBillSeriesYear(loaded.loanDetails?.takenDate || row.date);
-    };
-    if (t.type === "loan" && (!existing || billNumber(existing) !== billNumber(candidate) || seriesYearForRow(existing) !== candidateSeriesYear)) {
-      const other = await c.query(`SELECT id,type,date,"itemsJson" FROM public.transactions
-        WHERE type='loan' AND id<>$1`, [t.id]);
-      if (other.some(row => seriesYearForRow(row) === candidateSeriesYear && billNumber(row) === billNumber(candidate))) {
-        throw new ApiError(409, "This bill number belongs to another loan in the same Telugu calendar year.");
-      }
-    }
     const status = t.status ?? existing?.status ?? (t.type === "loan" ? "Pending" : "Cleared");
     const cleared = t.clearedDate === undefined ? existing?.clearedDate ?? null : t.clearedDate;
     const result = (await c.query(`INSERT INTO public.transactions

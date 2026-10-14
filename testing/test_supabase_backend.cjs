@@ -116,18 +116,23 @@ async function test(name,fn) {await fn();passed++;console.log('PASS '+name);}
     await assert.rejects(()=>saveRecord(db,{transaction:{...loan,amount:1}}),/already exists/);
     assert.equal((await db.query('SELECT amount FROM transactions'))[0].amount,10000);
   });
-  await test('duplicate displayed bills reject and roll back a staged new customer',async()=>{
+  await test('loans with the same bill number can be created without blocking',async()=>{
     const c={...customer,id:'TEST-C2'};
-    await assert.rejects(()=>saveRecord(db,{transaction:{...loan,id:'BILL-another-2026',customerId:c.id},customer:c}),/bill number/);
-    assert.equal((await db.query('SELECT * FROM customers')).length,1);
-  });
-  await test('bill numbers stay unique through Ugadi and can repeat after the Telugu New Year',async()=>{
-    const beforeUgadi={...loan,id:'BILL-300-2027-MAR',date:'2027-03-30',createOnly:true};
-    await assert.rejects(()=>saveRecord(db,{transaction:beforeUgadi}),/Telugu calendar year/);
-    const afterUgadi={...loan,id:'BILL-300-2027-APR',date:'2027-04-07',createOnly:true};
-    const result=await saveRecord(db,{transaction:afterUgadi});
-    assert.equal(result.transaction.loanDetails.billNumber,'300');
+    const result=await saveRecord(db,{transaction:{...loan,id:'BILL-another-2026',customerId:c.id},customer:c});
+    assert.equal(result.transaction.loanDetails.billNumber,loan.loanDetails.billNumber);
+    assert.equal((await db.query('SELECT * FROM customers')).length,2);
     await deleteTransaction(db,result.transaction.id,result.transaction);
+    await db.query('DELETE FROM customers WHERE id=$1',[c.id]);
+  });
+  await test('bill numbers can repeat across or within the Telugu New Year',async()=>{
+    const sameYear={...loan,id:'BILL-300-2027-MAR',date:'2027-03-30',createOnly:true};
+    const r1=await saveRecord(db,{transaction:sameYear});
+    assert.equal(r1.transaction.loanDetails.billNumber,'300');
+    const afterUgadi={...loan,id:'BILL-300-2027-APR',date:'2027-04-07',createOnly:true};
+    const r2=await saveRecord(db,{transaction:afterUgadi});
+    assert.equal(r2.transaction.loanDetails.billNumber,'300');
+    await deleteTransaction(db,r1.transaction.id,r1.transaction);
+    await deleteTransaction(db,r2.transaction.id,r2.transaction);
   });
   await test('bill-only edit keeps stable ID, payments, items and unknown metadata',async()=>{
     const edit={...saved,updateOnly:true,expectedTransaction:saved,loanDetails:{...saved.loanDetails,billNumber:'301'}};
