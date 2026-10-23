@@ -5147,7 +5147,7 @@ setShowOfflineLoanModal(true);
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs text-left">
                     <thead>
-                      <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                      <tr className="border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                         <th className="pb-3 pr-3 font-semibold">BILL NO.</th>
                         <th className="pb-3 pr-3 font-semibold">CUSTOMER NAME</th>
                         <th className="pb-3 pr-3 font-semibold">PLEDGED ITEMS</th>
@@ -5199,11 +5199,8 @@ setShowOfflineLoanModal(true);
                             onClick={() => setSelectedLoanTxn(t)} 
                             className="hover:bg-[#F3E2BC] transition-colors cursor-pointer"
                           >
-                            <td className="py-3.5 pr-3 text-[#B8860B] font-semibold text-xs">
-                              <div>{displayBill}</div>
-                              <div className="text-[10px] text-slate-400 font-normal">
-                                {getLoanSeriesLabel(getLoanTakenDate(t), customSeriesList)}
-                              </div>
+                            <td className="py-3.5 pr-3 text-[#B8860B] font-bold text-xs">
+                              {displayBill}
                             </td>
                             <td className="py-3.5 pr-3 text-slate-800 font-medium">
                               {custName}
@@ -6074,22 +6071,25 @@ setShowOfflineLoanModal(true);
                   <button onClick={() => setSelectedLoanTxn(null)} className="text-slate-400 hover:text-slate-700 ml-1 p-1 cursor-pointer"><X size={18} /></button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs text-slate-600 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50 sm:divide-y-0">
-                <div><span className="text-slate-400 font-medium">Bill No:</span> <span className="text-[#B8860B] font-bold ml-1">#{getBillNo(selectedLoanTxn.id)}</span></div>
-                <div className="pt-1 sm:pt-0"><span className="text-slate-400 font-medium">Date:</span> <span className="font-semibold text-slate-800 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.date)}</span></div>
-                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Pledger Name:</span> <span className="text-slate-900 font-bold ml-1">{customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</span></div>
-                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Father's Name:</span> <span className="font-semibold text-slate-800 ml-1">{selectedLoanTxn.loanDetails?.father || "-"}</span></div>
-                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">ID Proof:</span> <span className="font-technical text-slate-700 ml-1">{selectedLoanTxn.loanDetails?.idProof || "-"}</span></div>
-                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Phone No:</span> <span className="font-technical text-slate-700 ml-1">{customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</span></div>
-                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Address:</span> <span className="font-semibold text-slate-800 ml-1">{selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}</span></div>
-                <div className="pt-1 sm:pt-1.5"><span className="text-slate-400 font-medium">Mandal:</span> <span className="font-semibold text-slate-800 ml-1">{selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</span></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs text-slate-700 mb-4 pb-4 border-b border-slate-100 divide-y divide-slate-50 sm:divide-y-0">
+                <div><span className="text-slate-500 font-semibold">Bill No:</span> <span className="text-[#B8860B] font-bold ml-1 text-sm">#{getBillNo(selectedLoanTxn.id)}</span></div>
+                <div className="pt-1 sm:pt-0"><span className="text-slate-500 font-semibold">Date:</span> <span className="font-bold text-slate-900 ml-1">{formatDateToDDMMYYYY(selectedLoanTxn.date)}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-500 font-semibold">Pledger Name:</span> <span className="text-slate-900 font-bold ml-1 text-sm">{customers.find(c => c.id === selectedLoanTxn.customerId)?.name || "Unknown"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-500 font-semibold">Father's Name:</span> <span className="font-semibold text-slate-900 ml-1">{selectedLoanTxn.loanDetails?.father || "-"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-500 font-semibold">ID Proof:</span> <span className="font-semibold text-slate-900 ml-1">{selectedLoanTxn.loanDetails?.idProof || "-"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-500 font-semibold">Phone No:</span> <span className="font-semibold text-slate-900 ml-1 tracking-wide">{customers.find(c => c.id === selectedLoanTxn.customerId)?.phone || "-"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-500 font-semibold">Address:</span> <span className="font-semibold text-slate-900 ml-1">{selectedLoanTxn.loanDetails?.address || customers.find(c => c.id === selectedLoanTxn.customerId)?.address || "-"}</span></div>
+                <div className="pt-1 sm:pt-1.5"><span className="text-slate-500 font-semibold">Mandal:</span> <span className="font-semibold text-slate-900 ml-1">{selectedLoanTxn.loanDetails?.mandal || customers.find(c => c.id === selectedLoanTxn.customerId)?.mandal || "-"}</span></div>
               </div>
 
-              <h4 className="font-serif text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-2">Pledged Items</h4>
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#DFB76C]"></span>
+                Pledged Items
+              </h4>
               <div className="overflow-x-auto mb-4">
                 <table className="w-full text-left text-xs divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
                   <thead>
-                    <tr className="bg-[#FAFBFD] text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                    <tr className="bg-[#FAFBFD] text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                       <th className="p-2.5">Qty</th>
                       <th className="p-2.5">Item Name</th>
                       <th className="p-2.5">Yield</th>
