@@ -26,14 +26,34 @@ export const DEFAULT_LOAN_SERIES: LoanSeries[] = [
 ];
 
 /**
+ * Normalizes various date string formats (YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY, ISO timestamps)
+ * to a standard ISO YYYY-MM-DD string.
+ */
+export function normalizeDateToISO(dateStr: string): string {
+  if (!dateStr) return "";
+  const clean = String(dateStr).trim().split("T")[0].split(" ")[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+  const parts = clean.split(/[-/]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return `${parts[0]}-${parts[1].padStart(2, "0")}-${parts[2].padStart(2, "0")}`;
+    }
+    if (parts[2].length === 4) {
+      return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    }
+  }
+  return clean;
+}
+
+/**
  * Returns the series identifier for a given loan date.
  * Loans taken on or after a series start date belong to that series until the next series begins.
  * 
- * @param dateStr ISO date string (YYYY-MM-DD)
+ * @param dateStr ISO date string (YYYY-MM-DD or DD/MM/YYYY)
  * @param customSeries Array of custom series start dates or LoanSeries objects
  */
 export function getLoanSeriesKey(dateStr: string, customSeries: (string | LoanSeries)[] = []): string {
-  const isoDate = String(dateStr || "").slice(0, 10);
+  const isoDate = normalizeDateToISO(dateStr);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return "series-default";
 
   // Combine default preset series and any custom series added by the user
@@ -45,7 +65,7 @@ export function getLoanSeriesKey(dateStr: string, customSeries: (string | LoanSe
   // Extract unique valid start dates sorted descending (newest first)
   const startDates = Array.from(new Set(
     allSeries
-      .map(s => s.startDate)
+      .map(s => normalizeDateToISO(s.startDate))
       .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d))
   )).sort((a, b) => b.localeCompare(a));
 

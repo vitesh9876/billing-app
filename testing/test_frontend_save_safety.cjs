@@ -33,13 +33,14 @@ function visitAutocomplete(node) {
 visitAutocomplete(autocompleteAst);
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function contextFor(name, values) {
-  const ctx = vm.createContext({recordSavesInFlight: {current: new Set()}, mutationRevision: {current: 0}, exports: {}, setSavingRecord() {}, showSaveNotice() {}, crypto: require('node:crypto').webcrypto, customSeriesList: [], ...values, console, Date});
+  const ctx = vm.createContext({recordSavesInFlight: {current: new Set()}, mutationRevision: {current: 0}, exports: {}, setSavingRecord() {}, showSaveNotice() {}, crypto: require('node:crypto').webcrypto, customSeriesList: [], getNextBillNo: () => '1', ...values, console, Date});
   vm.runInContext(calendarCompiled, ctx);
   ctx.teluguBillSeriesYear = ctx.exports.teluguBillSeriesYear;
   vm.runInContext(loanSeriesCompiled, ctx);
   ctx.getLoanSeriesKey = ctx.exports.getLoanSeriesKey;
   ctx.getLoanSeriesLabel = ctx.exports.getLoanSeriesLabel;
   ctx.formatSeriesDate = ctx.exports.formatSeriesDate;
+  ctx.normalizeDateToISO = ctx.exports.normalizeDateToISO;
   for (const helper of ['applySavedTransaction', 'saveRecord', 'normalizePhoneForLoan', 'sanitizeLoanBillNumber']) {
     vm.runInContext(extracted[helper].replace('globalThis.handler', 'globalThis.' + helper), ctx);
   }

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { billingFetch as fetch, subscribeBillingChanges } from "@/lib/supabaseBilling";
 import PwaInstallCard from "@/components/PwaInstallCard";
 import AutocompleteInput, { type AutocompleteOption } from "@/components/AutocompleteInput";
-import { getLoanSeriesKey, getLoanSeriesLabel, formatSeriesDate, DEFAULT_LOAN_SERIES, type LoanSeries } from "@/lib/loanSeries";
+import { getLoanSeriesKey, getLoanSeriesLabel, formatSeriesDate, normalizeDateToISO, DEFAULT_LOAN_SERIES, type LoanSeries } from "@/lib/loanSeries";
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -95,7 +95,8 @@ function calculateDashboardStats(transactions: any[], customers: any[]) {
 
 function getLoanTakenDate(t: any): string {
   if (!t) return "";
-  return t.loanDetails?.originalTakenDate || t.date || t.loanDetails?.takenDate || "";
+  const raw = t.loanDetails?.originalTakenDate || t.date || t.loanDetails?.takenDate || "";
+  return normalizeDateToISO(raw);
 }
 
 function generateSmoothPath(points: { x: number; y: number }[]): string {
@@ -927,11 +928,13 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
   // Auto-generate the next number by checking current series + last saved forms
   const getNextBillNo = (isStar: boolean, dateStr?: string): string => {
-    const targetDate = dateStr || new Date().toISOString().slice(0, 10);
+    const rawDate = dateStr || offlineLoanForm?.takenDate || new Date().toISOString().slice(0, 10);
+    const targetDate = normalizeDateToISO(rawDate);
     const targetSeriesKey = getLoanSeriesKey(targetDate, customSeriesList);
     const prefix = isStar ? "★" : "";
 
     // 1. Check last saved form recorded in localStorage for this series and type
+    let lastSavedStorageNum = 0;
     if (typeof window !== "undefined") {
       try {
         const storageKey = `sbj_last_bill_${targetSeriesKey}_${isStar ? "star" : "normal"}`;
@@ -939,40 +942,56 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         if (savedLast) {
           const num = parseInt(savedLast.replace(/^[★*]/, "").trim(), 10);
           if (!isNaN(num) && num > 0 && num <= 999) {
-            return prefix + (num + 1);
+            lastSavedStorageNum = num;
           }
         }
       } catch {}
     }
 
-    // 2. Scan saved loans belonging to the current series
-    let maxNum = 0;
-    const offlineLoans = transactions.filter(t => t.type === "loan" && t.id);
-
-    offlineLoans.forEach(t => {
+    // 2. Scan saved loans belonging to this series and matching star / normal
+    const matchingLoans = transactions.filter(t => {
+      if (t.type !== "loan" || !t.id) return false;
       const txnDate = getLoanTakenDate(t);
       const txnSeriesKey = txnDate ? getLoanSeriesKey(txnDate, customSeriesList) : "series-default";
+      if (txnSeriesKey !== targetSeriesKey) return false;
 
-      // Strictly match the current series
-      if (txnSeriesKey === targetSeriesKey) {
-        const raw = t.loanDetails?.billNumber ? String(t.loanDetails.billNumber) : getBillNo(t.id);
-        const isStarBill = raw.startsWith("★") || raw.startsWith("*");
-
-        if (isStarBill === isStar) {
-          const cleanDigits = raw.replace(/^[★*]/, "").trim();
-          // Valid bill numbers are 1 to 3 digits (1 to 999).
-          // Discard 13-digit millisecond timestamps (e.g. 1785754513920) or numbers > 999.
-          if (/^\d{1,3}$/.test(cleanDigits)) {
-            const numPart = parseInt(cleanDigits, 10);
-            if (numPart > maxNum) {
-              maxNum = numPart;
-            }
-          }
-        }
-      }
+      const raw = t.loanDetails?.billNumber ? String(t.loanDetails.billNumber) : getBillNo(t.id);
+      const isStarBill = raw.startsWith("★") || raw.startsWith("*");
+      return isStarBill === isStar;
     });
 
-    return prefix + (maxNum + 1);
+    // Sort matching loans by date descending (newest first), matching Loan History table order
+    matchingLoans.sort((a, b) => {
+      const dateA = getLoanTakenDate(a);
+      const dateB = getLoanTakenDate(b);
+      if (dateA !== dateB) {
+        return dateB.localeCompare(dateA); // newest date first
+      }
+      const rawA = a.loanDetails?.billNumber ? String(a.loanDetails.billNumber) : getBillNo(a.id);
+      const rawB = b.loanDetails?.billNumber ? String(b.loanDetails.billNumber) : getBillNo(b.id);
+      const numA = parseInt(rawA.replace(/^[★*]/, "").trim(), 10) || 0;
+      const numB = parseInt(rawB.replace(/^[★*]/, "").trim(), 10) || 0;
+      return numB - numA;
+    });
+
+    // Find the latest valid 1-3 digit bill number from the top of the sorted loans
+    let latestLoanBillNum = 0;
+    for (const loan of matchingLoans) {
+      const raw = loan.loanDetails?.billNumber ? String(loan.loanDetails.billNumber) : getBillNo(loan.id);
+      const cleanDigits = raw.replace(/^[★*]/, "").trim();
+      if (/^\d{1,3}$/.test(cleanDigits)) {
+        const numPart = parseInt(cleanDigits, 10);
+        if (numPart > 0 && numPart <= 999) {
+          latestLoanBillNum = numPart;
+          break; // Found the last saved form in this series
+        }
+      }
+    }
+
+    // Take the latest saved form between localStorage and the newest saved loan in this series
+    const lastBill = Math.max(lastSavedStorageNum, latestLoanBillNum);
+
+    return prefix + (lastBill + 1);
   };
 
   const formatDateToDDMMYYYY = (dateStr: string) => {
@@ -2311,7 +2330,8 @@ setShowOfflineLoanModal(true);
           if (!usedNumberSet.has(String(number))) { generatedBillNo = String(number); break; }
         }
       }
-      const billNoForSave = form.billNo.trim() || generatedBillNo || String(maximumUsedNumber + 1);
+      const fallbackBillNo = getNextBillNo(form.starSeries, targetDate).replace(/^[★*]/, "");
+      const billNoForSave = form.billNo.trim() || fallbackBillNo || generatedBillNo || "1";
       const targetBillNumber = `${form.starSeries ? "★" : ""}${billNoForSave}`;
 
       // Explicitly selected or exact-name matched customers are safe to reuse.
@@ -2541,11 +2561,11 @@ setShowOfflineLoanModal(true);
 
       // Record last saved form bill number for current series and type
       if (!editingTxnId) {
-        const cleanNo = form.billNo.replace(/^[★*]/, "").trim();
+        const cleanNo = billNoForSave.replace(/^[★*]/, "").trim();
         const numVal = parseInt(cleanNo, 10);
         if (!isNaN(numVal) && numVal > 0 && numVal <= 999) {
           try {
-            const seriesKey = getLoanSeriesKey(form.takenDate, customSeriesList);
+            const seriesKey = getLoanSeriesKey(targetDate || form.takenDate, customSeriesList);
             const storageKey = `sbj_last_bill_${seriesKey}_${form.starSeries ? "star" : "normal"}`;
             localStorage.setItem(storageKey, String(numVal));
           } catch {}
