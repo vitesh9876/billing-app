@@ -95,6 +95,7 @@ export default function AutocompleteInput({
   }, [className, completion, value]);
 
   const choose = (option: AutocompleteOption) => {
+    onValueChange(option.label || option.value);
     onSelect(option);
     setIsOpen(false);
     setActiveIndex(-1);
@@ -135,10 +136,12 @@ export default function AutocompleteInput({
             event.preventDefault();
             event.stopPropagation();
             setActiveIndex(index => (index - 1 + suggestions.length) % suggestions.length);
-          } else if (event.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
-            event.preventDefault();
-            event.stopPropagation();
-            choose(suggestions[activeIndex]);
+          } else if (event.key === "Enter") {
+            if (activeIndex >= 0 && suggestions[activeIndex]) {
+              choose(suggestions[activeIndex]);
+            } else if (completion && inlineOption) {
+              choose(inlineOption);
+            }
           } else if (event.key === "Escape" && isOpen) {
             event.preventDefault();
             event.stopPropagation();

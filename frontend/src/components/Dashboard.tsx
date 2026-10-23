@@ -933,7 +933,8 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     let maxNum = 0;
 
     offlineLoans.forEach(t => {
-      const raw = getBillNo(t.id);
+      // Prioritize explicit billNumber stored on loanDetails
+      const raw = t.loanDetails?.billNumber ? String(t.loanDetails.billNumber) : getBillNo(t.id);
       const isStarBill = raw.startsWith("★") || raw.startsWith("*");
       
       // Check if this bill belongs to the target series
@@ -941,9 +942,14 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       const txnSeriesKey = txnDate ? getLoanSeriesKey(txnDate, customSeriesList) : "series-default";
 
       if (isStarBill === isStar && txnSeriesKey === targetSeriesKey) {
-        const numPart = parseInt(raw.replace(/^[★*]/, ""), 10);
-        if (!isNaN(numPart) && numPart > maxNum) {
-          maxNum = numPart;
+        const cleanDigits = raw.replace(/^[★*]/, "").trim();
+        // Genuine bill book numbers are 1 to 3 digits (1 to 999).
+        // Discard 13-digit millisecond timestamps (e.g. 1785754513920) or non-standard numbers.
+        if (/^\d{1,3}$/.test(cleanDigits)) {
+          const numPart = parseInt(cleanDigits, 10);
+          if (numPart > maxNum) {
+            maxNum = numPart;
+          }
         }
       }
     });
@@ -3865,15 +3871,24 @@ setShowOfflineLoanModal(true);
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50 font-medium">
-                        {transactions.slice(0, 5).map((t: any, idx: number) => {
-                          const custName = t.customerName || customers.find(c => c.id === t.customerId)?.name || "Customer";
-                          const rowKey = `recent-txn-${t.id || idx}`;
-                          const isRevealed = !!revealedSensitiveKeys[rowKey];
-                          return (
-                            <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                              <td className="py-3 text-slate-600 font-normal">
-                                {formatDateToDDMMYYYY(t.date)}
-                              </td>
+                        {[...transactions]
+                          .sort((a, b) => {
+                            const dateA = a.loanDetails?.takenDate || a.date || "";
+                            const dateB = b.loanDetails?.takenDate || b.date || "";
+                            if (dateB !== dateA) return dateB.localeCompare(dateA);
+                            return String(b.id || "").localeCompare(String(a.id || ""));
+                          })
+                          .slice(0, 5)
+                          .map((t: any, idx: number) => {
+                            const custName = t.customerName || customers.find(c => c.id === t.customerId)?.name || "Customer";
+                            const rowKey = `recent-txn-${t.id || idx}`;
+                            const isRevealed = !!revealedSensitiveKeys[rowKey];
+                            const txnDate = t.loanDetails?.takenDate || t.date;
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                                <td className="py-3 text-slate-600 font-normal">
+                                  {formatDateToDDMMYYYY(txnDate)}
+                                </td>
                               <td className="py-3 text-slate-900 font-semibold">
                                 {custName}
                               </td>
