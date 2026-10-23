@@ -925,36 +925,54 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
 
 
-  // Auto-generate the next number within the configured loan series.
+  // Auto-generate the next number by checking current series + last saved forms
   const getNextBillNo = (isStar: boolean, dateStr?: string): string => {
     const targetDate = dateStr || new Date().toISOString().slice(0, 10);
     const targetSeriesKey = getLoanSeriesKey(targetDate, customSeriesList);
-    const offlineLoans = transactions.filter(t => t.type === "loan" && t.id);
+    const prefix = isStar ? "★" : "";
+
+    // 1. Check last saved form recorded in localStorage for this series and type
+    if (typeof window !== "undefined") {
+      try {
+        const storageKey = `sbj_last_bill_${targetSeriesKey}_${isStar ? "star" : "normal"}`;
+        const savedLast = localStorage.getItem(storageKey);
+        if (savedLast) {
+          const num = parseInt(savedLast.replace(/^[★*]/, "").trim(), 10);
+          if (!isNaN(num) && num > 0 && num <= 999) {
+            return prefix + (num + 1);
+          }
+        }
+      } catch {}
+    }
+
+    // 2. Scan saved loans belonging to the current series
     let maxNum = 0;
+    const offlineLoans = transactions.filter(t => t.type === "loan" && t.id);
 
     offlineLoans.forEach(t => {
-      // Prioritize explicit billNumber stored on loanDetails
-      const raw = t.loanDetails?.billNumber ? String(t.loanDetails.billNumber) : getBillNo(t.id);
-      const isStarBill = raw.startsWith("★") || raw.startsWith("*");
-      
-      // Check if this bill belongs to the target series
-      const txnDate = t.loanDetails?.takenDate || t.date || "";
+      const txnDate = getLoanTakenDate(t);
       const txnSeriesKey = txnDate ? getLoanSeriesKey(txnDate, customSeriesList) : "series-default";
 
-      if (isStarBill === isStar && txnSeriesKey === targetSeriesKey) {
-        const cleanDigits = raw.replace(/^[★*]/, "").trim();
-        // Genuine bill book numbers are 1 to 3 digits (1 to 999).
-        // Discard 13-digit millisecond timestamps (e.g. 1785754513920) or non-standard numbers.
-        if (/^\d{1,3}$/.test(cleanDigits)) {
-          const numPart = parseInt(cleanDigits, 10);
-          if (numPart > maxNum) {
-            maxNum = numPart;
+      // Strictly match the current series
+      if (txnSeriesKey === targetSeriesKey) {
+        const raw = t.loanDetails?.billNumber ? String(t.loanDetails.billNumber) : getBillNo(t.id);
+        const isStarBill = raw.startsWith("★") || raw.startsWith("*");
+
+        if (isStarBill === isStar) {
+          const cleanDigits = raw.replace(/^[★*]/, "").trim();
+          // Valid bill numbers are 1 to 3 digits (1 to 999).
+          // Discard 13-digit millisecond timestamps (e.g. 1785754513920) or numbers > 999.
+          if (/^\d{1,3}$/.test(cleanDigits)) {
+            const numPart = parseInt(cleanDigits, 10);
+            if (numPart > maxNum) {
+              maxNum = numPart;
+            }
           }
         }
       }
     });
 
-    return (isStar ? "★" : "") + (maxNum + 1);
+    return prefix + (maxNum + 1);
   };
 
   const formatDateToDDMMYYYY = (dateStr: string) => {
@@ -2520,6 +2538,20 @@ setShowOfflineLoanModal(true);
       };
 
       await saveRecord(txnPayload, newCustPayload);
+
+      // Record last saved form bill number for current series and type
+      if (!editingTxnId) {
+        const cleanNo = form.billNo.replace(/^[★*]/, "").trim();
+        const numVal = parseInt(cleanNo, 10);
+        if (!isNaN(numVal) && numVal > 0 && numVal <= 999) {
+          try {
+            const seriesKey = getLoanSeriesKey(form.takenDate, customSeriesList);
+            const storageKey = `sbj_last_bill_${seriesKey}_${form.starSeries ? "star" : "normal"}`;
+            localStorage.setItem(storageKey, String(numVal));
+          } catch {}
+        }
+      }
+
       showSaveNotice(editingTxnId ? "Loan changes saved." : "Loan saved.");
       setShowOfflineLoanModal(false);
       setEditingTxnId(null);
