@@ -159,7 +159,7 @@ export default function AutocompleteInput({
           className="pointer-events-none absolute top-0 z-10 flex h-full items-center"
           style={{ left: completionStyle.left }}
         >
-          <span className="rounded-sm bg-blue-100 px-0.5 text-blue-700" style={{ font: completionStyle.font, lineHeight: completionStyle.lineHeight, letterSpacing: completionStyle.letterSpacing }}>
+          <span className="bg-[#0078d7] text-white select-none leading-none" style={{ font: completionStyle.font, lineHeight: completionStyle.lineHeight, letterSpacing: completionStyle.letterSpacing }}>
             {completion}
           </span>
         </span>

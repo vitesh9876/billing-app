@@ -21,6 +21,8 @@ import {
   Printer,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Grid,
   Table,
   List,
@@ -258,6 +260,7 @@ export default function Dashboard() {
   const [customerViewMode, setCustomerViewMode] = useState<"grid" | "table" | "compact">("grid");
   const [remindersStatus, setRemindersStatus] = useState<any[]>([]);
   const [showConnectionGuide, setShowConnectionGuide] = useState(false);
+  const [showSeriesManagement, setShowSeriesManagement] = useState(false);
 const [readmeSubTab, setReadmeSubTab] = useState("Overview");
    
    // Loan History masking state
@@ -1889,8 +1892,10 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   const handleOpenAddLoanModal = () => {
     setEditingTxnId(null);
     setOfflineLoanMetalType("");
+    const today = new Date().toISOString().split('T')[0];
+    const predictedNo = getNextBillNo(false, today).replace(/^[★*]/, "");
     setOfflineLoanForm({
-      billNo: "",
+      billNo: predictedNo,
       custName: "",
       phone: "",
       father: "",
@@ -1899,7 +1904,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       mandal: "",
       amount: "",
       interestRate: "3.0%",
-      takenDate: new Date().toISOString().split('T')[0],
+      takenDate: today,
       endDate: new Date(Date.now() + 365*24*60*60*1000).toISOString().split('T')[0],
       status: "Pending",
       interestPaidUpto: "",
@@ -1914,10 +1919,10 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       note: "",
       topups: [],
       newTopUpAmount: "",
-      newTopUpDate: new Date().toISOString().split('T')[0],
+      newTopUpDate: today,
       newTopUpRemarks: "",
       newRepaymentAmount: "",
-      newRepaymentDate: new Date().toISOString().split('T')[0],
+      newRepaymentDate: today,
       newRepaymentRemarks: "",
       starSeries: false
     });
@@ -2129,16 +2134,38 @@ setShowOfflineLoanModal(true);
         const index = elements.indexOf(target);
         
         if (index > -1) {
+          const currentRadioName = target.getAttribute("type") === "radio" ? target.getAttribute("name") : null;
           let nextIndex = index + 1;
           while (nextIndex < elements.length) {
             const nextEl = elements[nextIndex];
             const tagName = nextEl.tagName;
             const type = nextEl.getAttribute("type");
+            const radioName = nextEl.getAttribute("name");
+
+            // If we are currently on a radio, skip other radios in the same group
+            if (currentRadioName && type === "radio" && radioName === currentRadioName) {
+              nextIndex++;
+              continue;
+            }
+
+            // If next element is a radio button, focus the checked one or the first one in that group
+            if (type === "radio") {
+              const groupRadios = elements.filter(
+                el => el.tagName === "INPUT" && el.getAttribute("type") === "radio" && el.getAttribute("name") === radioName
+              ) as HTMLInputElement[];
+              const targetRadio = groupRadios.find(r => r.checked) || groupRadios[0];
+              if (targetRadio && !targetRadio.hasAttribute("disabled")) {
+                targetRadio.focus();
+                return;
+              }
+              nextIndex++;
+              continue;
+            }
+
             const isInputField = tagName === "INPUT" && 
                                   type !== "submit" && 
                                   type !== "button" && 
                                   type !== "checkbox" && 
-                                  type !== "radio" && 
                                   type !== "hidden";
             const isSelectOrTextarea = tagName === "SELECT" || tagName === "TEXTAREA";
             const isFocusable = (isInputField || isSelectOrTextarea) && 
@@ -2160,7 +2187,7 @@ setShowOfflineLoanModal(true);
     value: string,
     fieldName: string,
   ) => {
-    if (["custName", "address", "mandal"].includes(fieldName)) {
+    if (["custName", "father", "address", "mandal"].includes(fieldName)) {
       value = sanitizeLoanText(value);
     }
     setOfflineLoanForm(prev => {
@@ -2818,6 +2845,13 @@ setShowOfflineLoanModal(true);
     }));
   const offlineAddressOptions: AutocompleteOption[] = uniqueAddresses.map(address => ({ value: address, label: address }));
   const offlineMandalOptions: AutocompleteOption[] = uniqueMandals.map(mandal => ({ value: mandal, label: mandal }));
+  const offlineFatherOptions: AutocompleteOption[] = Array.from(
+    new Set(
+      customers
+        .map(c => c.father ? String(c.father).trim() : "")
+        .filter(Boolean)
+    )
+  ).map(father => ({ value: father, label: father }));
   const offlineItemOptions: AutocompleteOption[] = uniqueItemNames.map(name => ({ value: name, label: name }));
   const phoneDigits = normalizePhoneForLoan(offlineLoanForm.phone);
 
@@ -5345,93 +5379,122 @@ setShowOfflineLoanModal(true);
               </div>
 
               {/* LOAN & BILL SERIES SECTION */}
-              <div className="pt-6 border-t border-slate-100 mb-8">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                  <div>
-                    <h4 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-[#FAFBFD] border border-slate-200/90 rounded-2xl p-5 mb-8">
+                <div 
+                  className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 cursor-pointer select-none"
+                  onClick={() => setShowSeriesManagement(!showSeriesManagement)}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-[#DFB76C]"></span>
-                      Loan &amp; Bill Series Management
-                    </h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      <h4 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider">
+                        Loan &amp; Bill Series Management
+                      </h4>
+                      <span className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 px-2 py-0.5 rounded-full shadow-xs">
+                        {allLoanSeries.length} Series
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
                       Loans are separated by series. Starting a new series resets auto-generated bill numbers back to 1 (and ★1), preventing duplicate conflicts across books.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewSeriesDate(new Date().toISOString().slice(0, 10));
-                      setNewSeriesLabel("");
-                      setShowNewSeriesModal(true);
-                    }}
-                    className="bg-[#0B1320] hover:bg-[#152238] text-[#E5C378] text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
-                  >
-                    <PlusCircle size={14} className="text-[#E5C378]" />
-                    New Series
-                  </button>
+                  <div className="flex items-center gap-2 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewSeriesDate(new Date().toISOString().slice(0, 10));
+                        setNewSeriesLabel("");
+                        setShowNewSeriesModal(true);
+                      }}
+                      className="bg-[#0B1320] hover:bg-[#152238] text-[#E5C378] text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      <PlusCircle size={13} className="text-[#E5C378]" />
+                      New Series
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowSeriesManagement(!showSeriesManagement)}
+                      className="text-xs bg-white hover:bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5 font-semibold text-slate-700 shadow-xs cursor-pointer flex items-center gap-1.5"
+                    >
+                      {showSeriesManagement ? (
+                        <>
+                          <ChevronUp size={13} />
+                          <span>Collapse</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown size={13} />
+                          <span>View Series</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto border border-slate-200/90 rounded-2xl bg-white shadow-xs">
-                  <table className="w-full text-xs text-left">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-[#FAFBFD] text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                        <th className="py-3 px-4 font-semibold">SERIES / BOOK</th>
-                        <th className="py-3 px-4 font-semibold">START DATE</th>
-                        <th className="py-3 px-4 font-semibold">LOANS COUNT</th>
-                        <th className="py-3 px-4 font-semibold">TYPE</th>
-                        <th className="py-3 px-4 font-semibold text-right">ACTION</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-normal">
-                      {allLoanSeries.map((s, idx) => {
-                        const count = transactions.filter(t => t.type === "loan" && getLoanSeriesKey(getLoanTakenDate(t), customSeriesList) === `series-${s.startDate}`).length;
-                        const isPreset = DEFAULT_LOAN_SERIES.some(p => p.startDate === s.startDate);
-                        const isCurrentActive = idx === 0;
+                {showSeriesManagement && (
+                  <div className="mt-4 pt-4 border-t border-slate-200/60 overflow-x-auto border border-slate-200/90 rounded-2xl bg-white shadow-xs">
+                    <table className="w-full text-xs text-left">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-[#FAFBFD] text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                          <th className="py-3 px-4 font-semibold">SERIES / BOOK</th>
+                          <th className="py-3 px-4 font-semibold">START DATE</th>
+                          <th className="py-3 px-4 font-semibold">LOANS COUNT</th>
+                          <th className="py-3 px-4 font-semibold">TYPE</th>
+                          <th className="py-3 px-4 font-semibold text-right">ACTION</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-normal">
+                        {allLoanSeries.map((s, idx) => {
+                          const count = transactions.filter(t => t.type === "loan" && getLoanSeriesKey(getLoanTakenDate(t), customSeriesList) === `series-${s.startDate}`).length;
+                          const isPreset = DEFAULT_LOAN_SERIES.some(p => p.startDate === s.startDate);
+                          const isCurrentActive = idx === 0;
 
-                        return (
-                          <tr key={s.startDate} className="hover:bg-amber-50/30 transition-colors">
-                            <td className="py-3 px-4 font-semibold text-slate-900">
-                              <div className="flex items-center gap-2">
-                                <span>{s.label || `Series (${formatSeriesDate(s.startDate)})`}</span>
-                                {isCurrentActive && (
-                                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    Current Series
-                                  </span>
+                          return (
+                            <tr key={s.startDate} className="hover:bg-amber-50/30 transition-colors">
+                              <td className="py-3 px-4 font-semibold text-slate-900">
+                                <div className="flex items-center gap-2">
+                                  <span>{s.label || `Series (${formatSeriesDate(s.startDate)})`}</span>
+                                  {isCurrentActive && (
+                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      Current Series
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 font-technical text-slate-700 font-medium">
+                                {formatSeriesDate(s.startDate)}
+                              </td>
+                              <td className="py-3 px-4 font-technical text-slate-700">
+                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
+                                  {count} {count === 1 ? "loan" : "loans"}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isPreset ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-800 border border-amber-200"}`}>
+                                  {isPreset ? "Pre-added Preset" : "Custom Series"}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                {!isPreset && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCustomSeries(s.startDate)}
+                                    className="text-rose-600 hover:text-rose-800 text-xs font-semibold px-2 py-1 rounded hover:bg-rose-50 transition-colors"
+                                  >
+                                    Remove
+                                  </button>
                                 )}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 font-technical text-slate-700 font-medium">
-                              {formatSeriesDate(s.startDate)}
-                            </td>
-                            <td className="py-3 px-4 font-technical text-slate-700">
-                              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
-                                {count} {count === 1 ? "loan" : "loans"}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isPreset ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-800 border border-amber-200"}`}>
-                                {isPreset ? "Pre-added Preset" : "Custom Series"}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              {!isPreset && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteCustomSeries(s.startDate)}
-                                  className="text-rose-600 hover:text-rose-800 text-xs font-semibold px-2 py-1 rounded hover:bg-rose-50 transition-colors"
-                                >
-                                  Remove
-                                </button>
-                              )}
-                              {isPreset && (
-                                <span className="text-[11px] text-slate-400">Default</span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                                {isPreset && (
+                                  <span className="text-[11px] text-slate-400">Default</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               <div className="pt-6 border-t border-slate-100">
@@ -6554,20 +6617,36 @@ setShowOfflineLoanModal(true);
                   <div className="flex items-center gap-2 mb-2">
                     <label className={`flex items-center gap-1 text-xs font-semibold cursor-pointer px-3 py-1.5 rounded-xl border transition-all ${!offlineLoanForm.starSeries ? 'bg-[#0B1320] text-[#E5C378] border-[#0B1320]' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                       <input type="radio" name="billSeries" className="hidden" checked={!offlineLoanForm.starSeries} onChange={() => {
-                        setOfflineLoanForm(prev => ({ ...prev, starSeries: false }));
+                        const prevPredicted = getNextBillNo(true, offlineLoanForm.takenDate).replace(/^[★*]/, "");
+                        const newPredicted = getNextBillNo(false, offlineLoanForm.takenDate).replace(/^[★*]/, "");
+                        const isAuto = !offlineLoanForm.billNo || offlineLoanForm.billNo === prevPredicted;
+                        setOfflineLoanForm(prev => ({
+                          ...prev,
+                          starSeries: false,
+                          billNo: isAuto ? newPredicted : prev.billNo
+                        }));
                       }} />
                       Normal
                     </label>
                     <label className={`flex items-center gap-1 text-xs font-semibold cursor-pointer px-3 py-1.5 rounded-xl border transition-all ${offlineLoanForm.starSeries ? 'bg-[#DFB76C] text-[#5C3F08] border-[#DFB76C] font-bold' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                       <input type="radio" name="billSeries" className="hidden" checked={offlineLoanForm.starSeries} onChange={() => {
-                        setOfflineLoanForm(prev => ({ ...prev, starSeries: true }));
+                        const prevPredicted = getNextBillNo(false, offlineLoanForm.takenDate).replace(/^[★*]/, "");
+                        const newPredicted = getNextBillNo(true, offlineLoanForm.takenDate).replace(/^[★*]/, "");
+                        const isAuto = !offlineLoanForm.billNo || offlineLoanForm.billNo === prevPredicted;
+                        setOfflineLoanForm(prev => ({
+                          ...prev,
+                          starSeries: true,
+                          billNo: isAuto ? newPredicted : prev.billNo
+                        }));
                       }} />
                       ★ Star (Above ₹10K)
                     </label>
                   </div>
-                  <div className={`flex items-center border rounded-xl overflow-hidden ${offlineLoanForm.starSeries ? 'border-amber-400' : 'border-slate-200/90'}`}>
+                  <div className={`flex items-center border rounded-xl overflow-hidden bg-white transition-all ${offlineLoanForm.starSeries ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90 focus-within:border-[#B8860B]'}`}>
                     {offlineLoanForm.starSeries && (
-                      <span className="px-3 py-2 bg-amber-400 text-white font-bold text-xs select-none">★</span>
+                      <span className="flex items-center justify-center pl-3 pr-1 text-amber-500 font-bold text-base select-none">
+                        ★
+                      </span>
                     )}
                     <input 
                       type="text" 
@@ -6575,15 +6654,15 @@ setShowOfflineLoanModal(true);
                       maxLength={3}
                       aria-label="Bill number, up to 3 digits"
                       placeholder="Enter Bill No..."
-                      className={`flex-1 p-2.5 text-xs outline-none bg-white font-bold ${offlineLoanForm.starSeries ? 'text-amber-800' : 'text-slate-800'}`}
+                      className={`flex-1 p-2.5 text-xs outline-none bg-transparent font-bold ${offlineLoanForm.starSeries ? 'text-amber-900 font-extrabold text-sm' : 'text-slate-900 font-bold'}`}
                       value={offlineLoanForm.billNo}
                       onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, billNo: sanitizeLoanBillNumber(e.target.value) }))}
                     />
                   </div>
-                  <p className="mt-1 text-[10px] text-slate-400">
+                  <p className="mt-1 text-[10px] text-slate-500 font-medium">
                     {editingTxnId && offlineLoanForm.billNo && !/^\d{1,3}$/.test(offlineLoanForm.billNo)
                       ? "This existing bill number is from an older record. Leave it unchanged or replace it with 1–3 digits."
-                      : "Numbers only, up to 3 digits. Leave blank to assign the next available number."}
+                      : "Auto-predicted from previous loan. You can freely change or type any number."}
                   </p>
                 </div>
                 <div className="form-group">
@@ -6593,7 +6672,19 @@ setShowOfflineLoanModal(true);
                     required 
                     className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
                     value={offlineLoanForm.takenDate}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, takenDate: e.target.value }))}
+                    onChange={(e) => {
+                      const newDate = e.target.value;
+                      setOfflineLoanForm(prev => {
+                        const prevPredicted = getNextBillNo(prev.starSeries, prev.takenDate).replace(/^[★*]/, "");
+                        const newPredicted = getNextBillNo(prev.starSeries, newDate).replace(/^[★*]/, "");
+                        const isAuto = !prev.billNo || prev.billNo === prevPredicted;
+                        return {
+                          ...prev,
+                          takenDate: newDate,
+                          billNo: isAuto ? newPredicted : prev.billNo
+                        };
+                      });
+                    }}
                   />
                 </div>
 
@@ -6625,20 +6716,21 @@ setShowOfflineLoanModal(true);
                 </div>
 
                 {/* Row 3: Father's/Husband's Name */}
-                <div className="form-group">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Father's / Husband's Name</label>
-                  <input 
-                    type="text" 
+                <div className="form-group relative">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Father's / Husband's Name</label>
+                  <AutocompleteInput
+                    value={offlineLoanForm.father}
+                    options={offlineFatherOptions}
                     placeholder="Father's / Husband's Name..."
                     className="w-full border border-slate-200/90 rounded-xl p-2.5 text-xs outline-none bg-white font-medium focus:border-[#C5A880]"
-                    value={offlineLoanForm.father}
-                    onChange={(e) => setOfflineLoanForm(prev => ({ ...prev, father: sanitizeLoanText(e.target.value) }))}
+                    onValueChange={value => handleAutocompleteInputChange(value, "father")}
+                    onSelect={option => handleAutocompleteInputChange(option.value, "father")}
                   />
                 </div>
 
                 {/* Row 4: Ration/Aadhar ID Proof & Phone Number */}
                 <div className="form-group">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Ration / Aadhar ID Proof</label>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Ration / Aadhar ID Proof</label>
                   <input 
                     type="text" 
                     placeholder="ID Proof..."
@@ -6648,7 +6740,7 @@ setShowOfflineLoanModal(true);
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Phone Number</label>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Phone Number</label>
                   <input 
                     type="tel" 
                     inputMode="numeric"
@@ -6668,7 +6760,7 @@ setShowOfflineLoanModal(true);
 
                 {/* Row 5: Address (with suggestions) */}
                 <div className="form-group relative">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Address</label>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Address</label>
                   <AutocompleteInput
                     value={offlineLoanForm.address}
                     options={offlineAddressOptions}
@@ -6681,7 +6773,7 @@ setShowOfflineLoanModal(true);
 
                 {/* Row 6: Mandal (with suggestions) */}
                 <div className="form-group relative">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Mandal</label>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Mandal</label>
                   <AutocompleteInput
                     value={offlineLoanForm.mandal}
                     options={offlineMandalOptions}
@@ -6694,7 +6786,7 @@ setShowOfflineLoanModal(true);
 
                 {/* Amount and Metal Type side-by-side */}
                 <div className="form-group">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Loan Amount * (₹)</label>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Loan Amount * (₹)</label>
                   <input 
                     type="text" 
                     inputMode="decimal"
@@ -6705,13 +6797,27 @@ setShowOfflineLoanModal(true);
                   />
                 </div>
                 <div className="form-group">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Metal Type</label>
-                  <div className={`flex items-center gap-4 min-h-[42px] border rounded-xl px-3 bg-white ${offlineLoanMetalType ? "border-slate-200/90" : "border-amber-400"}`}>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Metal Type</label>
+                  <div className={`flex items-center gap-4 min-h-[42px] border rounded-xl px-3 bg-white transition-all focus-within:border-[#C5A880] focus-within:ring-2 focus-within:ring-amber-100 ${offlineLoanMetalType ? "border-slate-200/90" : "border-amber-400"}`}>
                     <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-700">
-                      <input type="radio" name="off-metal" required checked={offlineLoanMetalType === "Gold"} onChange={() => setOfflineLoanMetalType("Gold")} /> Gold
+                      <input 
+                        type="radio" 
+                        name="off-metal" 
+                        required 
+                        className="accent-[#0B1320] focus:ring-2 focus:ring-[#C5A880] focus:outline-none"
+                        checked={offlineLoanMetalType === "Gold"} 
+                        onChange={() => setOfflineLoanMetalType("Gold")} 
+                      /> Gold
                     </label>
                     <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer text-slate-700">
-                      <input type="radio" name="off-metal" required checked={offlineLoanMetalType === "Silver"} onChange={() => setOfflineLoanMetalType("Silver")} /> Silver
+                      <input 
+                        type="radio" 
+                        name="off-metal" 
+                        required 
+                        className="accent-[#0B1320] focus:ring-2 focus:ring-[#C5A880] focus:outline-none"
+                        checked={offlineLoanMetalType === "Silver"} 
+                        onChange={() => setOfflineLoanMetalType("Silver")} 
+                      /> Silver
                     </label>
                     {!offlineLoanMetalType && <span className="text-[10px] text-amber-700">Choose one</span>}
                   </div>
