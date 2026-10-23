@@ -1,5 +1,4 @@
 import { ApiError, assertExpected, billNumber, day, reminders, same, today, transaction, validateCustomer, validateTransaction, text, type Row } from "./domain.ts";
-import { teluguBillSeriesYear } from "./teluguCalendar.ts";
 
 export interface Connection {
   query(sql: string, params?: unknown[]): Promise<Row[]>;

@@ -8,6 +8,8 @@ const auth = fs.readFileSync(require('node:path').join(__dirname, '../frontend/s
 const autocomplete = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/components/AutocompleteInput.tsx'), 'utf8');
 const calendar = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/lib/teluguCalendar.ts'), 'utf8');
 const calendarCompiled = ts.transpileModule(calendar, {compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022}}).outputText;
+const loanSeries = fs.readFileSync(require('node:path').join(__dirname, '../frontend/src/lib/loanSeries.ts'), 'utf8');
+const loanSeriesCompiled = ts.transpileModule(loanSeries, {compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022}}).outputText;
 const ast = ts.createSourceFile('Dashboard.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 const extracted = {};
 function visit(node) {
@@ -31,9 +33,13 @@ function visitAutocomplete(node) {
 visitAutocomplete(autocompleteAst);
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function contextFor(name, values) {
-  const ctx = vm.createContext({recordSavesInFlight: {current: new Set()}, mutationRevision: {current: 0}, exports: {}, setSavingRecord() {}, showSaveNotice() {}, crypto: require('node:crypto').webcrypto, ...values, console, Date});
+  const ctx = vm.createContext({recordSavesInFlight: {current: new Set()}, mutationRevision: {current: 0}, exports: {}, setSavingRecord() {}, showSaveNotice() {}, crypto: require('node:crypto').webcrypto, customSeriesList: [], ...values, console, Date});
   vm.runInContext(calendarCompiled, ctx);
   ctx.teluguBillSeriesYear = ctx.exports.teluguBillSeriesYear;
+  vm.runInContext(loanSeriesCompiled, ctx);
+  ctx.getLoanSeriesKey = ctx.exports.getLoanSeriesKey;
+  ctx.getLoanSeriesLabel = ctx.exports.getLoanSeriesLabel;
+  ctx.formatSeriesDate = ctx.exports.formatSeriesDate;
   for (const helper of ['applySavedTransaction', 'saveRecord', 'normalizePhoneForLoan', 'sanitizeLoanBillNumber']) {
     vm.runInContext(extracted[helper].replace('globalThis.handler', 'globalThis.' + helper), ctx);
   }

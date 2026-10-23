@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { billingFetch as fetch, subscribeBillingChanges } from "@/lib/supabaseBilling";
 import PwaInstallCard from "@/components/PwaInstallCard";
 import AutocompleteInput, { type AutocompleteOption } from "@/components/AutocompleteInput";
-import { teluguBillSeriesYear } from "@/lib/teluguCalendar";
+import { getLoanSeriesKey, getLoanSeriesLabel, formatSeriesDate, DEFAULT_LOAN_SERIES, type LoanSeries } from "@/lib/loanSeries";
 import { 
   LayoutDashboard, 
   PlusCircle, 
@@ -448,8 +448,82 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
   const [loanHistorySearch, setLoanHistorySearch] = useState("");
   const [loanHistoryFilter, setLoanHistoryFilter] = useState("all");
   const [loanSeriesFilter, setLoanSeriesFilter] = useState("all");
+  const [loanSeriesPeriodFilter, setLoanSeriesPeriodFilter] = useState("all");
   const [loanSortField, setLoanSortField] = useState<"date" | "name" | "amount">("date");
   const [loanSortOrder, setLoanSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Configurable Loan Bill Series
+  const [customSeriesList, setCustomSeriesList] = useState<LoanSeries[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem("sbj-custom-loan-series");
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      console.warn("Failed to read loan series from storage", e);
+    }
+    return [];
+  });
+  const [showNewSeriesModal, setShowNewSeriesModal] = useState(false);
+  const [newSeriesDate, setNewSeriesDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [newSeriesLabel, setNewSeriesLabel] = useState("");
+
+  // All combined series sorted newest first
+  const allLoanSeries = useMemo(() => {
+    const map = new Map<string, LoanSeries>();
+    DEFAULT_LOAN_SERIES.forEach(s => map.set(s.startDate, s));
+    customSeriesList.forEach(s => map.set(s.startDate, s));
+    return Array.from(map.values()).sort((a, b) => b.startDate.localeCompare(a.startDate));
+  }, [customSeriesList]);
+
+  const handleCreateNewSeries = async (startDate: string, label?: string) => {
+    const cleanDate = startDate.trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
+      alert("Please enter a valid start date (YYYY-MM-DD).");
+      return;
+    }
+    const cleanLabel = label?.trim() || `Series from ${formatSeriesDate(cleanDate)}`;
+    const newEntry: LoanSeries = {
+      id: `series-${Date.now()}`,
+      startDate: cleanDate,
+      label: cleanLabel,
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [newEntry, ...customSeriesList.filter(s => s.startDate !== cleanDate)];
+    setCustomSeriesList(updated);
+    try {
+      localStorage.setItem("sbj-custom-loan-series", JSON.stringify(updated));
+      await fetch("/api/v1/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: JSON.stringify(newEntry),
+          category: "Setting-LoanSeries",
+        }),
+      });
+      refreshData();
+    } catch (err) {
+      console.warn("Could not sync series to server", err);
+    }
+    setShowNewSeriesModal(false);
+    setNewSeriesLabel("");
+    alert(`New series "${cleanLabel}" started! Bill numbers will restart from 1 for loans on or after ${formatSeriesDate(cleanDate)}.`);
+  };
+
+  const handleDeleteCustomSeries = async (startDate: string) => {
+    if (!confirm(`Remove custom series starting ${formatSeriesDate(startDate)}?`)) return;
+    const updated = customSeriesList.filter(s => s.startDate !== startDate);
+    setCustomSeriesList(updated);
+    try {
+      localStorage.setItem("sbj-custom-loan-series", JSON.stringify(updated));
+      const match = itemsCatalog.find((i: any) => i.category === "Setting-LoanSeries" && i.name.includes(startDate));
+      if (match?.id) {
+        await fetch(`/api/v1/items/${match.id}`, { method: "DELETE" });
+      }
+      refreshData();
+    } catch (err) {
+      console.warn("Could not remove series item", err);
+    }
+  };
 
   // Mark Loan as Cleared Modal States
   const [showClearLoanModal, setShowClearLoanModal] = useState(false);
@@ -582,6 +656,9 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         || (loanSeriesFilter === "star" && isStar)
         || (loanSeriesFilter === "normal" && !isStar);
       
+      const matchesPeriod = loanSeriesPeriodFilter === "all"
+        || getLoanSeriesKey(getLoanTakenDate(t), customSeriesList) === `series-${loanSeriesPeriodFilter}`;
+      
       const matchesSearch = custName.includes(loanHistorySearch.toLowerCase()) || billNo.includes(loanHistorySearch.toLowerCase());
       
       const status = t.status || "Pending";
@@ -589,7 +666,7 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         || (loanHistoryFilter === "pending" && status === "Pending")
         || (loanHistoryFilter === "cleared" && status === "Cleared");
       
-      return matchesSearch && matchesFilter && matchesSeries;
+      return matchesSearch && matchesFilter && matchesSeries && matchesPeriod;
     })
     .sort((a, b) => {
       let valA: any = "";
@@ -665,6 +742,32 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
     refreshData();
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!Array.isArray(itemsCatalog)) return;
+    const seriesItems = itemsCatalog.filter((item: any) => item.category === "Setting-LoanSeries");
+    if (seriesItems.length > 0) {
+      const parsed: LoanSeries[] = [];
+      for (const item of seriesItems) {
+        try {
+          const obj = JSON.parse(item.name);
+          if (obj && obj.startDate) {
+            parsed.push({ ...obj, id: item.id || obj.id });
+          }
+        } catch {}
+      }
+      if (parsed.length > 0) {
+        setCustomSeriesList(prev => {
+          const map = new Map<string, LoanSeries>();
+          prev.forEach(s => map.set(s.startDate, s));
+          parsed.forEach(s => map.set(s.startDate, s));
+          const merged = Array.from(map.values()).sort((a, b) => b.startDate.localeCompare(a.startDate));
+          try { localStorage.setItem("sbj-custom-loan-series", JSON.stringify(merged)); } catch {}
+          return merged;
+        });
+      }
+    }
+  }, [itemsCatalog]);
 
   const refreshInFlight = useRef(false);
   const refreshPending = useRef(false);
@@ -819,9 +922,10 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
 
 
 
-  // Auto-generate the next number within the Telugu calendar series.
+  // Auto-generate the next number within the configured loan series.
   const getNextBillNo = (isStar: boolean, dateStr?: string): string => {
-    const seriesYear = teluguBillSeriesYear(dateStr || new Date().toISOString().slice(0, 10));
+    const targetDate = dateStr || new Date().toISOString().slice(0, 10);
+    const targetSeriesKey = getLoanSeriesKey(targetDate, customSeriesList);
     const offlineLoans = transactions.filter(t => t.type === "loan" && t.id);
     let maxNum = 0;
 
@@ -829,11 +933,11 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       const raw = getBillNo(t.id);
       const isStarBill = raw.startsWith("★") || raw.startsWith("*");
       
-      // Check if this bill belongs to the target year
+      // Check if this bill belongs to the target series
       const txnDate = t.loanDetails?.takenDate || t.date || "";
-      const txnSeriesYear = txnDate ? teluguBillSeriesYear(txnDate) : 0;
+      const txnSeriesKey = txnDate ? getLoanSeriesKey(txnDate, customSeriesList) : "series-default";
 
-      if (isStarBill === isStar && txnSeriesYear === seriesYear) {
+      if (isStarBill === isStar && txnSeriesKey === targetSeriesKey) {
         const numPart = parseInt(raw.replace(/^[★*]/, ""), 10);
         if (!isNaN(numPart) && numPart > maxNum) {
           maxNum = numPart;
@@ -1575,12 +1679,21 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
       const totalAmount = parseFloat(loanDetails.amount) || 0;
       // Series-based loan ID
       const prefix = totalAmount > 8000 ? "L★-" : "L-";
-      const count = Math.max(0, ...transactions.filter(t => t.type === "loan" && (t.id.startsWith(prefix) || t.loanDetails?.billNumber?.startsWith(prefix))).map(t => {
+      const targetDate = loanDetails.takenDate || new Date().toISOString().split("T")[0];
+      const targetSeriesKey = getLoanSeriesKey(targetDate, customSeriesList);
+      const count = Math.max(0, ...transactions.filter(t => {
+        if (t.type !== "loan") return false;
+        const raw = t.loanDetails?.billNumber || t.id;
+        if (!raw.startsWith(prefix)) return false;
+        const txnDate = t.loanDetails?.takenDate || t.date || "";
+        const txnSeriesKey = txnDate ? getLoanSeriesKey(txnDate, customSeriesList) : "series-default";
+        return txnSeriesKey === targetSeriesKey;
+      }).map(t => {
         const raw = t.loanDetails?.billNumber || t.id;
         return Number(raw.slice(prefix.length)) || 0;
       }));
       const billNumber = prefix + String(count + 1).padStart(3, "0");
-      const txnId = `BILL-${billNumber}-${loanDetails.takenDate || new Date().toISOString().split("T")[0]}-${crypto.randomUUID()}`;
+      const txnId = `BILL-${billNumber}-${targetDate}-${crypto.randomUUID()}`;
       
       let endDate = loanDetails.endDate;
       if (!endDate && loanDetails.takenDate) {
@@ -1598,6 +1711,8 @@ const [readmeSubTab, setReadmeSubTab] = useState("Overview");
         date: new Date().toISOString().split("T")[0],
         loanDetails: {
           billNumber,
+          series: targetSeriesKey,
+          seriesLabel: getLoanSeriesLabel(targetDate, customSeriesList),
           father: loanDetails.father || "N/A",
           idProof: loanDetails.idProof || "N/A",
           interestRate: loanDetails.interestRate,
@@ -2122,32 +2237,30 @@ setShowOfflineLoanModal(true);
       const originalTxn = editingTxnId ? form.expectedTransaction || transactions.find(t => t.id === editingTxnId) : null;
       if (editingTxnId && !originalTxn) throw new Error("This loan is no longer available. Refresh Loan History before editing.");
 
-      const billSeriesYear = teluguBillSeriesYear(form.takenDate || new Date().toISOString().slice(0, 10));
+      const targetDate = form.takenDate || new Date().toISOString().slice(0, 10);
+      const targetSeriesKey = getLoanSeriesKey(targetDate, customSeriesList);
       const usedSeriesNumbers = transactions
         .filter(transaction => {
           if (transaction.type !== "loan" || transaction.id === editingTxnId) return false;
           const transactionDate = String(transaction.loanDetails?.takenDate || transaction.date || "");
           const transactionStar = /^[★*]/.test(getBillNo(transaction.id));
-          return teluguBillSeriesYear(transactionDate) === billSeriesYear && transactionStar === form.starSeries;
+          const txnSeriesKey = transactionDate ? getLoanSeriesKey(transactionDate, customSeriesList) : "series-default";
+          return txnSeriesKey === targetSeriesKey && transactionStar === form.starSeries;
         })
         .map(transaction => getBillNo(transaction.id).replace(/^[★*]/, ""))
-        .filter(number => /^\d{1,3}$/.test(number));
+        .filter(number => /^\d+$/.test(number));
       const usedNumberSet = new Set(usedSeriesNumbers);
       const maximumUsedNumber = Math.max(0, ...usedSeriesNumbers.map(Number));
       let generatedBillNo = "";
-      for (let number = maximumUsedNumber + 1; number <= 999; number += 1) {
+      for (let number = maximumUsedNumber + 1; number <= 99999; number += 1) {
         if (!usedNumberSet.has(String(number))) { generatedBillNo = String(number); break; }
       }
       if (!generatedBillNo) {
-        for (let number = 1; number <= Math.min(maximumUsedNumber, 999); number += 1) {
+        for (let number = 1; number <= maximumUsedNumber; number += 1) {
           if (!usedNumberSet.has(String(number))) { generatedBillNo = String(number); break; }
         }
       }
-      const billNoForSave = form.billNo.trim() || generatedBillNo;
-      if (!billNoForSave) {
-        alert(`All bill numbers from 1 to 999 are already used in the Telugu year beginning Ugadi ${billSeriesYear}.`);
-        return;
-      }
+      const billNoForSave = form.billNo.trim() || generatedBillNo || String(maximumUsedNumber + 1);
       const targetBillNumber = `${form.starSeries ? "★" : ""}${billNoForSave}`;
 
       // Explicitly selected or exact-name matched customers are safe to reuse.
@@ -2336,6 +2449,8 @@ setShowOfflineLoanModal(true);
         loanDetails: {
           ...originalTxn?.loanDetails,
           billNumber,
+          series: targetSeriesKey,
+          seriesLabel: getLoanSeriesLabel(targetDate, customSeriesList),
           father: form.father.trim(),
           idProof: form.idProof.trim(),
           address: form.address.trim(),
@@ -4980,10 +5095,22 @@ setShowOfflineLoanModal(true);
                     </div>
                     <select 
                       className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs outline-none cursor-pointer font-medium text-slate-700 bg-white"
+                      value={loanSeriesPeriodFilter}
+                      onChange={(e) => setLoanSeriesPeriodFilter(e.target.value)}
+                    >
+                      <option value="all">All Series Books</option>
+                      {allLoanSeries.map(s => (
+                        <option key={s.startDate} value={s.startDate}>
+                          {s.label || `Series (${formatSeriesDate(s.startDate)})`}
+                        </option>
+                      ))}
+                    </select>
+                    <select 
+                      className="border border-slate-200/90 rounded-xl px-3 py-2 text-xs outline-none cursor-pointer font-medium text-slate-700 bg-white"
                       value={loanSeriesFilter}
                       onChange={(e) => setLoanSeriesFilter(e.target.value)}
                     >
-                      <option value="all">All Series</option>
+                      <option value="all">All Star / Normal</option>
                       <option value="star">★ Star Series (&gt;₹10K)</option>
                       <option value="normal">Normal Series</option>
                     </select>
@@ -5073,7 +5200,10 @@ setShowOfflineLoanModal(true);
                             className="hover:bg-[#F3E2BC] transition-colors cursor-pointer"
                           >
                             <td className="py-3.5 pr-3 text-[#B8860B] font-semibold text-xs">
-                              {displayBill}
+                              <div>{displayBill}</div>
+                              <div className="text-[10px] text-slate-400 font-normal">
+                                {getLoanSeriesLabel(getLoanTakenDate(t), customSeriesList)}
+                              </div>
                             </td>
                             <td className="py-3.5 pr-3 text-slate-800 font-medium">
                               {custName}
@@ -5215,6 +5345,96 @@ setShowOfflineLoanModal(true);
                     <li>Confirm this page shows the phone as connected. Test with a safe number before relying on live reminders.</li>
                   </ol>
                 )}
+              </div>
+
+              {/* LOAN & BILL SERIES SECTION */}
+              <div className="pt-6 border-t border-slate-100 mb-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                  <div>
+                    <h4 className="font-serif text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#DFB76C]"></span>
+                      Loan &amp; Bill Series Management
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Loans are separated by series. Starting a new series resets auto-generated bill numbers back to 1 (and ★1), preventing duplicate conflicts across books.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewSeriesDate(new Date().toISOString().slice(0, 10));
+                      setNewSeriesLabel("");
+                      setShowNewSeriesModal(true);
+                    }}
+                    className="bg-[#0B1320] hover:bg-[#152238] text-[#E5C378] text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    <PlusCircle size={14} className="text-[#E5C378]" />
+                    New Series
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto border border-slate-200/90 rounded-2xl bg-white shadow-xs">
+                  <table className="w-full text-xs text-left">
+                    <thead>
+                      <tr className="border-b border-slate-100 bg-[#FAFBFD] text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="py-3 px-4 font-semibold">SERIES / BOOK</th>
+                        <th className="py-3 px-4 font-semibold">START DATE</th>
+                        <th className="py-3 px-4 font-semibold">LOANS COUNT</th>
+                        <th className="py-3 px-4 font-semibold">TYPE</th>
+                        <th className="py-3 px-4 font-semibold text-right">ACTION</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-normal">
+                      {allLoanSeries.map((s, idx) => {
+                        const count = transactions.filter(t => t.type === "loan" && getLoanSeriesKey(getLoanTakenDate(t), customSeriesList) === `series-${s.startDate}`).length;
+                        const isPreset = DEFAULT_LOAN_SERIES.some(p => p.startDate === s.startDate);
+                        const isCurrentActive = idx === 0;
+
+                        return (
+                          <tr key={s.startDate} className="hover:bg-amber-50/30 transition-colors">
+                            <td className="py-3 px-4 font-semibold text-slate-900">
+                              <div className="flex items-center gap-2">
+                                <span>{s.label || `Series (${formatSeriesDate(s.startDate)})`}</span>
+                                {isCurrentActive && (
+                                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Current Series
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 font-technical text-slate-700 font-medium">
+                              {formatSeriesDate(s.startDate)}
+                            </td>
+                            <td className="py-3 px-4 font-technical text-slate-700">
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
+                                {count} {count === 1 ? "loan" : "loans"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isPreset ? "bg-slate-100 text-slate-600" : "bg-amber-50 text-amber-800 border border-amber-200"}`}>
+                                {isPreset ? "Pre-added Preset" : "Custom Series"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              {!isPreset && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCustomSeries(s.startDate)}
+                                  className="text-rose-600 hover:text-rose-800 text-xs font-semibold px-2 py-1 rounded hover:bg-rose-50 transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                              {isPreset && (
+                                <span className="text-[11px] text-slate-400">Default</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div className="pt-6 border-t border-slate-100">
@@ -7075,6 +7295,81 @@ setShowOfflineLoanModal(true);
               <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 mt-6">
                 <button type="button" onClick={() => setShowItemModal(false)} className="px-4 py-2 border border-slate-200/90 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs">Cancel</button>
                 <button type="submit" className="bg-[#0B1320] hover:bg-[#152238] text-white font-semibold px-4 py-2 rounded-xl text-xs shadow-sm cursor-pointer">Save Item</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* START NEW LOAN SERIES MODAL */}
+      {showNewSeriesModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl border border-slate-100 relative">
+            <div className="flex justify-between items-start mb-5">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#B8860B] block mb-1">LOAN BOOK CONFIGURATION</span>
+                <h3 className="font-serif text-xl font-bold text-slate-900">Start New Loan Series</h3>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setShowNewSeriesModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 mb-5 text-xs text-amber-900 leading-relaxed">
+              <p className="font-semibold mb-1 flex items-center gap-1.5">
+                <span>✦</span> Fresh Numbering Sequence
+              </p>
+              Loans created with a loan taken date on or after this start date will belong to this new series. Auto-generated bill numbers will restart fresh from <strong>1</strong> (and <strong>★1</strong>), separating records so duplicate conflicts never occur.
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateNewSeries(newSeriesDate, newSeriesLabel);
+            }} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  Series Start Date *
+                </label>
+                <input 
+                  type="date"
+                  required
+                  className="w-full border border-slate-200/90 rounded-xl p-3 text-xs outline-none bg-white font-medium focus:border-[#C5A880] transition-colors"
+                  value={newSeriesDate}
+                  onChange={(e) => setNewSeriesDate(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
+                  Series Label / Note (Optional)
+                </label>
+                <input 
+                  type="text"
+                  placeholder="e.g. Series 2027 / New Ledger Book"
+                  className="w-full border border-slate-200/90 rounded-xl p-3 text-xs outline-none bg-white font-medium focus:border-[#C5A880] transition-colors"
+                  value={newSeriesLabel}
+                  onChange={(e) => setNewSeriesLabel(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setShowNewSeriesModal(false)} 
+                  className="px-4 py-2.5 border border-slate-200/90 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="bg-[#0B1320] hover:bg-[#152238] text-[#E5C378] font-semibold px-5 py-2.5 rounded-xl text-xs shadow-sm cursor-pointer transition-colors"
+                >
+                  Start Series
+                </button>
               </div>
             </form>
           </div>
