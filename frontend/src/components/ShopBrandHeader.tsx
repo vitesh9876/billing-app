@@ -8,6 +8,10 @@ export default function ShopBrandHeader() {
       <img
         src="/shop-logo-horizontal.png"
         alt="Sri Sai Balaji Jewelry and Furniture"
+        width={224}
+        height={48}
+        loading="lazy"
+        decoding="async"
         className="h-auto w-56 object-contain"
       />
     </a>

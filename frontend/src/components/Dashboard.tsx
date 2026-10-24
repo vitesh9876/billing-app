@@ -3122,8 +3122,11 @@ setShowOfflineLoanModal(true);
               {/* Drawer Header */}
               <div className="sbj-brand min-h-0 p-4 flex items-center justify-between">
                 <div className="flex min-w-0 items-center gap-3 pr-3">
-                  <img src="/shop-logo-mark.png" alt="" aria-hidden="true" />
-                  <div className="min-w-0"><p className="sbj-brand-name">Sri Sai Balaji</p><span className="sbj-brand-caption">Jewelry &amp; Furniture</span></div>
+                  <img src="/shop-logo-mark.png" alt="Sri Sai Balaji Logo" width={36} height={36} loading="lazy" decoding="async" />
+                  <div className="min-w-0">
+                    <p className="sbj-brand-name font-serif text-sm font-bold leading-tight">Sri Sai Balaji</p>
+                    <span className="sbj-brand-caption block">Jewelry &amp; Furniture</span>
+                  </div>
                 </div>
                 <button 
                   type="button" 
@@ -3220,8 +3223,11 @@ setShowOfflineLoanModal(true);
         <div>
           {/* Brand Header */}
           <div className="sbj-brand flex items-center gap-3">
-            <img src="/shop-logo-mark.png" alt="" aria-hidden="true" />
-            <div className="min-w-0"><p className="sbj-brand-name">Sri Sai Balaji</p><span className="sbj-brand-caption">Jewelry &amp; Furniture</span></div>
+            <img src="/shop-logo-mark.png" alt="Sri Sai Balaji Logo" width={36} height={36} loading="lazy" decoding="async" />
+            <div className="min-w-0">
+              <h1 className="sbj-brand-name font-serif text-sm font-bold leading-tight">Sri Sai Balaji</h1>
+              <span className="sbj-brand-caption block">Jewelry &amp; Furniture</span>
+            </div>
           </div>
 
           {/* Desktop Nav Links */}
@@ -3312,8 +3318,13 @@ setShowOfflineLoanModal(true);
         </div>
 
         {/* Sidebar Footer */}
-        <div className="px-5 py-3 border-t border-slate-200 text-right">
-          <span className="text-[10px] font-mono text-slate-500">v2.4</span>
+        <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="flex items-center gap-2">
+            <a href="/privacy" className="hover:text-amber-800 transition-colors">Privacy</a>
+            <span>•</span>
+            <a href="/contact" className="hover:text-amber-800 transition-colors">Contact</a>
+          </div>
+          <span className="text-[10px] font-mono text-slate-400">v2.4</span>
         </div>
       </aside>
 

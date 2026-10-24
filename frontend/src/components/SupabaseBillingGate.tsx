@@ -157,7 +157,7 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
   return <main className="sbj-login-screen flex items-center justify-center">
     <form id="billing-login-form" method="post" className="sbj-login-card w-full max-w-md bg-white p-8" onSubmit={submitAccount} autoComplete="on">
       <div className="mb-6 flex justify-center">
-        <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" className="sbj-login-logo h-20 w-full object-contain" />
+        <img src="/shop-logo-horizontal.png" alt="Sri Sai Balaji Jewelry and Furniture" width={320} height={80} loading="lazy" decoding="async" className="sbj-login-logo h-20 w-full object-contain" />
       </div>
       <h1 className="font-serif text-3xl font-bold text-slate-900">{accountMode==="signin"?"Welcome back":"Create your account"}</h1>
       <p className="mt-2 mb-6 text-sm leading-relaxed text-slate-600">{accountMode==="signin"?"Sign in to securely access your shop records.":"Create an account using the shop’s private access code."}</p>
@@ -183,6 +183,11 @@ export default function SupabaseBillingGate({children}:{children:ReactNode}) {
         </button>
         {userId && <button type="button" onClick={signOut} className="mt-3 w-full text-sm underline">Use another account</button>}
       </>}
+      <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-center gap-4 text-xs text-slate-500">
+        <a href="/privacy" className="hover:text-amber-700 underline">Privacy Policy</a>
+        <span>•</span>
+        <a href="/contact" className="hover:text-amber-700 underline">Contact Us</a>
+      </div>
     </form>
   </main>;
 }
